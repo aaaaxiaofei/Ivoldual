@@ -4,7 +4,7 @@
 
 /*
   IJK: Isosurface Jeneration Kode
-  Copyright (C) 2006-2016 Rephael Wenger
+  Copyright (C) 2006-2017 Rephael Wenger
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public License
@@ -35,7 +35,6 @@
 
 #include "ijkdual_types.h"
 #include "ijkdual_datastruct.h"
-#include "ijkdualtable.h"
 
 
 /// ijkdual template functions
@@ -53,7 +52,7 @@ namespace IJKDUAL {
   void construct_multi_isov_mesh
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const SCALAR_TYPE isovalue, 
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
+   const ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
    const DUALISO_DATA_FLAGS & param,
    std::vector<ISO_VERTEX_INDEX> & isopoly_vert,
    std::vector<GRID_EDGE_TYPE> & dual_edge,
@@ -68,8 +67,20 @@ namespace IJKDUAL {
     const bool flag_separate_neg = param.SeparateNegFlag();
     const bool flag_connect_ambiguous = param.ConnectAmbiguousFlag();
     const VERTEX_POSITION_METHOD vpos_method = param.VertexPositionMethod();
-    IJK::PROCEDURE_ERROR error("dual_contouring");
+    IJK::PROCEDURE_ERROR error("construct_multi_isov_mesh");
     clock_t t0, t1, t2;
+
+    if (scalar_grid.Dimension() != isodual_table.Dimension()) {
+      error.AddMessage
+        ("Programming error.  Incorrect isodual table dimension.");
+      error.AddMessage
+        ("  Isodual table dimension does not match scalar grid dimension.");
+      error.AddMessage
+        ("    Isodual table dimension: ", isodual_table.Dimension(), "");
+      error.AddMessage
+        ("    Scalar grid dimension: ", scalar_grid.Dimension(), "");
+      throw error;
+    }
 
     t0 = clock();
 
@@ -175,7 +186,7 @@ namespace IJKDUAL {
   void dual_contouring_multi_isov
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const SCALAR_TYPE isovalue, 
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
+   const ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
    const DUALISO_DATA_FLAGS & param,
    std::vector<ISO_VERTEX_INDEX> & isopoly_vert,
    std::vector<GRID_EDGE_TYPE> & dual_edge,
@@ -185,14 +196,8 @@ namespace IJKDUAL {
    MERGE_DATA & merge_data, 
    DUALISO_INFO & dualiso_info)
   {
-    const int dimension = scalar_grid.Dimension();
-    const bool flag_split_non_manifold = param.SplitNonManifoldFlag();
-    const bool flag_select_split = param.SelectSplitFlag();
-    const bool flag_separate_neg = param.SeparateNegFlag();
-    const bool flag_connect_ambiguous = param.ConnectAmbiguousFlag();
     const VERTEX_POSITION_METHOD vpos_method = param.VertexPositionMethod();
     const COORD_TYPE center_offset = 0.1;
-    IJK::PROCEDURE_ERROR error("dual_contouring");
     clock_t t0, t1, t2;
 
     t0 = clock();
@@ -236,7 +241,7 @@ namespace IJKDUAL {
   void dual_contouring_multi_isov
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const SCALAR_TYPE isovalue, 
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
+   const ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
    const DUALISO_DATA_FLAGS & param,
    std::vector<ISO_VERTEX_INDEX> & isopoly_vert,
    std::vector<GRID_EDGE_TYPE> & dual_edge,
@@ -271,7 +276,7 @@ namespace IJKDUAL {
     const AXIS_SIZE_TYPE * axis_size = scalar_grid.AxisSize();
     const bool flag_separate_neg = param.SeparateNegFlag();
     const bool flag_always_separate_opposite(true);
-    IJKDUALTABLE::ISODUAL_CUBE_TABLE_AMBIG 
+    ISODUAL_CUBE_TABLE_AMBIG 
       isodual_table(dimension, flag_separate_neg, 
                     flag_always_separate_opposite);
     ISO_MERGE_DATA merge_data(dimension, axis_size);
@@ -295,7 +300,7 @@ namespace IJKDUAL {
   void dual_contouring_manifold
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const SCALAR_TYPE isovalue, 
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
+   const ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
    const DUALISO_DATA_FLAGS & param,
    std::vector<ISO_VERTEX_INDEX> & isopoly_vert,
    std::vector<GRID_EDGE_TYPE> & dual_edge,
@@ -327,7 +332,7 @@ namespace IJKDUAL {
   void dual_contouring_manifold
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const SCALAR_TYPE isovalue, 
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
+   const ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
    const DUALISO_DATA_FLAGS & param,
    std::vector<ISO_VERTEX_INDEX> & isopoly_vert,
    std::vector<GRID_EDGE_TYPE> & dual_edge,

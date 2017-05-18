@@ -25,8 +25,6 @@
 
 #include <vector>
 
-#include "ijkdualtable.h"
-
 #include "ijkcoord.txx"
 #include "ijkinterpolate.txx"
 #include "ijkisopoly.txx"
@@ -175,29 +173,30 @@ namespace IJKDUAL {
   /// @param temp_coord0[] Temporary coordinate array.
   /// @param temp_coord1[] Temporary coordinate array.
   /// @param temp_coord2[] Temporary coordinate array.
-  template <typename GRID_TYPE, typename STYPE,
+  template <typename GRID_TYPE, 
+            typename ISODUAL_TABLE_TYPE,
+            typename STYPE,
             typename DUAL_ISOV_TYPE, 
-            typename ISOV_INDEX_TYPE,
             typename CUBE_TYPE,
             typename CTYPE, typename CTYPE2>
   void position_dual_isov_centroid_multi
   (const GRID_TYPE & scalar_grid,
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE & isodual_table,
+   const ISODUAL_TABLE_TYPE & isodual_table,
    const STYPE isovalue,
-   const std::vector<DUAL_ISOV_TYPE> & iso_vlist,
+   const DUAL_ISOV_TYPE & isov_info,
    const CUBE_TYPE & cube,
-   const ISOV_INDEX_TYPE isov,
    CTYPE * vcoord, 
    CTYPE2 * temp_coord0, CTYPE2 * temp_coord1, CTYPE2 * temp_coord2)
   {
     typedef typename GRID_TYPE::DIMENSION_TYPE DTYPE;
     typedef typename GRID_TYPE::VERTEX_INDEX_TYPE VTYPE;
     typedef typename GRID_TYPE::NUMBER_TYPE NTYPE;
+    typedef typename ISODUAL_TABLE_TYPE::TABLE_INDEX TABLE_INDEX;
 
     const DTYPE dimension = scalar_grid.Dimension();
-    const VTYPE icube = iso_vlist[isov].cube_index;
-    const NTYPE ipatch = iso_vlist[isov].patch_index;
-    const IJKDUALTABLE::TABLE_INDEX it = iso_vlist[isov].table_index;
+    const VTYPE icube = isov_info.cube_index;
+    const NTYPE ipatch = isov_info.patch_index;
+    const TABLE_INDEX it = isov_info.table_index;
 
     NTYPE num_intersected_edges = 0;
     IJK::set_coord(dimension, 0.0, vcoord);
@@ -243,12 +242,15 @@ namespace IJKDUAL {
     }
   }
 
+
   /// Position dual isosurface vertices using centroids.
-  template <typename GRID_TYPE, typename STYPE,
+  template <typename GRID_TYPE, 
+            typename ISODUAL_TABLE_TYPE,
+            typename STYPE,
             typename DUAL_ISOV_TYPE, typename CTYPE>
   void position_all_dual_isovertices_centroid_multi
   (const GRID_TYPE & scalar_grid,
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE & isodual_table,
+   const ISODUAL_TABLE_TYPE & isodual_table,
    const STYPE isovalue,
    const std::vector<DUAL_ISOV_TYPE> & iso_vlist,
    CTYPE * coord)
@@ -265,19 +267,18 @@ namespace IJKDUAL {
     IJK::CUBE_FACE_INFO<int,int,int> cube(dimension);
 
     for (NTYPE i = 0; i < iso_vlist.size(); i++) {
-
       position_dual_isov_centroid_multi
-        (scalar_grid, isodual_table, isovalue, iso_vlist, cube, i, 
+        (scalar_grid, isodual_table, isovalue, iso_vlist[i], cube,
          coord+i*dimension, coord0.Ptr(), coord1.Ptr(), coord2.Ptr());
     }
   }
 
   /// Position dual isosurface vertices using centroids.
-  template <typename GRID_TYPE, typename STYPE, typename DUAL_ISOV_TYPE, 
-            typename CTYPE>
+  template <typename GRID_TYPE, typename ISODUAL_TABLE_TYPE,
+            typename STYPE, typename DUAL_ISOV_TYPE, typename CTYPE>
   void position_all_dual_isovertices_centroid_multi
   (const GRID_TYPE & scalar_grid,
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE & isodual_table,
+   const ISODUAL_TABLE_TYPE & isodual_table,
    const STYPE isovalue,
    const std::vector<DUAL_ISOV_TYPE> & iso_vlist, 
    std::vector<CTYPE> & coord)
@@ -296,11 +297,12 @@ namespace IJKDUAL {
   /// More than one vertex can be in a cube.
   /// If cube contains multiple isosurface then vertices are positioned
   ///   near but not on cube center.
-  template <typename GRID_TYPE, typename STYPE,
+  template <typename GRID_TYPE, typename ISODUAL_TABLE_TYPE,
+            typename STYPE,
             typename DUAL_ISOV_TYPE, typename CTYPE0, typename CTYPE1>
   void position_all_dual_isovertices_near_cube_center_multi
   (const GRID_TYPE & scalar_grid,
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE & isodual_table,
+   const ISODUAL_TABLE_TYPE & isodual_table,
    const STYPE isovalue,
    const std::vector<DUAL_ISOV_TYPE> & iso_vlist,
    const CTYPE0 offset,
@@ -309,6 +311,7 @@ namespace IJKDUAL {
     typedef typename GRID_TYPE::DIMENSION_TYPE DTYPE;
     typedef typename GRID_TYPE::VERTEX_INDEX_TYPE VTYPE;
     typedef typename GRID_TYPE::NUMBER_TYPE NTYPE;
+    typedef typename ISODUAL_TABLE_TYPE::TABLE_INDEX TABLE_INDEX;
 
     const DTYPE dimension = scalar_grid.Dimension();
     CTYPE1 vcoord[dimension];
@@ -319,7 +322,7 @@ namespace IJKDUAL {
     for (VTYPE i = 0; i < iso_vlist.size(); i++) {
       VTYPE icube = iso_vlist[i].cube_index;
       NTYPE ipatch = iso_vlist[i].patch_index;
-      IJKDUALTABLE::TABLE_INDEX it = iso_vlist[i].table_index;
+      TABLE_INDEX it = iso_vlist[i].table_index;
 
       if (isodual_table.NumIsoVertices(it) == 1) {
         scalar_grid.ComputeCubeCenterCoord(icube, coord+i*dimension);
@@ -370,11 +373,12 @@ namespace IJKDUAL {
   /// Position dual isosurface vertices near cube centers.
   /// - More than one vertex can be in a cube.
   /// - C++ STL vector format for array coord[].
-  template <typename GRID_TYPE, typename STYPE,
+  template <typename GRID_TYPE, typename ISODUAL_TABLE_TYPE, 
+            typename STYPE,
             typename DUAL_ISOV_TYPE, typename CTYPE0, typename CTYPE1>
   void position_all_dual_isovertices_near_cube_center_multi
   (const GRID_TYPE & scalar_grid,
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE & isodual_table,
+   const ISODUAL_TABLE_TYPE & isodual_table,
    const STYPE isovalue,
    const std::vector<DUAL_ISOV_TYPE> & iso_vlist,
    const CTYPE0 offset,
@@ -399,11 +403,12 @@ namespace IJKDUAL {
   /// @param isovalue0 Lower isovalue.
   /// @param isovalue1 Upper isovalue.
   /// @pre isovalue0 < isovalue1.
-  template <typename GRID_TYPE, typename ISOVAL0_TYPE, typename ISOVAL1_TYPE,
+  template <typename GRID_TYPE, typename ISODUAL_TABLE_TYPE,
+            typename ISOVAL0_TYPE, typename ISOVAL1_TYPE,
             typename DUAL_ISOV_TYPE, typename CTYPE>
   void position_all_dual_isovertices_ivol_lifted
   (const GRID_TYPE & scalar_grid,
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE & isodual_table,
+   const ISODUAL_TABLE_TYPE & isodual_table,
    const ISOVAL0_TYPE isovalue0,
    const ISOVAL1_TYPE isovalue1,
    const std::vector<DUAL_ISOV_TYPE> & iso_vlist,
@@ -434,29 +439,30 @@ namespace IJKDUAL {
       if (icube < numv_in_grid_facet_maxd) {
         // Apply isovalue1 to (*,*,*,0) grid cubes.
         position_dual_isov_centroid_multi
-          (scalar_grid, isodual_table, isovalue1, iso_vlist, cube, isov,
+          (scalar_grid, isodual_table, isovalue1, iso_vlist[isov], cube,
            coord+isov*dimension, coord0.Ptr(), coord1.Ptr(), coord2.Ptr());
       }
       else {
         // Apply isovalue0 to (*,*,*,1) grid cubes.
         position_dual_isov_centroid_multi
-          (scalar_grid, isodual_table, isovalue0, iso_vlist, cube, isov,
+          (scalar_grid, isodual_table, isovalue0, iso_vlist[isov], cube,
            coord+isov*dimension, coord0.Ptr(), coord1.Ptr(), coord2.Ptr());
-      }
 
+      }
     }
   }
 
 
   /// Position interval volume vertices which have been lifted
   ///   to one higher dimension.
-  template <typename GRID_TYPE, typename STYPE,
+  template <typename GRID_TYPE, typename ISODUAL_TABLE_TYPE, 
+            typename STYPE0, typename STYPE1,
             typename DUAL_ISOV_TYPE, typename CTYPE>
   void position_all_dual_isovertices_ivol_lifted
   (const GRID_TYPE & scalar_grid,
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE & isodual_table,
-   const STYPE isovalue0,
-   const STYPE isovalue1,
+   const ISODUAL_TABLE_TYPE & isodual_table,
+   const STYPE0 isovalue0,
+   const STYPE1 isovalue1,
    const std::vector<DUAL_ISOV_TYPE> & iso_vlist,
    std::vector<CTYPE> & coord)
   {

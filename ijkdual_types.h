@@ -65,10 +65,13 @@ namespace IJKDUAL {
   /// Vertex degree type.
   typedef unsigned char DEGREE_TYPE;
 
+  /// Isosurface lookup table index type.
+  typedef unsigned long TABLE_INDEX;
 
-// **************************************************
-// ARRAY TYPES
-// **************************************************
+
+  // **************************************************
+  // ARRAY TYPES
+  // **************************************************
 
   typedef std::vector<COORD_TYPE> COORD_ARRAY;   ///< Grid coordinate array.
   typedef std::vector<VERTEX_INDEX>              /// Vertex index array.
@@ -82,9 +85,9 @@ namespace IJKDUAL {
   typedef std::vector<DIRECTION_TYPE> DIRECTION_ARRAY;
 
 
-// **************************************************
-// ENUMERATED TYPES
-// **************************************************
+  // **************************************************
+  // ENUMERATED TYPES
+  // **************************************************
 
   /// Interpolation type.
   /// - LINEAR_INTERPOLATION: Determine the location of an isosurface vertex

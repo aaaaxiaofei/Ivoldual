@@ -37,7 +37,6 @@
 
 #include "isodual_types.h"
 #include "isodual_datastruct.h"
-#include "ijkdualtable.h"
 
 /// isodual classes and routines.
 namespace ISODUAL {
@@ -65,7 +64,7 @@ namespace ISODUAL {
   void dual_contouring_manifold
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const SCALAR_TYPE isovalue, 
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE & isodual_table,
+   const IJKDUAL::ISODUAL_CUBE_TABLE & isodual_table,
    const DUALISO_DATA_FLAGS & param,
    std::vector<ISO_VERTEX_INDEX> & isopoly_vert,
    GRID_EDGE_ARRAY & dual_edge,
@@ -83,7 +82,7 @@ namespace ISODUAL {
   void dual_contouring_multi_isov
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const SCALAR_TYPE isovalue, 
-   const IJKDUALTABLE::ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
+   const IJKDUAL::ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
    const DUALISO_DATA_FLAGS & param,
    std::vector<ISO_VERTEX_INDEX> & isopoly_vert,
    GRID_EDGE_ARRAY & dual_edge,

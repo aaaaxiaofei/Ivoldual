@@ -20,7 +20,7 @@ LINK_LIBRARIES(NrrdIO z)
 SET(CMAKE_CXX_FLAGS "-std=c++11")
 
 ADD_EXECUTABLE(ivoldual ivoldual_main.cxx isodualIO.cxx isodual.cxx
-                       ijkdual_datastruct.cxx ijkdualtable.cxx)
+                       ijkdual_datastruct.cxx)
 
 
 ADD_CUSTOM_TARGET(tar WORKING_DIRECTORY . COMMAND tar cvfh isodual.tar *.cxx *.h *.txx CMakeLists.txt isodual_doxygen.config)

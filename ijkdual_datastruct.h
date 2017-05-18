@@ -34,9 +34,9 @@
 #include "ijkmerge.txx"
 
 
-#include "ijkdual_types.h"
-#include "ijkdualtable.h"
+#include "ijkdualtable.txx"
 
+#include "ijkdual_types.h"
 
 namespace IJKDUAL {
 
@@ -61,6 +61,21 @@ namespace IJKDUAL {
 
 
   // **************************************************
+  // ISOSURFACE LOOKUP TABLES
+  // **************************************************
+
+  typedef IJKDUALTABLE::ISODUAL_TABLE_ENTRY<int,int> ISODUAL_TABLE_ENTRY;
+
+  typedef IJKDUALTABLE::ISODUAL_CUBE_TABLE
+  <int,int,TABLE_INDEX,ISODUAL_TABLE_ENTRY>
+  ISODUAL_CUBE_TABLE;
+
+  typedef IJKDUALTABLE::ISODUAL_CUBE_TABLE_AMBIG
+  <int,int,TABLE_INDEX,ISODUAL_TABLE_ENTRY>
+  ISODUAL_CUBE_TABLE_AMBIG;
+
+
+  // **************************************************
   // CUBE DATA STRUCTURES
   // **************************************************
 
@@ -73,12 +88,12 @@ namespace IJKDUAL {
   // **************************************************
 
   typedef IJK::DUAL_ISOVERT
-  <ISO_VERTEX_INDEX, FACET_VERTEX_INDEX, IJKDUALTABLE::TABLE_INDEX,
+  <ISO_VERTEX_INDEX, FACET_VERTEX_INDEX, TABLE_INDEX,
    ISO_VERTEX_INDEX>
   DUAL_ISOVERT;
 
   typedef IJK::DUAL_ISOVERT_BFLAG
-  <ISO_VERTEX_INDEX, FACET_VERTEX_INDEX, IJKDUALTABLE::TABLE_INDEX,
+  <ISO_VERTEX_INDEX, FACET_VERTEX_INDEX, TABLE_INDEX,
    ISO_VERTEX_INDEX>
   DUAL_ISOVERT_BFLAG;
 
@@ -88,7 +103,7 @@ namespace IJKDUAL {
   // **************************************************
 
   typedef IJK::GRID_CUBE_ISOVERT
-  <ISO_VERTEX_INDEX, IJKDUALTABLE::TABLE_INDEX, FACET_VERTEX_INDEX,
+  <ISO_VERTEX_INDEX, TABLE_INDEX, FACET_VERTEX_INDEX,
    ISO_VERTEX_INDEX> GRID_CUBE_ISOVERT;
 
 
@@ -107,7 +122,7 @@ namespace IJKDUAL {
   // **************************************************
 
   class GRID_CUBE_DATA:
-    public IJK::GRID_CUBE_ISOVERT<ISO_VERTEX_INDEX, IJKDUALTABLE::TABLE_INDEX, 
+    public IJK::GRID_CUBE_ISOVERT<ISO_VERTEX_INDEX, TABLE_INDEX, 
                                   FACET_VERTEX_INDEX, ISO_VERTEX_INDEX> {
 
   public:

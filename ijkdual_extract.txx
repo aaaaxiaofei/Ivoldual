@@ -25,9 +25,7 @@
 #define _IJKDUAL_EXTRACT_TXX_
 
 #include "ijkgrid_macros.h"
-#include "ijkdualtable.h"
 #include "ijkdual_types.h"
-#include "ijkdual_datastruct.h"
 
 #include "ijkisopoly.txx"
 #include "ijkmerge.txx"
@@ -47,11 +45,11 @@ namespace IJKDUAL {
   /// @param iso_poly[] = vector of isosurface polygope vertices
   ///   iso_simplices[numv_per_poly*ip+k] = 
   ///     cube containing k'th vertex of polytope ip.
-  template <typename GTYPE, typename STYPE>
+  template <typename GTYPE, typename STYPE, typename INFO_TYPE>
   void extract_dual_isopoly
   (const GTYPE & scalar_grid, const STYPE isovalue, 
    std::vector<ISO_VERTEX_INDEX> & iso_poly,
-   DUALISO_INFO & dualiso_info)
+   INFO_TYPE & dualiso_info)
   {
     dualiso_info.time.extract = 0;
 
@@ -84,12 +82,12 @@ namespace IJKDUAL {
   ///   If two collinear dual edges e1 and e2 share an endpoint,
   ///     with e1 appearing to the left/below e2, 
   ///     then e1 will be followed by e2 in array dual_edge[].
-  template <typename GTYPE, typename STYPE, typename ETYPE>
+  template <typename GTYPE, typename STYPE, typename ETYPE, typename INFO_TYPE>
   void extract_dual_isopoly
   (const GTYPE & scalar_grid, const STYPE isovalue, 
    std::vector<ISO_VERTEX_INDEX> & iso_poly,
    std::vector<ETYPE> & dual_edge,
-   DUALISO_INFO & dualiso_info)
+   INFO_TYPE & dualiso_info)
   {
     dualiso_info.time.extract = 0;
 
@@ -117,12 +115,12 @@ namespace IJKDUAL {
   ///   iso_simplices[numv_per_poly*ip+k] = 
   ///     cube containing k'th vertex of polytope ip.
   /// @param facet_vertex[i] = Edge of cube containing iso_poly[i].
-  template <typename GTYPE, typename STYPE>
+  template <typename GTYPE, typename STYPE, typename INFO_TYPE>
   void extract_dual_isopoly
   (const GTYPE & scalar_grid, const STYPE isovalue, 
    std::vector<ISO_VERTEX_INDEX> & iso_poly,
    std::vector<FACET_VERTEX_INDEX> & facet_vertex,
-   DUALISO_INFO & dualiso_info)
+   INFO_TYPE & dualiso_info)
   {
     dualiso_info.time.extract = 0;
 
@@ -158,13 +156,13 @@ namespace IJKDUAL {
   ///   If two collinear dual edges e1 and e2 share an endpoint,
   ///     with e1 appearing to the left/below e2, 
   ///     then e1 will be followed by e2 in array dual_edge[].
-  template <typename GTYPE, typename STYPE, typename ETYPE>
+  template <typename GTYPE, typename STYPE, typename ETYPE, typename INFO_TYPE>
   void extract_dual_isopoly
   (const GTYPE & scalar_grid,
    const STYPE isovalue, std::vector<ISO_VERTEX_INDEX> & iso_poly,
    std::vector<FACET_VERTEX_INDEX> & facet_vertex,
    std::vector<ETYPE> & dual_edge,
-   DUALISO_INFO & dualiso_info)
+   INFO_TYPE & dualiso_info)
   {
     dualiso_info.time.extract = 0;
 
