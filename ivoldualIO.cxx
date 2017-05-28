@@ -1,5 +1,5 @@
-/// \file isodualIO.cxx
-/// IO routines for isodual
+/// \file ivoldualIO.cxx
+/// IO routines for ivoldual
 
 /*
   IJK: Isosurface Jeneration Kode
@@ -34,11 +34,11 @@
 #include "ijkstring.txx"
 #include "ijkprint.txx"
 
-#include "isodualIO.h"
+#include "ivoldualIO.h"
 
 using namespace IJK;
 using namespace IJKDUAL;
-using namespace ISODUAL;
+using namespace IVOLDUAL;
 
 using namespace std;
 
@@ -727,10 +727,10 @@ void process_io_info(IO_INFO_TYPE & io_info)
     exit(230);
   };
 
-  if (io_info.isovalue.size() > 1 && io_info.output_filename != "") {
+  if (io_info.isovalue.size() > 2 && io_info.output_filename != "") {
     cerr << "Error.  Cannot specify output file when input contains"
          << endl;
-    cerr << "  more than one isovalue." << endl;
+    cerr << "  more than two isovalues." << endl;
     exit(233);
   }
 
@@ -773,7 +773,7 @@ void process_io_info(IO_INFO_TYPE & io_info)
 // parse command line
 // control parameters, followed by one or more isovalues, 
 // followed by input file name
-void ISODUAL::parse_command_line(int argc, char **argv, IO_INFO & io_info)
+void IVOLDUAL::parse_command_line(int argc, char **argv, IO_INFO & io_info)
 {
   IJK::ERROR error;
 
@@ -813,7 +813,7 @@ void ISODUAL::parse_command_line(int argc, char **argv, IO_INFO & io_info)
 
 
 // Check input information/flags.
-bool ISODUAL::check_input
+bool IVOLDUAL::check_input
 (const IO_INFO & io_info, 
  const DUALISO_SCALAR_GRID_BASE & scalar_grid,
  IJK::ERROR & error)
@@ -832,7 +832,7 @@ bool ISODUAL::check_input
 // READ NEARLY RAW RASTER DATA (nrrd) FILE
 // **************************************************
 
-void ISODUAL::read_nrrd_file
+void IVOLDUAL::read_nrrd_file
 (const char * input_filename, DUALISO_SCALAR_GRID & scalar_grid, 
  NRRD_HEADER & nrrd_header, IO_TIME & io_time)
 {
@@ -853,7 +853,7 @@ void ISODUAL::read_nrrd_file
   io_time.read_nrrd_time = wall_time.getElapsed();
 }
 
-void ISODUAL::read_nrrd_file
+void IVOLDUAL::read_nrrd_file
 (const std::string input_filename, DUALISO_SCALAR_GRID & scalar_grid, 
  NRRD_HEADER & nrrd_header, IO_TIME & io_time)
 {
@@ -880,7 +880,7 @@ namespace {
 // **************************************************
 
 // Write dual mesh with output format output_format.
-void ISODUAL::write_dual_mesh
+void IVOLDUAL::write_dual_mesh
 (const OUTPUT_INFO & output_info, const OUTPUT_FORMAT output_format,
  const vector<COORD_TYPE> & vertex_coord, const vector<VERTEX_INDEX> & plist)
 {
@@ -966,7 +966,7 @@ void ISODUAL::write_dual_mesh
 
 
 // Write dual mesh.
-void ISODUAL::write_dual_mesh
+void IVOLDUAL::write_dual_mesh
 (const OUTPUT_INFO & output_info,
  const vector<COORD_TYPE> & vertex_coord, const vector<VERTEX_INDEX> & plist)
 {
@@ -1006,7 +1006,7 @@ void ISODUAL::write_dual_mesh
 
 
 // Write dual mesh and record output time.
-void ISODUAL::write_dual_mesh
+void IVOLDUAL::write_dual_mesh
 (const OUTPUT_INFO & output_info,
  const vector<COORD_TYPE> & vertex_coord, const vector<VERTEX_INDEX> & plist,
  IO_TIME & io_time)
@@ -1020,7 +1020,7 @@ void ISODUAL::write_dual_mesh
 
 
 // Write dual mesh and color facets with output format output_format.
-void ISODUAL::write_dual_mesh_color
+void IVOLDUAL::write_dual_mesh_color
 (const OUTPUT_INFO & output_info, const OUTPUT_FORMAT output_format,
  const vector<COORD_TYPE> & vertex_coord, const vector<VERTEX_INDEX> & plist,
  const COLOR_TYPE * front_color, const COLOR_TYPE * back_color)
@@ -1073,7 +1073,7 @@ void ISODUAL::write_dual_mesh_color
     cout << "Wrote output to file: " << ofilename << endl;
 }
 
-void ISODUAL::write_dual_mesh_color
+void IVOLDUAL::write_dual_mesh_color
 (const OUTPUT_INFO & output_info, 
  const vector<COORD_TYPE> & vertex_coord, const vector<VERTEX_INDEX> & plist,
  const COLOR_TYPE * front_color, const COLOR_TYPE * back_color)
@@ -1115,7 +1115,7 @@ void ISODUAL::write_dual_mesh_color
   }
 }
 
-void ISODUAL::write_dual_mesh_color
+void IVOLDUAL::write_dual_mesh_color
 (const OUTPUT_INFO & output_info,
  const vector<COORD_TYPE> & vertex_coord, const vector<VERTEX_INDEX> & plist,
  const COLOR_TYPE * front_color, const COLOR_TYPE * back_color,
@@ -1131,7 +1131,7 @@ void ISODUAL::write_dual_mesh_color
 
 
 // Write dual isosurface triangular mesh.
-void ISODUAL::write_dual_tri_mesh
+void IVOLDUAL::write_dual_tri_mesh
 (const OUTPUT_INFO & output_info, const OUTPUT_FORMAT output_format,
  const std::vector<COORD_TYPE> & vertex_coord,
  const std::vector<VERTEX_INDEX> & tri_vert)
@@ -1200,7 +1200,7 @@ void ISODUAL::write_dual_tri_mesh
 /// @param vertex_coord List of vertex coordinates.
 /// @param tri_vert[] List of triangle vertices.
 ///        tri_vert[3*i+k] is k'th vertex of triangle i.
-void ISODUAL::write_dual_tri_mesh
+void IVOLDUAL::write_dual_tri_mesh
 (const OUTPUT_INFO & output_info,
  const std::vector<COORD_TYPE> & vertex_coord,
  const std::vector<VERTEX_INDEX> & tri_vert)
@@ -1240,7 +1240,7 @@ void ISODUAL::write_dual_tri_mesh
 }
 
 
-void ISODUAL::write_dual_tri_mesh
+void IVOLDUAL::write_dual_tri_mesh
 (const OUTPUT_INFO & output_info,
  const vector<COORD_TYPE> & vertex_coord,
  const vector<VERTEX_INDEX> & tri_vert,
@@ -1256,7 +1256,7 @@ void ISODUAL::write_dual_tri_mesh
 /// Write dual isosurface mesh of quad and triangles.
 /// @param output_info Output information.
 /// @param vertex_coord List of vertex coordinates.
-void ISODUAL::write_dual_quad_tri_mesh
+void IVOLDUAL::write_dual_quad_tri_mesh
 (const OUTPUT_INFO & output_info, const OUTPUT_FORMAT output_format,
  const std::vector<COORD_TYPE> & vertex_coord,
  const std::vector<VERTEX_INDEX> & quad_vert,
@@ -1328,7 +1328,7 @@ void ISODUAL::write_dual_quad_tri_mesh
 /// Write dual isosurface mesh of quad and triangles.
 /// @param output_info Output information.
 /// @param vertex_coord List of vertex coordinates.
-void ISODUAL::write_dual_quad_tri_mesh
+void IVOLDUAL::write_dual_quad_tri_mesh
 (const OUTPUT_INFO & output_info,
  const std::vector<COORD_TYPE> & vertex_coord,
  const std::vector<VERTEX_INDEX> & quad_vert,
@@ -1368,7 +1368,7 @@ void ISODUAL::write_dual_quad_tri_mesh
 }
 
 
-void ISODUAL::write_dual_quad_tri_mesh
+void IVOLDUAL::write_dual_quad_tri_mesh
 (const OUTPUT_INFO & output_info,
  const std::vector<COORD_TYPE> & vertex_coord,
  const std::vector<VERTEX_INDEX> & quad_vert,
@@ -1388,7 +1388,7 @@ void ISODUAL::write_dual_quad_tri_mesh
 // @param vertex_coord List of vertex coordinates.
 // @param tri_vert[] List of triangle vertices.
 //        tri_vert[3*i+k] is k'th vertex of triangle i.
-void ISODUAL::write_dual_tri_mesh_color_vertices
+void IVOLDUAL::write_dual_tri_mesh_color_vertices
 (const OUTPUT_INFO & output_info, const OUTPUT_FORMAT output_format,
  const std::vector<COORD_TYPE> & vertex_coord,
  const std::vector<VERTEX_INDEX> & tri_vert,
@@ -1439,7 +1439,7 @@ void ISODUAL::write_dual_tri_mesh_color_vertices
 // @param vertex_coord List of vertex coordinates.
 // @param tri_vert[] List of triangle vertices.
 //        tri_vert[3*i+k] is k'th vertex of triangle i.
-void ISODUAL::write_dual_tri_mesh_color_vertices
+void IVOLDUAL::write_dual_tri_mesh_color_vertices
 (const OUTPUT_INFO & output_info,
  const std::vector<COORD_TYPE> & vertex_coord,
  const std::vector<VERTEX_INDEX> & tri_vert,
@@ -1475,7 +1475,7 @@ void ISODUAL::write_dual_tri_mesh_color_vertices
   }
 }
 
-void ISODUAL::write_dual_tri_mesh_color_vertices
+void IVOLDUAL::write_dual_tri_mesh_color_vertices
 (const OUTPUT_INFO & output_info,
  const std::vector<COORD_TYPE> & vertex_coord,
  const std::vector<VERTEX_INDEX> & tri_vert,
@@ -1494,7 +1494,7 @@ void ISODUAL::write_dual_tri_mesh_color_vertices
 /// Write dual isosurface mesh of quad and triangles.  Color vertices.
 /// @param output_info Output information.
 /// @param vertex_coord List of vertex coordinates.
-void ISODUAL::write_dual_quad_tri_mesh_color_vertices
+void IVOLDUAL::write_dual_quad_tri_mesh_color_vertices
 (const OUTPUT_INFO & output_info, const OUTPUT_FORMAT output_format,
  const std::vector<COORD_TYPE> & vertex_coord,
  const std::vector<VERTEX_INDEX> & quad_vert,
@@ -1552,7 +1552,7 @@ void ISODUAL::write_dual_quad_tri_mesh_color_vertices
 /// Write dual isosurface mesh of quad and triangles.  Color vertices.
 /// @param output_info Output information.
 /// @param vertex_coord List of vertex coordinates.
-void ISODUAL::write_dual_quad_tri_mesh_color_vertices
+void IVOLDUAL::write_dual_quad_tri_mesh_color_vertices
 (const OUTPUT_INFO & output_info,
  const std::vector<COORD_TYPE> & vertex_coord,
  const std::vector<VERTEX_INDEX> & quad_vert,
@@ -1591,7 +1591,7 @@ void ISODUAL::write_dual_quad_tri_mesh_color_vertices
 }
 
 
-void ISODUAL::write_dual_quad_tri_mesh_color_vertices
+void IVOLDUAL::write_dual_quad_tri_mesh_color_vertices
 (const OUTPUT_INFO & output_info,
  const std::vector<COORD_TYPE> & vertex_coord,
  const std::vector<VERTEX_INDEX> & quad_vert,
@@ -1646,7 +1646,7 @@ namespace {
 
 }
 
-void ISODUAL::rescale_vertex_coord
+void IVOLDUAL::rescale_vertex_coord
 (const int dimension, const COORD_TYPE * grid_spacing,
  std::vector<COORD_TYPE> & vertex_coord)
 {
@@ -1662,7 +1662,7 @@ void ISODUAL::rescale_vertex_coord
   }
 }
 
-void ISODUAL::rescale_vertex_coord(const std::vector<COORD_TYPE> & grid_spacing,
+void IVOLDUAL::rescale_vertex_coord(const std::vector<COORD_TYPE> & grid_spacing,
                                    std::vector<COORD_TYPE> & vertex_coord)
 {
   const int dimension = grid_spacing.size();
@@ -1681,7 +1681,7 @@ void ISODUAL::rescale_vertex_coord(const std::vector<COORD_TYPE> & grid_spacing,
 
 
 /// Rescale subsampled/supersampled vertex coordinates.
-void ISODUAL::rescale_vertex_coord
+void IVOLDUAL::rescale_vertex_coord
 (const int grow_factor, const int shrink_factor, COORD_ARRAY & vertex_coord)
 {
   PROCEDURE_ERROR error("rescale_vertex_coord");
@@ -1707,7 +1707,7 @@ void ISODUAL::rescale_vertex_coord
 
 /// Rescale subsampled/supersampled vertex coordinates.
 /// Also rescale to reflect grid spacing.
-void ISODUAL::rescale_vertex_coord
+void IVOLDUAL::rescale_vertex_coord
 (const int grow_factor, const int shrink_factor,
  const COORD_ARRAY & grid_spacing, COORD_ARRAY & vertex_coord)
 {
@@ -1719,7 +1719,7 @@ void ISODUAL::rescale_vertex_coord
 // REPORT SCALAR FIELD OR ISOSURFACE INFORMATION
 // **************************************************
 
-void ISODUAL::report_num_cubes
+void IVOLDUAL::report_num_cubes
 (const DUALISO_GRID & full_scalar_grid, const IO_INFO & io_info, 
  const DUALISO_DATA & dualiso_data)
 {
@@ -1727,7 +1727,7 @@ void ISODUAL::report_num_cubes
 }
 
 
-void ISODUAL::report_num_cubes
+void IVOLDUAL::report_num_cubes
 (const DUALISO_GRID & full_scalar_grid, const IO_INFO & io_info, 
  const DUALISO_GRID & dualiso_data_grid)
 {
@@ -1755,7 +1755,7 @@ void ISODUAL::report_num_cubes
 }
 
 
-void ISODUAL::warn_non_manifold(const IO_INFO & io_info)
+void IVOLDUAL::warn_non_manifold(const IO_INFO & io_info)
 {
   const char * mesh_str = "mesh";
 
@@ -1778,7 +1778,7 @@ void ISODUAL::warn_non_manifold(const IO_INFO & io_info)
 // REPORT TIMING INFORMATION
 // **************************************************
 
-void ISODUAL::report_dualiso_time
+void IVOLDUAL::report_dualiso_time
 (const IO_INFO & io_info, const DUALISO_TIME & dualiso_time, 
  const char * mesh_type_string)
 {
@@ -1799,7 +1799,7 @@ void ISODUAL::report_dualiso_time
 }
 
 
-void ISODUAL::report_time
+void IVOLDUAL::report_time
 (const IO_INFO & io_info, const IO_TIME & io_time, 
  const DUALISO_TIME & dualiso_time, const double total_elapsed_time)
 {
@@ -1885,19 +1885,19 @@ namespace {
   }
 }
 
-void ISODUAL::usage(std::ostream & out, const int return_code)
+void IVOLDUAL::usage(std::ostream & out, const int return_code)
 {
   usage_msg(out);
   options_msg(out, REGULAR_OPTG);
   exit(return_code);
 }
 
-void ISODUAL::usage_error()
+void IVOLDUAL::usage_error()
 {
   usage(cerr, 10);
 }
 
-void ISODUAL::usage_all(std::ostream & out, const int return_code)
+void IVOLDUAL::usage_all(std::ostream & out, const int return_code)
 {
   usage_msg(out);
   options_msg(out, REGULAR_OPTG);
@@ -1907,7 +1907,7 @@ void ISODUAL::usage_all(std::ostream & out, const int return_code)
   exit(return_code);
 }
 
-void ISODUAL::help_all()
+void IVOLDUAL::help_all()
 {
   help_msg();
   cout << endl;
@@ -1924,7 +1924,7 @@ void ISODUAL::help_all()
   exit(20);
 }
 
-void ISODUAL::help()
+void IVOLDUAL::help()
 {
   help_msg();
   cout << endl;
@@ -1938,7 +1938,7 @@ void ISODUAL::help()
 // **************************************************
 
 /// IO information
-void ISODUAL::IO_INFO::Init()
+void IVOLDUAL::IO_INFO::Init()
 {
   isovalue.clear();
   isovalue_string.clear();
@@ -1970,7 +1970,7 @@ void ISODUAL::IO_INFO::Init()
 }
 
 
-int ISODUAL::IO_INFO::NumOutputFormats() const
+int IVOLDUAL::IO_INFO::NumOutputFormats() const
 {
   int num_output_formats = 0;
 
@@ -1981,13 +1981,13 @@ int ISODUAL::IO_INFO::NumOutputFormats() const
   return(num_output_formats);
 }
 
-void ISODUAL::IO_INFO::Set(const IO_INFO & io_info)
+void IVOLDUAL::IO_INFO::Set(const IO_INFO & io_info)
 {
   *this = io_info;
 }
 
 
-void ISODUAL::IO_INFO::SetOutputFormat(const OUTPUT_FORMAT output_format)
+void IVOLDUAL::IO_INFO::SetOutputFormat(const OUTPUT_FORMAT output_format)
 {
   IJK::PROCEDURE_ERROR error("IO_INFO::SetOutputFormat");
 
@@ -2015,7 +2015,7 @@ void ISODUAL::IO_INFO::SetOutputFormat(const OUTPUT_FORMAT output_format)
 
 
 // Set output filename for output format flagged true.
-void ISODUAL::IO_INFO::SetOutputFilename(const char * output_filename)
+void IVOLDUAL::IO_INFO::SetOutputFilename(const char * output_filename)
 {
   IJK::PROCEDURE_ERROR error("IO_INFO::SetOutputFilename");
 
@@ -2050,7 +2050,7 @@ void ISODUAL::IO_INFO::SetOutputFilename(const char * output_filename)
 
 
 // Set output filename for a given output format.
-void ISODUAL::IO_INFO::SetOutputFilename
+void IVOLDUAL::IO_INFO::SetOutputFilename
 (const OUTPUT_FORMAT output_format, const char * output_filename)
 {
   IJK::PROCEDURE_ERROR error("IO_INFO::SetOutputFilename");
@@ -2081,7 +2081,7 @@ void ISODUAL::IO_INFO::SetOutputFilename
 }
 
 
-void ISODUAL::IO_INFO::ConstructOutputFilenames(const int i)
+void IVOLDUAL::IO_INFO::ConstructOutputFilenames(const int i)
 {
   string prefix, suffix;
   string ofilename;
@@ -2120,7 +2120,7 @@ void ISODUAL::IO_INFO::ConstructOutputFilenames(const int i)
 // class OUTPUT_INFO
 // **************************************************
 
-void ISODUAL::OUTPUT_INFO::Init()
+void IVOLDUAL::OUTPUT_INFO::Init()
 {
   dimension = 3;
   num_vertices_per_isopoly = 4;
@@ -2132,7 +2132,7 @@ void ISODUAL::OUTPUT_INFO::Init()
 }
 
 
-void ISODUAL::OUTPUT_INFO::SetDimension
+void IVOLDUAL::OUTPUT_INFO::SetDimension
 (const int d, const int numv_per_isopoly)
 {
   dimension = d;
@@ -2167,7 +2167,7 @@ namespace {
 // SET ROUTINES
 // **************************************************
 
-void ISODUAL::set_output_info
+void IVOLDUAL::set_output_info
 (const IO_INFO & io_info, 
  const int i, OUTPUT_INFO & output_info)
 {
@@ -2199,7 +2199,7 @@ void ISODUAL::set_output_info
   }
 }
 
-void ISODUAL::set_color_alternating
+void IVOLDUAL::set_color_alternating
 (const DUALISO_GRID & grid, const vector<VERTEX_INDEX> & cube_list, 
  COLOR_TYPE * color)
 {

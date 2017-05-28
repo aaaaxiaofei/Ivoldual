@@ -260,7 +260,6 @@ namespace IJKDUAL {
     typedef typename GRID_TYPE::NUMBER_TYPE NTYPE;
 
     const DTYPE dimension = scalar_grid.Dimension();
-    IJK::ARRAY<CTYPE> vcoord(dimension);
     IJK::ARRAY<CTYPE> coord0(dimension);
     IJK::ARRAY<CTYPE> coord1(dimension);
     IJK::ARRAY<CTYPE> coord2(dimension);
@@ -426,7 +425,6 @@ namespace IJKDUAL {
 
     const VTYPE numv_in_grid_facet_maxd = 
       scalar_grid.AxisIncrement(dimension-1);
-    IJK::ARRAY<CTYPE> vcoord(dimension);
     IJK::ARRAY<CTYPE> coord0(dimension);
     IJK::ARRAY<CTYPE> coord1(dimension);
     IJK::ARRAY<CTYPE> coord2(dimension);

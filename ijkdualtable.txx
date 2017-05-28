@@ -28,6 +28,7 @@
 #include <limits>
 
 #include "ijk.txx"
+#include "ijkbits.txx"
 #include "ijkcube.txx"
 
 /// Classes and routines for storing and manipulating 
@@ -186,7 +187,34 @@ namespace IJKDUALTABLE {
   // IVOLDUAL CUBE TABLE ROUTINES
   // **************************************************
 
+  /// Set position of polytope vertices relative to interval volume.
+  template <typename TI_TYPE, typename NTYPE, typename ENTRY_TYPE>
+  void set_position_relative_to_interval_volume4
+  (const TI_TYPE ientry, const NTYPE num_poly_vertices, 
+   ENTRY_TYPE & table_entry)
+  {
+    const int NUM_VERTEX_TYPES = 4;
+
+    TI_TYPE x = ientry;
+    for (NTYPE iv = 0; iv < num_poly_vertices; iv++) {
+      TI_TYPE y = x%NUM_VERTEX_TYPES;
+
+      if (y == 0) {
+        table_entry.poly_vertex_info[iv].SetBelowIntervalVolume();
+      }
+      else if (y == 3) {
+        table_entry.poly_vertex_info[iv].SetAboveIntervalVolume();
+      }
+      else {
+        table_entry.poly_vertex_info[iv].SetInIntervalVolume();
+      }
+      x = x/NUM_VERTEX_TYPES;
+    }
+  }
+
+
   /// Compute lifted ivol indices.
+  /// @param num_cube_vertices Number of vertices of cube (not lifted cube).
   template <typename TI_TYPE, typename NTYPE, 
             typename TI_TYPE_L, typename TI_TYPE_U>
   void compute_lifted_ivol_indices4
@@ -227,13 +255,98 @@ namespace IJKDUALTABLE {
   }
 
 
+  /// Compute lower and upper isosurface table indices
+  ///   for interval volume table indexientry.
+  /// @param num_cube_vertices Number of vertices of cube.
+  template <typename TI_TYPE, typename NTYPE, 
+            typename TI_TYPE_L, typename TI_TYPE_U>
+  void compute_isov_indices_from_ivol_index
+  (const TI_TYPE ivol_table_index, const NTYPE num_cube_vertices, 
+   TI_TYPE_L & lower_isosurface_table_index, 
+   TI_TYPE_U & upper_isosurface_table_index)
+  {
+    const int NUM_CUBE_VERTEX_TYPES = 4;
+    TI_TYPE factor;
+
+    TI_TYPE x = ivol_table_index;
+    factor = 1;
+    lower_isosurface_table_index = 0;
+    upper_isosurface_table_index = 0;
+
+    while (x != 0) {
+      TI_TYPE vertex_type = x%NUM_CUBE_VERTEX_TYPES;
+      if (vertex_type == 3) {
+        lower_isosurface_table_index += factor;
+        upper_isosurface_table_index += factor;
+      }
+      else if (vertex_type > 0) {
+        lower_isosurface_table_index += factor;
+      }
+
+      factor = (factor << 1);
+
+      x = x/NUM_CUBE_VERTEX_TYPES;
+    }
+  }
+
+
+  /// Determine if interval volume vertices are on lower or upper isosurfaces.
+  template <typename TI_TYPE, typename CUBE_TYPE, 
+            typename ISODUAL_ENTRY_TYPE, typename ENTRY_TYPE>
+  void determine_isosurface_containing_ivol_vertices4
+  (const TI_TYPE ientry, 
+   const CUBE_TYPE & cube, const CUBE_TYPE & lifted_cube,
+   ISODUAL_ENTRY_TYPE & lower_isodual, ISODUAL_ENTRY_TYPE & upper_isodual,
+   ENTRY_TYPE & table_entry)
+  {
+    typedef typename CUBE_TYPE::DIMENSION_TYPE DTYPE;
+    typedef typename CUBE_TYPE::NUMBER_TYPE NTYPE;
+
+    for (NTYPE ie = 0; ie < cube.NumEdges(); ie++) {
+
+      const DTYPE edge_dir = cube.EdgeDir(ie);
+      NTYPE iend0 = cube.EdgeEndpoint(ie,0);
+      NTYPE iend1 = cube.EdgeEndpoint(ie,1);
+
+      if (!table_entry.poly_vertex_info[iend0].flag_dual_ivolpoly) 
+        { std::swap(iend0, iend1); }
+
+      if (!table_entry.poly_vertex_info[iend0].flag_dual_ivolpoly) {
+        // Neither edge endpoint is contained in the interval volume.
+        continue;
+      }
+
+      if (table_entry.poly_vertex_info[iend1].flag_dual_ivolpoly) {
+        // Both edge endpoints are contained in the interval volume.
+        continue;
+      }
+
+      const NTYPE ivolv0 = 
+        table_entry.poly_vertex_info[iend0].incident_ivol_vertex;
+
+      const NTYPE je_lower = lifted_cube.IncidentEdge(iend0, edge_dir);
+      const NTYPE kend0 = iend0 + cube.NumVertices();
+      const NTYPE je_upper = lifted_cube.IncidentEdge(kend0, edge_dir);
+
+      if (table_entry.ivolv_info[ivolv0].flag_in_lower_lifted_cube) {
+        if (lower_isodual.IsBipolar(je_lower)) 
+          { table_entry.ivolv_info[ivolv0].SetToUpperIsosurface(); }
+      }
+      else {
+        if (upper_isodual.IsBipolar(je_upper))
+          { table_entry.ivolv_info[ivolv0].SetToLowerIsosurface(); }
+      }
+    }
+  }
+
+
   /// Create ivoldual cube table entry ientry.
   /// @tparam TI_TYPE Table index type.
-  template <typename TI_TYPE, typename NTYPE, typename FIND_TYPE,
+  template <typename TI_TYPE, typename FIND_TYPE,
             typename CUBE_TYPE, typename ISODUAL_ENTRY_TYPE,
             typename ENTRY_TYPE>
   void create_ivoldual_cube_table_entry
-  (const TI_TYPE ientry, const NTYPE num_poly_vertices,
+  (const TI_TYPE ientry,
    const bool flag_separate_neg, const bool flag_separate_opposite,
    const CUBE_TYPE & cube,
    const CUBE_TYPE & lifted_cube,
@@ -243,23 +356,31 @@ namespace IJKDUALTABLE {
    ENTRY_TYPE & table_entry)
   {
     typedef typename CUBE_TYPE::DIMENSION_TYPE DTYPE;
+    typedef typename CUBE_TYPE::NUMBER_TYPE NTYPE;
 
     const DTYPE lifted_dimension = lifted_cube.Dimension();
-    const NTYPE num_lifted_poly_vertices = lifted_cube.NumVertices();
+    const NTYPE num_cube_vertices = cube.NumVertices();
+    const NTYPE num_lifted_cube_vertices = lifted_cube.NumVertices();
     TI_TYPE ilower, iupper;
+    TI_TYPE lower_isosurface_table_index, upper_isosurface_table_index;
 
-    compute_lifted_ivol_indices4(ientry, num_poly_vertices, ilower, iupper);
+    set_position_relative_to_interval_volume4
+      (ientry, num_cube_vertices, table_entry);
+
+    compute_lifted_ivol_indices4
+      (ientry, num_cube_vertices, ilower, iupper);
     create_isodual_cube_table_entry
-      (ilower, num_lifted_poly_vertices, 
+      (ilower, num_lifted_cube_vertices, 
        flag_separate_neg, flag_separate_opposite,
        lifted_cube, find_component, lower_isodual);
     create_isodual_cube_table_entry
-      (iupper, num_lifted_poly_vertices, 
+      (iupper, num_lifted_cube_vertices, 
        flag_separate_neg, flag_separate_opposite,
        lifted_cube, find_component, upper_isodual);
 
-    table_entry.num_vertices = 
-      lower_isodual.NumVertices() + upper_isodual.NumVertices();
+    table_entry.CreateIntervalVolumeVertices
+      (lower_isodual.NumVertices(), upper_isodual.NumVertices());
+
 
     for (NTYPE ie = 0; ie < lifted_cube.NumEdges(); ie++) {
       const DTYPE edge_dir = lifted_cube.EdgeDir(ie);
@@ -269,32 +390,57 @@ namespace IJKDUALTABLE {
 
       if (edge_dir+1 == lifted_dimension) {
         if (lower_isodual.IsBipolar(ie)) {
-          const NTYPE iv = lower_isodual.IncidentIsoVertex(ie);
-          table_entry.vertex_info[iend0].SetIncident(iv);
+          const NTYPE isov = lower_isodual.IncidentIsoVertex(ie);
+          table_entry.poly_vertex_info[iend0].SetIncident(isov);
         }
         else if (upper_isodual.IsBipolar(ie)) {
-          const NTYPE iv = upper_isodual.IncidentIsoVertex(ie);
-          table_entry.vertex_info[iend0].SetIncident(iv);
+          const NTYPE isov = upper_isodual.IncidentIsoVertex(ie) 
+            + lower_isodual.NumVertices();
+          table_entry.poly_vertex_info[iend0].SetIncident(isov);
         }
       }
       else {
+
         if (iend1 < cube.NumVertices()) {
           if (upper_isodual.IsBipolar(ie)) {
             const NTYPE je = cube.IncidentEdge(iend0, edge_dir);
-            const NTYPE iv = lower_isodual.IncidentIsoVertex(ie);
-            table_entry.edge_info[je].SetUpperIncident(iv);
+            const NTYPE isov = upper_isodual.IncidentIsoVertex(ie)
+              + lower_isodual.NumVertices();
+
+            // Vertices on the upper isodual are on the lower isosurface.
+            table_entry.poly_edge_info[je].SetLowerIncident(isov);
+
+            if (table_entry.IsBelowIntervalVolume(iend0) ||
+                table_entry.IsBelowIntervalVolume(iend1))
+              { table_entry.ivolv_info[isov].SetToLowerIsosurface(); }
           }
         }
         else {
           if (lower_isodual.IsBipolar(ie)) {
             const NTYPE jend0 = iend0 - cube.NumVertices();
+            const NTYPE jend1 = iend1 - cube.NumVertices();
             const NTYPE je = cube.IncidentEdge(jend0, edge_dir);
-            const NTYPE iv = lower_isodual.IncidentIsoVertex(ie);
-            table_entry.edge_info[je].SetLowerIncident(iv);
+            const NTYPE isov = lower_isodual.IncidentIsoVertex(ie);
+
+            // Vertices on the lower isodual are on the upper isosurface.
+            table_entry.poly_edge_info[je].SetUpperIncident(isov);
+
+            if (table_entry.IsAboveIntervalVolume(jend0) ||
+                table_entry.IsAboveIntervalVolume(jend1))
+              { table_entry.ivolv_info[isov].SetToUpperIsosurface(); }
           }
         }
       }
     }
+
+    determine_isosurface_containing_ivol_vertices4
+      (ientry, cube, lifted_cube, lower_isodual, upper_isodual, table_entry);
+
+    compute_isov_indices_from_ivol_index
+      (ientry, num_cube_vertices, 
+       lower_isosurface_table_index, upper_isosurface_table_index);
+    table_entry.lower_isosurface_table_index = lower_isosurface_table_index;
+    table_entry.upper_isosurface_table_index = upper_isosurface_table_index;
   }
 
 
@@ -413,27 +559,27 @@ namespace IJKDUALTABLE {
   // **************************************************
 
   template <typename ISOV_TYPE>
-  class IVOLDUAL_EDGE_INFO {
+  class IVOLDUAL_POLY_EDGE_INFO {
 
   protected:
     void Init();
 
   public:
-    /// Isosurface vertex incident on isosurface polytope dual to edge
-    ///   on lower isosurface.
+    /// Lower isosurface vertex incident on interval volume polytope 
+    ///   dual to edge.
     ISOV_TYPE lower_incident_isovertex;
 
-    /// Isosurface vertex incident on isosurface polytope dual to edge
-    ///   on upper isosurface.
+    /// Upper isosurface vertex incident on interval volume polytope 
+    ///   dual to edge.
     ISOV_TYPE upper_incident_isovertex;
 
-    /// If flag_dual_isopoly is true, then some isosurface polytope
+    /// If flag_dual_ivolpoly is true, then some isosurface polytope
     ///   is dual to the edge.
     /// - If true, then both lower_incident_isovertex
     ///   and upper_incident_isovertex are set.
-    bool flag_dual_isopoly;
+    bool flag_dual_ivolpoly;
 
-    IVOLDUAL_EDGE_INFO() 
+    IVOLDUAL_POLY_EDGE_INFO() 
     { Init(); }
 
     /// Set lower_incident_isovertex.
@@ -446,45 +592,157 @@ namespace IJKDUALTABLE {
   };
 
   template <typename ISOV_TYPE>
-  class IVOLDUAL_VERTEX_INFO {
+  class IVOLDUAL_POLY_VERTEX_INFO {
 
   protected:
     void Init();
 
   public:
-    /// Isosurface vertex incident on isosurface polytope dual to edge.
-    ISOV_TYPE incident_isovertex;
 
-    /// If flag_dual_isopoly is true, then some isosurface polytope
+    typedef enum 
+      { BELOW_INTERVAL_VOLUME, IN_INTERVAL_VOLUME, ABOVE_INTERVAL_VOLUME}
+      RELATIVE_POSITION;
+
+    /// Interval volume vertex incident on isosurface polytope dual to edge.
+    ISOV_TYPE incident_ivol_vertex;
+
+    /// If flag_dual_ivolpoly is true, then some isosurface polytope
     ///   is dual to the edge.
     /// - If true, then both lower_incident_isovertex
     ///   and upper_incident_isovertex are set.
-    bool flag_dual_isopoly;
+    bool flag_dual_ivolpoly;
 
-    /// Set incident_isovertex.
-    template <typename ISOV_TYPE2>
-    void SetIncident(const ISOV_TYPE2 isov);
+    /// Position of polytope vertex relative to interval volume.
+    RELATIVE_POSITION relative_position;
 
-    IVOLDUAL_VERTEX_INFO() 
+    /// True, if below interval volume.
+    bool IsBelowIntervalVolume() const
+    { return(relative_position == BELOW_INTERVAL_VOLUME); }
+
+    /// True, if in interval volume.
+    bool IsInIntervalVolume() const
+    { return(relative_position == IN_INTERVAL_VOLUME); }
+
+    /// True, if above interval volume.
+    bool IsAboveIntervalVolume() const
+    { return(relative_position == ABOVE_INTERVAL_VOLUME); }
+
+    /// Set incident_ivol_vertex.
+    template <typename IVOLV_TYPE2>
+    void SetIncident(const IVOLV_TYPE2 ivolv);
+
+    /// Set relative position to below interval volume.
+    void SetBelowIntervalVolume()
+    { relative_position = BELOW_INTERVAL_VOLUME; }
+
+    /// Set relative position to in interval volume.
+    void SetInIntervalVolume()
+    { relative_position = IN_INTERVAL_VOLUME; }
+
+    /// Set relative position to above interval volume.
+    void SetAboveIntervalVolume()
+    { relative_position = ABOVE_INTERVAL_VOLUME; }
+
+    IVOLDUAL_POLY_VERTEX_INFO() 
     { Init(); }
   };
 
+
+  class IVOLDUAL_IVOLV_INFO {
+
+  public:
+
+    /// True if ivol vertex is on lower isosurface.
+    bool flag_lower_isosurface;
+
+    /// True if ivol vertex is on upper isosurface.
+    /// - An ivol vertex cannot be on both the lower and upper isosurface
+    ///   although an internal ivol vertex could be on neither.
+    bool flag_upper_isosurface;
+
+    /// True if ivol vertex was generated from lower lifted cube.
+    /// False if ivol vertex was generated from upper lifted cube.
+    bool flag_in_lower_lifted_cube;
+
+    IVOLDUAL_IVOLV_INFO()
+    {
+      flag_lower_isosurface = false;
+      flag_upper_isosurface = false;
+      flag_in_lower_lifted_cube = true;
+    }
+
+    /// Set vertex to be on lower isosurface.
+    void SetToLowerIsosurface()
+    { flag_lower_isosurface = true; }
+
+    /// Set vertex to be on upper isosurface.
+    void SetToUpperIsosurface()
+    { flag_upper_isosurface = true; }
+
+  };
+
   /// Entry in the dual interval volume lookup table.
-  template <typename NTYPE, typename ISOV_TYPE>
+  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
   class IVOLDUAL_TABLE_ENTRY {
+
+  protected:
+
+    /// Number of interval volume vertices in cube.
+    NTYPE num_vertices;
 
   public:
 
     typedef ISOV_TYPE IVOL_VERTEX_INDEX_TYPE;
 
-    NTYPE num_vertices;         ///< Number of dualiso vertices in cube.
+    /// Lower isosurface table index.
+    TI_TYPE lower_isosurface_table_index;
+
+    /// Upper table index.
+    TI_TYPE upper_isosurface_table_index;
+
+    IVOLDUAL_POLY_VERTEX_INFO<ISOV_TYPE> * poly_vertex_info;
+    IVOLDUAL_POLY_EDGE_INFO<ISOV_TYPE> * poly_edge_info;
+    IVOLDUAL_IVOLV_INFO * ivolv_info;
+
     IVOLDUAL_TABLE_ENTRY();      ///< constructor
     ~IVOLDUAL_TABLE_ENTRY();     ///< destructor
 
-    IVOLDUAL_VERTEX_INFO<ISOV_TYPE> * vertex_info;
-    IVOLDUAL_EDGE_INFO<ISOV_TYPE> * edge_info;
+    // get functions
 
-    /// Allocate vertex_info[] and edge_info[].
+    /// Return number of dual interval volume vertices in cube.
+    NTYPE NumVertices() const
+    { return(num_vertices); }
+
+    /// True, if below interval volume.
+    template <typename ITYPE>
+    bool IsBelowIntervalVolume(const ITYPE iv) const
+    { return(poly_vertex_info[iv].IsBelowIntervalVolume()); }
+
+    /// True, if in interval volume.
+    template <typename ITYPE>
+    bool IsInIntervalVolume(const ITYPE iv) const
+    { return(poly_vertex_info[iv].IsInIntervalVolume()); }
+
+    /// True, if above interval volume.
+    template <typename ITYPE>
+    bool IsAboveIntervalVolume(const ITYPE iv) const
+    { return(poly_vertex_info[iv].IsAboveIntervalVolume()); }
+
+    /// Return lower isosurface table index.
+    TI_TYPE LowerIsosurfaceTableIndex() const
+    { return(lower_isosurface_table_index); }
+
+    /// Return upper isosurface table index.
+    TI_TYPE UpperIsosurfaceTableIndex() const
+    { return(upper_isosurface_table_index); }
+
+    /// Create interval volume vertices.
+    template <typename NUMV0_TYPE, typename NUMV1_TYPE>
+    void CreateIntervalVolumeVertices
+    (const NUMV0_TYPE numv_in_lower_lifted, 
+     const NUMV1_TYPE numv_in_upper_lifted);
+
+    /// Allocate poly_vertex_info[] and poly_edge_info[].
     template <typename NUMV_TYPE, typename NUME_TYPE>
     void Allocate(const NUMV_TYPE num_poly_vertices,
                   const NUME_TYPE num_poly_edges);
@@ -556,7 +814,7 @@ namespace IJKDUALTABLE {
     /// Return number of vertices in isosurface patch for table entry \a it.
     template <typename TI_TYPE2>
     NTYPE NumIsoVertices(const TI_TYPE2 it) const
-    { return(entry[it].num_vertices); }; 
+    { return(entry[it].NumVertices()); }; 
 
     /// Return index of isosurface vertex incident on face kf.
     /// Undefined if polytope edge k is not bipolar.
@@ -817,7 +1075,8 @@ namespace IJKDUALTABLE {
 
   //! Isodual cube table plus ambiguity information.
   //! @tparam TI_TYPE Table index type.
-  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
+  template <const int NUM_VERTEX_TYPES,
+            typename DTYPE, typename NTYPE, typename TI_TYPE,
             typename ENTRY_TYPE>
   class IVOLDUAL_CUBE_TABLE:
     public ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE> {
@@ -837,60 +1096,108 @@ namespace IJKDUALTABLE {
     void CreateTableEntries
     (const bool flag_separate_neg, const bool flag_separate_opposite);
 
+    void Init();
+
   public:
 
-    IVOLDUAL_CUBE_TABLE() {};
+    /// Constructor
+    IVOLDUAL_CUBE_TABLE() { Init(); };
 
     template <typename DTYPE2>
-    IVOLDUAL_CUBE_TABLE(const DTYPE2 dimension) :
-      ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>
-      (dimension) 
-    { Create(dimension); };
-      
+    IVOLDUAL_CUBE_TABLE(const DTYPE2 dimension);
+
     template <typename DTYPE2>
     IVOLDUAL_CUBE_TABLE
-    (const DTYPE2 dimension, const bool flag_separate_opposite) :
-      ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>
-      (dimension) 
-    { Create(dimension, flag_separate_opposite); }
+    (const DTYPE2 dimension, const bool flag_separate_opposite);
 
     template <typename DTYPE2>
     IVOLDUAL_CUBE_TABLE
     (const DTYPE2 dimension, const bool flag_separate_neg,
-     const bool flag_separate_opposite) :
-      ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>
-      (dimension)
-    { Create(dimension, flag_separate_neg, flag_separate_opposite); }
+     const bool flag_separate_opposite);
 
 
     // Get functions.
 
-    /// Return true if edge ie has dual isosurface polytope.
+    /// Return number of vertex types.
+    NTYPE NumVertexTypes() const
+    {  return(NUM_VERTEX_TYPES); }
+
+    /// Return true if edge ie has dual interval volume polytope.
     template <typename TI_TYPE2, typename NTYPE2>
-    bool EdgeHasDualIsoPoly(const TI_TYPE2 ientry, const NTYPE2 ie) const
-    { return(this->entry[ientry].edge_info[ie].flag_dual_isopoly); }
+    bool EdgeHasDualIVolPoly(const TI_TYPE2 ientry, const NTYPE2 ie) const
+    { return(this->entry[ientry].poly_edge_info[ie].flag_dual_ivolpoly); }
 
     /// Return lower incident isovertex on polytope dual to edge ie.
     template <typename TI_TYPE2, typename NTYPE2>
-    bool LowerIncident(const TI_TYPE2 ientry, const NTYPE2 ie) const
-    { return(this->entry[ientry].edge_info[ie].lower_incident_isovertex); }
+    NTYPE LowerIncident(const TI_TYPE2 ientry, const NTYPE2 ie) const
+    { return(this->entry[ientry].poly_edge_info[ie].lower_incident_isovertex); }
 
     /// Return upper incident isovertex on polytope dual to edge ie.
     template <typename TI_TYPE2, typename NTYPE2>
-    bool UpperIncident(const TI_TYPE2 ientry, const NTYPE2 ie) const
-    { return(this->entry[ientry].edge_info[ie].upper_incident_isovertex); }
+    NTYPE UpperIncident(const TI_TYPE2 ientry, const NTYPE2 ie) const
+    { return(this->entry[ientry].poly_edge_info[ie].upper_incident_isovertex); }
 
-    /// Return true if vertex iv has dual isosurface polytope.
+    /// Return true if vertex iv has dual interval volume polytope.
     template <typename TI_TYPE2, typename NTYPE2>
-    bool VertexHasDualIsoPoly(const TI_TYPE2 ientry, const NTYPE2 iv) const
-    { return(this->entry[ientry].vertex_info[iv].flag_dual_isopoly); }
+    bool VertexHasDualIVolPoly(const TI_TYPE2 ientry, const NTYPE2 iv) const
+    { return(this->entry[ientry].poly_vertex_info[iv].flag_dual_ivolpoly); }
 
-    /// Return incident isovertex on polytope dual to cube vertex iv.
+    /// Return incident interval volume vertex on polytope dual 
+    ///   to cube vertex iv.
     template <typename TI_TYPE2, typename NTYPE2>
-    bool IncidentIsoVertex(const TI_TYPE2 ientry, const NTYPE2 iv) const
-    { return(this->entry[ientry].vertex_info[iv].incident_isovertex); }
+    NTYPE IncidentIVolVertex(const TI_TYPE2 ientry, const NTYPE2 iv) const
+    { return(this->entry[ientry].poly_vertex_info[iv].incident_ivol_vertex); }
 
+    /// Return true if isov is lower vertex.
+    template <typename TI_TYPE2, typename ISOV2_TYPE>
+    bool IsLowerVertex(const TI_TYPE2 ientry, const ISOV2_TYPE isov) const
+    { return(this->entry[ientry].IsLowerVertex(isov)); }
 
+    /// Return number of interval volume vertices.
+    template <typename TI_TYPE2>
+    NTYPE NumVertices(const TI_TYPE2 ientry) const
+    { return(this->entry[ientry].NumVertices()); }
+
+    /// True, if interval volume vertex was generated in lower lifted cube.
+    template <typename TI_TYPE2, typename VTYPE>
+    bool IsInLowerLiftedCube
+    (const TI_TYPE2 ientry, const VTYPE ivolv) const
+    { return(this->entry[ientry].ivolv_info[ivolv].flag_in_lower_lifted_cube); }
+
+    /// True, if below interval volume.
+    template <typename TI_TYPE2, typename VTYPE>
+    bool IsBelowIntervalVolume(const TI_TYPE2 ientry, const VTYPE iv) const
+    { return(this->entry[ientry].IsBelowIntervalVolume(iv)); }
+
+    /// True, if in interval volume.
+    template <typename TI_TYPE2, typename VTYPE>
+    bool IsInIntervalVolume(const TI_TYPE2 ientry, const VTYPE iv) const
+    { return(this->entry[ientry].IsInIntervalVolume(iv)); }
+
+    /// True, if above interval volume.
+    template <typename TI_TYPE2, typename VTYPE>
+    bool IsAboveIntervalVolume(const TI_TYPE2 ientry, const VTYPE iv) const
+    { return(this->entry[ientry].IsAboveIntervalVolume(iv)); }
+
+    /// Return lower isosurface table index.
+    template <typename TI_TYPE2>
+    TI_TYPE LowerIsosurfaceTableIndex(const TI_TYPE2 ientry) const
+    { return(this->entry[ientry].LowerIsosurfaceTableIndex()); }
+
+    /// Return upper isosurface table index.
+    template <typename TI_TYPE2>
+    TI_TYPE UpperIsosurfaceTableIndex(const TI_TYPE2 ientry) const
+    { return(this->entry[ientry].UpperIsosurfaceTableIndex()); }
+
+    /// Return true if interval volume vertex ivolv is on lower isosurface.
+    template <typename TI_TYPE2, typename VTYPE>
+    bool OnLowerIsosurface(const TI_TYPE2 ientry, const VTYPE ivolv) const
+    { return(this->entry[ientry].ivolv_info[ivolv].flag_lower_isosurface); }
+
+    /// Return true if interval volume vertex ivolv is on upper isosurface.
+    template <typename TI_TYPE2, typename VTYPE>
+    bool OnUpperIsosurface(const TI_TYPE2 ientry, const VTYPE ivolv) const
+    { return(this->entry[ientry].ivolv_info[ivolv].flag_upper_isosurface); }
 
     template <typename DTYPE2>
     void Create(const DTYPE2 dimension);
@@ -899,6 +1206,16 @@ namespace IJKDUALTABLE {
     template <typename DTYPE2>
     void Create(const DTYPE2 dimension, const bool flag_separate_neg, 
                 const bool flag_separate_opposite);
+
+
+    /// Check number of vertex types.
+    /// - Should be 4.
+    bool CheckNumVertexTypes(IJK::ERROR & error);
+
+    /// Undefine IncidentIsoVertex
+    template <typename TI_TYPE2>
+    NTYPE IncidentIsoVertex
+    (const TI_TYPE2 it, const NTYPE kf) const;
   };
 
 
@@ -1074,78 +1391,113 @@ namespace IJKDUALTABLE {
   // IVOLDUAL TABLE ENTRY MEMBER FUNCTIONS
   // **************************************************
  
-  // IVOLDUAL_EDGE_INFO initalization routine
+  // IVOLDUAL_POLY_EDGE_INFO initalization routine
   template <typename ISOV_TYPE>
-  void IVOLDUAL_EDGE_INFO<ISOV_TYPE>::Init()
+  void IVOLDUAL_POLY_EDGE_INFO<ISOV_TYPE>::Init()
   {
-    flag_dual_isopoly = false;
+    flag_dual_ivolpoly = false;
   }
 
   template <typename ISOV_TYPE>
   template <typename ISOV_TYPE2>
-  void IVOLDUAL_EDGE_INFO<ISOV_TYPE>::
+  void IVOLDUAL_POLY_EDGE_INFO<ISOV_TYPE>::
   SetLowerIncident(const ISOV_TYPE2 ilower)
   {
     lower_incident_isovertex = ilower;
-    flag_dual_isopoly = true;
+    flag_dual_ivolpoly = true;
   }
 
   template <typename ISOV_TYPE>
   template <typename ISOV_TYPE2>
-  void IVOLDUAL_EDGE_INFO<ISOV_TYPE>::
+  void IVOLDUAL_POLY_EDGE_INFO<ISOV_TYPE>::
   SetUpperIncident(const ISOV_TYPE2 iupper)
   {
     upper_incident_isovertex = iupper;
-    flag_dual_isopoly = true;
+    flag_dual_ivolpoly = true;
   }
 
-  // IVOLDUAL_VERTEX_INFO initalization routine
+  // IVOLDUAL_POLY_VERTEX_INFO initalization routine
   template <typename ISOV_TYPE>
-  void IVOLDUAL_VERTEX_INFO<ISOV_TYPE>::Init()
+  void IVOLDUAL_POLY_VERTEX_INFO<ISOV_TYPE>::Init()
   {
-    flag_dual_isopoly = false;
+    flag_dual_ivolpoly = false;
   }
 
-  // Set incident_isovertex.
-  template <typename ISOV_TYPE>
-  template <typename ISOV_TYPE2>
-  void IVOLDUAL_VERTEX_INFO<ISOV_TYPE>::
-  SetIncident(const ISOV_TYPE2 isov)
+  // Set incident_ivol_vertex.
+  template <typename IVOLV_TYPE>
+  template <typename IVOLV_TYPE2>
+  void IVOLDUAL_POLY_VERTEX_INFO<IVOLV_TYPE>::
+  SetIncident(const IVOLV_TYPE2 ivolv)
   {
-    incident_isovertex = isov;
-    flag_dual_isopoly = true;
+    incident_ivol_vertex = ivolv;
+    flag_dual_ivolpoly = true;
   }
 
   // constructor
-  template <typename NTYPE, typename ISOV_TYPE>
-  IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE>::IVOLDUAL_TABLE_ENTRY()
+  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
+  IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,TI_TYPE>::IVOLDUAL_TABLE_ENTRY()
   {
     num_vertices = 0;
-    vertex_info = NULL;
-    edge_info = NULL;
+    lower_isosurface_table_index = 0;
+    upper_isosurface_table_index = 0;
+    poly_vertex_info = NULL;
+    poly_edge_info = NULL;
+    ivolv_info = NULL;
   }
 
   // destructor
-  template <typename NTYPE, typename ISOV_TYPE>
-  IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE>::~IVOLDUAL_TABLE_ENTRY()
+  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
+  IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,TI_TYPE>::~IVOLDUAL_TABLE_ENTRY()
   {
     FreeAll();
   }
 
-  template <typename NTYPE, typename ISOV_TYPE>
+  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
   template <typename NUMV_TYPE, typename NUME_TYPE>
-  void IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE>::
+  void IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,TI_TYPE>::
   Allocate(const NUMV_TYPE num_poly_vertices,
            const NUME_TYPE num_poly_edges)
   {
     FreeAll();
 
-    vertex_info = new IVOLDUAL_VERTEX_INFO<ISOV_TYPE>[num_poly_vertices];
-    edge_info = new IVOLDUAL_EDGE_INFO<ISOV_TYPE>[num_poly_edges];
+    poly_vertex_info = 
+      new IVOLDUAL_POLY_VERTEX_INFO<ISOV_TYPE>[num_poly_vertices];
+    poly_edge_info = 
+      new IVOLDUAL_POLY_EDGE_INFO<ISOV_TYPE>[num_poly_edges];
   }
 
-  template <typename NTYPE, typename ISOV_TYPE>
-  bool IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE>::
+
+  /// Create interval volume vertices.
+  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
+  template <typename NUMV0_TYPE, typename NUMV1_TYPE>
+  void IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,TI_TYPE>::
+  CreateIntervalVolumeVertices
+  (const NUMV0_TYPE numv_in_lower_lifted, 
+   const NUMV1_TYPE numv_in_upper_lifted)
+  {
+    const NTYPE numv = numv_in_lower_lifted + numv_in_upper_lifted;
+
+    if (ivolv_info != NULL) {
+      delete [] ivolv_info;
+      ivolv_info = NULL;
+    }
+
+    if (numv > 0) 
+      { ivolv_info = new IVOLDUAL_IVOLV_INFO[numv]; }
+
+    num_vertices = numv;
+
+    for (NTYPE i = 0; i < numv; i++) {
+      if (i < numv_in_lower_lifted) 
+        { ivolv_info[i].flag_in_lower_lifted_cube = true; }
+      else
+        { ivolv_info[i].flag_in_lower_lifted_cube = false; }
+    }
+  }
+
+
+  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
+  bool IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,TI_TYPE>::
   Check(IJK::ERROR & error_msg) const
   {
     if (num_vertices < 0) {
@@ -1155,13 +1507,13 @@ namespace IJKDUALTABLE {
       return(false);
     }
 
-    if (vertex_info == NULL) {
+    if (poly_vertex_info == NULL) {
       error_msg.AddMessage
         ("Programming error.  Memory for isosurface elements dual to polytope vertices not allocated.");
       return(false);
     }
 
-    if (edge_info == NULL) {
+    if (poly_edge_info == NULL) {
       error_msg.AddMessage
         ("Programming errror.  Memory for isosurface elements dual to polytope edges not allocated.");
       return(false);
@@ -1171,20 +1523,27 @@ namespace IJKDUALTABLE {
   }
 
   // Free all memory.
-  template <typename NTYPE, typename ISOV_TYPE>
-  void IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE>::FreeAll()
+  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
+  void IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,TI_TYPE>::FreeAll()
   {
-    if (vertex_info != NULL) {
-      delete [] vertex_info;
-      vertex_info = NULL;
+    if (poly_vertex_info != NULL) {
+      delete [] poly_vertex_info;
+      poly_vertex_info = NULL;
     }
 
-    if (edge_info != NULL) {
-      delete [] edge_info;
-      edge_info = NULL;
+    if (poly_edge_info != NULL) {
+      delete [] poly_edge_info;
+      poly_edge_info = NULL;
+    }
+
+    if (ivolv_info != NULL) {
+      delete [] ivolv_info;
+      ivolv_info = NULL;
     }
 
     num_vertices = 0;
+    lower_isosurface_table_index = 0;
+    upper_isosurface_table_index = 0;
   }
 
 
@@ -1684,30 +2043,80 @@ namespace IJKDUALTABLE {
   // IVOLDUAL CUBE TABLE MEMBER FUNCTIONS
   // **************************************************
 
-  // Create table.
-  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
-            typename ENTRY_TYPE>
+  // Constructor.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
   template <typename DTYPE2>
-  void IVOLDUAL_CUBE_TABLE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  IVOLDUAL_CUBE_TABLE(const DTYPE2 dimension) :
+    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension) 
+  {
+    Init();
+    Create(dimension); 
+  }
+
+  // Constructor.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename DTYPE2>
+  IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  IVOLDUAL_CUBE_TABLE
+  (const DTYPE2 dimension, const bool flag_separate_opposite) :
+    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension)
+  {
+    Init();
+    Create(dimension, flag_separate_opposite); 
+  }
+
+
+  // Constructor.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename DTYPE2>
+  IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  IVOLDUAL_CUBE_TABLE
+  (const DTYPE2 dimension, const bool flag_separate_neg,
+   const bool flag_separate_opposite) :
+    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension)
+  {
+    Init();
+    Create(dimension, flag_separate_neg, flag_separate_opposite); 
+  }
+
+
+  // Initialize.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  void IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  Init()
+  {
+    IJK::PROCEDURE_ERROR error("IVOLDUAL_CUBE_TABLE::Init");
+
+    if (!CheckNumVertexTypes(error)) { throw error; }
+  }
+
+
+  // Create table.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename DTYPE2>
+  void IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
   Create(const DTYPE2 dimension, const bool flag_separate_neg,
          const bool flag_separate_opposite)
   {
-    const int NUM_CUBE_VERTEX_TYPES = 4;
-
     this->SetToCube(dimension);
-
     TI_TYPE n = calculate_num_entries<TI_TYPE>
-      (this->NumPolyVertices(), NUM_CUBE_VERTEX_TYPES);
+      (this->NumPolyVertices(), NumVertexTypes());
     this->SetNumTableEntries(n);
     CreateTableEntries(flag_separate_neg, flag_separate_opposite);
   }
 
 
   // Create table.
-  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
-            typename ENTRY_TYPE>
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
   template <typename DTYPE2>
-  void IVOLDUAL_CUBE_TABLE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  void IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
   Create(const DTYPE2 dimension, const bool flag_separate_opposite)
   {
     Create(dimension, true, flag_separate_opposite);
@@ -1715,10 +2124,10 @@ namespace IJKDUALTABLE {
 
 
   // Create table.
-  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
-            typename ENTRY_TYPE>
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
   template <typename DTYPE2>
-  void IVOLDUAL_CUBE_TABLE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  void IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
   Create(const DTYPE2 dimension)
   {
     Create(dimension, true);
@@ -1729,13 +2138,18 @@ namespace IJKDUALTABLE {
   // @param flag_separate_neg  If true, separate negative vertices.
   // @param flag_separate_opposite If true, always separate two diagonally 
   //        opposite negative or positive vertices 
-  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
-            typename ENTRY_TYPE>
-  void IVOLDUAL_CUBE_TABLE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  void IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
   CreateTableEntries
   (const bool flag_separate_neg, const bool flag_separate_opposite)
   {
     typedef typename ENTRY_TYPE::IVOL_VERTEX_INDEX_TYPE ISOV_TYPE;
+
+    IJK::PROCEDURE_ERROR error("IVOLDUAL_CUBE_TABLE::CreateTableEntries");
+
+    // Make sure that number of vertex types is correct (4).
+    if (!CheckNumVertexTypes(error)) { throw error; }
 
     this->flag_separate_neg = flag_separate_neg;
     this->flag_always_separate_opposite = flag_separate_opposite;
@@ -1754,11 +2168,29 @@ namespace IJKDUALTABLE {
     for (TI_TYPE ientry = 0; ientry < this->NumTableEntries(); ientry++) {
       // Create ivoldual cube table entry
       create_ivoldual_cube_table_entry
-        (ientry, this->NumPolyVertices(), 
-         flag_separate_neg, flag_separate_opposite, cube, lifted_cube,
+        (ientry, flag_separate_neg, flag_separate_opposite, cube, lifted_cube,
          find_component, lower_isodual, upper_isodual, this->entry[ientry]);
     }
 
+  }
+
+  // Check number of vertex types.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  bool IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  CheckNumVertexTypes(IJK::ERROR & error)
+  {
+    if (NUM_VERTEX_TYPES != 4) {
+      error.AddMessage
+        ("Programming error.  Illegal number of vertex types.");
+      error.AddMessage
+        ("  Number of vertex types: ", NUM_VERTEX_TYPES, "");
+      error.AddMessage
+        ("  Number of vertex types should be 4.");
+      return(false);
+    }
+
+    return(true);
   }
 
 

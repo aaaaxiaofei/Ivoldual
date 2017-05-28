@@ -930,6 +930,7 @@ namespace IJK {
 
     const SIZE_TYPE num_cubes = cube_list.size();
 
+    // Count total number of isosurface vertices.
     SIZE_TYPE total_num_isov = 0;
     for (SIZE_TYPE i = 0; i < num_cubes; i++) {
       TABLE_INDEX it = cube_list[i].table_index;
@@ -939,6 +940,7 @@ namespace IJK {
 
     iso_vlist.resize(total_num_isov);
 
+    // Set isosurface vertices.
     SIZE_TYPE k = 0;
     for (SIZE_TYPE i = 0; i < num_cubes; i++) {
       cube_list[i].first_isov = k;
@@ -1485,6 +1487,8 @@ namespace IJK {
 
 
   /// Compute number of cubes which have more than one isosurface vertex.
+  // *** DOES NOT USE isodual_table. ***
+  // *** SHOULD BE NAMED compute_num_split ***
   template <typename ISODUAL_TABLE, typename GRID_CUBE_TYPE,
             typename NTYPE>
   void compute_num_splitB

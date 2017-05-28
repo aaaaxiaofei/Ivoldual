@@ -1,5 +1,5 @@
-/// \file isodualIO.h
-/// IO classes and routines for isodual.
+/// \file ivoldualIO.h
+/// IO classes and routines for ivoldual.
 
 /*
   IJK: Isosurface Jeneration Kode
@@ -20,8 +20,8 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef _ISODUALIO_
-#define _ISODUALIO_
+#ifndef _IVOLDUALIO_
+#define _IVOLDUALIO_
 
 #include <ctime>
 #include <string>
@@ -32,11 +32,11 @@
 
 #include "ijkdualIO.txx"
 
-#include "isodual_types.h"
-#include "isodual_datastruct.h"
+#include "ivoldual_types.h"
+#include "ivoldual_datastruct.h"
 
 
-namespace ISODUAL {
+namespace IVOLDUAL {
 
   // **************************************************
   // TYPE DEFINITIONS
@@ -153,7 +153,7 @@ namespace ISODUAL {
     void Init();
 
   public:
-    typedef ISODUAL::COLOR_TYPE COLOR_TYPE;
+    typedef IVOLDUAL::COLOR_TYPE COLOR_TYPE;
     
   public:
     int dimension;
