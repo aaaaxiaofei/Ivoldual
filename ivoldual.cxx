@@ -604,14 +604,6 @@ void IVOLDUAL::position_dual_ivolv_on_isosurface_centroid_multi
   int num_intersected_edges = 0;
   IJK::set_coord(dimension, 0.0, vcoord);
 
-  // *** DEBUG ***
-  /*
-  using namespace std;
-  cerr << "Cube: " << icube << " table index: " 
-       << table_index << "  ivolv: " << ivolv
-       << "  isovalue: " << isovalue << endl;
-  */
-
   for (int ie = 0; ie < cube.NumEdges(); ie++) {
     int k0 = cube.EdgeEndpoint(ie, 0);
     int k1 = cube.EdgeEndpoint(ie, 1);

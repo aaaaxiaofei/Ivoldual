@@ -308,15 +308,15 @@ namespace IJKDUALTABLE {
       NTYPE iend0 = cube.EdgeEndpoint(ie,0);
       NTYPE iend1 = cube.EdgeEndpoint(ie,1);
 
-      if (!table_entry.poly_vertex_info[iend0].flag_dual_ivolpoly) 
+      if (!table_entry.IsInIntervalVolume(iend0))
         { std::swap(iend0, iend1); }
 
-      if (!table_entry.poly_vertex_info[iend0].flag_dual_ivolpoly) {
+      if (!table_entry.IsInIntervalVolume(iend0)) {
         // Neither edge endpoint is contained in the interval volume.
         continue;
       }
 
-      if (table_entry.poly_vertex_info[iend1].flag_dual_ivolpoly) {
+      if (table_entry.IsInIntervalVolume(iend1)) {
         // Both edge endpoints are contained in the interval volume.
         continue;
       }
@@ -603,17 +603,13 @@ namespace IJKDUALTABLE {
       { BELOW_INTERVAL_VOLUME, IN_INTERVAL_VOLUME, ABOVE_INTERVAL_VOLUME}
       RELATIVE_POSITION;
 
-    /// Interval volume vertex incident on isosurface polytope dual to edge.
-    ISOV_TYPE incident_ivol_vertex;
-
-    /// If flag_dual_ivolpoly is true, then some isosurface polytope
-    ///   is dual to the edge.
-    /// - If true, then both lower_incident_isovertex
-    ///   and upper_incident_isovertex are set.
-    bool flag_dual_ivolpoly;
-
     /// Position of polytope vertex relative to interval volume.
     RELATIVE_POSITION relative_position;
+
+    /// Interval volume vertex incident on isosurface polytope dual to edge.
+    /// - incident_ivol_vertex is defined if and only if relative_position
+    ///     is IN_INTERVAL_VOLUME.
+    ISOV_TYPE incident_ivol_vertex;
 
     /// True, if below interval volume.
     bool IsBelowIntervalVolume() const
@@ -1137,11 +1133,6 @@ namespace IJKDUALTABLE {
     NTYPE UpperIncident(const TI_TYPE2 ientry, const NTYPE2 ie) const
     { return(this->entry[ientry].poly_edge_info[ie].upper_incident_isovertex); }
 
-    /// Return true if vertex iv has dual interval volume polytope.
-    template <typename TI_TYPE2, typename NTYPE2>
-    bool VertexHasDualIVolPoly(const TI_TYPE2 ientry, const NTYPE2 iv) const
-    { return(this->entry[ientry].poly_vertex_info[iv].flag_dual_ivolpoly); }
-
     /// Return incident interval volume vertex on polytope dual 
     ///   to cube vertex iv.
     template <typename TI_TYPE2, typename NTYPE2>
@@ -1419,9 +1410,7 @@ namespace IJKDUALTABLE {
   // IVOLDUAL_POLY_VERTEX_INFO initalization routine
   template <typename ISOV_TYPE>
   void IVOLDUAL_POLY_VERTEX_INFO<ISOV_TYPE>::Init()
-  {
-    flag_dual_ivolpoly = false;
-  }
+  {}
 
   // Set incident_ivol_vertex.
   template <typename IVOLV_TYPE>
@@ -1430,7 +1419,6 @@ namespace IJKDUALTABLE {
   SetIncident(const IVOLV_TYPE2 ivolv)
   {
     incident_ivol_vertex = ivolv;
-    flag_dual_ivolpoly = true;
   }
 
   // constructor
