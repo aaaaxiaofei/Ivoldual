@@ -80,7 +80,9 @@ int main(int argc, char **argv)
 
     // Note: dualiso_data.SetScalarGrid must be called before set_mesh_data.
     // subsample and supersample parameters are hard-coded here.
-    dualiso_data.SetScalarGrid(full_scalar_grid, false, 1, false, 1);
+    dualiso_data.SetScalarGrid
+      (full_scalar_grid, io_info.flag_subsample, io_info.subsample_resolution, 
+       io_info.flag_supersample, io_info.supersample_resolution);
     dualiso_data.Set(io_info);
     warn_non_manifold(io_info);
     report_num_cubes(full_scalar_grid, io_info, dualiso_data);
