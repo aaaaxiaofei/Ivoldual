@@ -679,6 +679,7 @@ namespace IJK {
     triangulate_polygon(num_poly_vert, poly_vert, k_min_cos, tri_vert);
   }
 
+
   /// Triangulate list of polygons.
   template <typename DTYPE, typename CTYPE,
             typename NTYPE0, typename NTYPE1, 
@@ -696,6 +697,27 @@ namespace IJK {
         (dimension, vert_coord, num_poly_vert[ipoly], 
          poly_vert+first_poly_vert[ipoly], max_small_magnitude, tri_vert);
     }
+  }
+
+  /// Triangulate list of polygons.
+  /// - C++ STL vector format for vert_coord[], num_poly_vert[],
+  ///   poly_vert[], and first_poly_vert[].
+  template <typename DTYPE, typename CTYPE, typename NTYPE,
+            typename VTYPE0, typename VTYPE1,
+            typename MTYPE, typename ITYPE>
+  void triangulate_polygon_list_split_max_angle
+  (const DTYPE dimension, const std::vector<CTYPE> & vert_coord,
+   const std::vector<NTYPE> & num_poly_vert, 
+   const std::vector<VTYPE0> & poly_vert,
+   const std::vector<ITYPE> & first_poly_vert,
+   const MTYPE max_small_magnitude,
+   std::vector<VTYPE1> & tri_vert)
+  {
+    triangulate_polygon_list_split_max_angle
+      (dimension, IJK::vector2pointer(vert_coord), 
+       IJK::vector2pointer(num_poly_vert), IJK::vector2pointer(poly_vert),
+       IJK::vector2pointer(first_poly_vert), num_poly_vert.size(),
+       max_small_magnitude, tri_vert);
   }
 
   ///@}

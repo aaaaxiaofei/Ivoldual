@@ -4,12 +4,12 @@
 
 /*
   IJK: Isosurface Jeneration Kode
-  Copyright (C) 2011-2015 Rephael Wenger
+  Copyright (C) 2011-2017 Rephael Wenger
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public License
   (LGPL) as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
+  version 2.1 of the License, or any later version.
 
   This library is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -66,6 +66,12 @@ namespace IJK {
     /// Set volume dimension and axis size.
     template <typename DTYPE2, typename ATYPE2>
     void SetSize(const DTYPE2 dimension, const ATYPE2 * axis_size);
+
+    /// Set spacing.
+    template <typename SPACING_TYPE>
+    void SetSpacing(const SPACING_TYPE spacing[]);
+    template <typename SPACING_TYPE>
+    void SetSpacing(const std::vector<SPACING_TYPE> & spacing);
 
     void CopyHeader                   ///< Copy header.
     (const Nrrd * from_data);
@@ -150,6 +156,38 @@ namespace IJK {
      NRRD_DATA<DTYPE2,ATYPE2> & header, IJK::ERROR & error);
   };
 
+
+  // **************************************************
+  //! @name CHECK FUNCTIONS
+  // **************************************************
+
+  //!@{
+
+  //! Return false and set error message if dimension is negative 
+  //! or larger than NRRD_DIM_MAX.
+  template <typename DTYPE>
+  inline bool check_nrrd_dimension(const DTYPE dimension, IJK::ERROR & error)
+  {
+    if (dimension > NRRD_DIM_MAX) {
+      error.AddMessage
+        ("Dimension error. Dimension ", dimension, " is too large.");  
+      error.AddMessage("  Max allowable dimension is ", NRRD_DIM_MAX, ".");
+      return(false);
+    }
+    else if (dimension < 0) {
+      error.AddMessage
+        ("Dimension error.  Dimension ", dimension, " is negative.");
+      error.AddMessage("  Dimension must be non-negative.");
+      
+      return(false);
+    }
+
+    return(true);
+  }
+
+  //!@}
+
+
   // **************************************************
   // FUNCTION add_nrrd_message
   // **************************************************
@@ -174,28 +212,38 @@ namespace IJK {
   }
 
   // **************************************************
-  // NRRD SET/COPY FUNCTIONS
+  /// @name NRRD SET/COPY FUNCTIONS
   // **************************************************
 
+  ///@{
+
+  /// Set dimension and axis size of Nrrd data.
   template <typename DTYPE, typename ATYPE>
   inline void set_nrrd_size
   (const DTYPE dimension, const ATYPE * axis_size, Nrrd * nrrd_data)
   {
-    IJK::ARRAY<size_t> nrrd_axis_size(dimension);
+    size_t nrrd_axis_size[NRRD_DIM_MAX];
+    IJK::PROCEDURE_ERROR error("set_nrrd_size");
+
+    if (!check_nrrd_dimension(dimension, error)) { throw error; };
 
     nrrd_data->dim = dimension;
 
     for (DTYPE d = 0; d < dimension; d++) 
       { nrrd_axis_size[d] = axis_size[d]; }
 
-    nrrdAxisInfoSet_nva(nrrd_data, nrrdAxisInfoSize, nrrd_axis_size.Ptr());
+    nrrdAxisInfoSet_nva(nrrd_data, nrrdAxisInfoSize, nrrd_axis_size);
   }
 
+
+  /// Copy dimension from one Nrrd data structure to another.
   inline void copy_nrrd_dimension(const Nrrd * from_nrrd, Nrrd * to_nrrd)
   {
     to_nrrd->dim = from_nrrd->dim;
   }
 
+
+  /// Copy axis information from one Nrrd data structure to another.
   inline void copy_nrrd_axis_info(const Nrrd * from_nrrd, Nrrd * to_nrrd)
   {
     IJK::PROCEDURE_ERROR error("copy_nrrd_axis_info");
@@ -213,6 +261,25 @@ namespace IJK {
     }
   }
 
+
+  /// Set spacing of nrrd data.
+  template <typename DTYPE, typename SPACING_TYPE>
+  inline void set_nrrd_spacing
+  (const DTYPE dimension, const SPACING_TYPE spacing[], Nrrd * nrrd_data)
+  {
+    double nrrd_spacing[NRRD_DIM_MAX];
+    IJK::PROCEDURE_ERROR error("set_nrrd_spacing");
+
+    if (!check_nrrd_dimension(dimension, error)) { throw error; };
+
+    for (DTYPE d = 0; d < dimension; d++) 
+      { nrrd_spacing[d] = spacing[d]; }
+
+    nrrdAxisInfoSet_nva(nrrd_data, nrrdAxisInfoSpacing, nrrd_spacing);
+  }
+
+
+  /// Copy key values from one Nrrd data structure to another.
   inline void copy_nrrd_key_values(const Nrrd * from_nrrd, Nrrd * to_nrrd)
   {
     IJK::PROCEDURE_ERROR error("copy_nrrd_key_values");
@@ -226,6 +293,8 @@ namespace IJK {
     }
   }
 
+
+  /// Copy comments from one Nrrd data structure to another.
   inline void copy_nrrd_comments(const Nrrd * from_nrrd, Nrrd * to_nrrd)
   {
     IJK::PROCEDURE_ERROR error("copy_nrrd_comments");
@@ -239,6 +308,8 @@ namespace IJK {
     }
   }
 
+  /// Copy header information from one Nrrd data structure to another.
+  /// - Copy dimension, axis size, key values and comments.
   inline void copy_nrrd_header(const Nrrd * from_nrrd, Nrrd * to_nrrd)
   {
     copy_nrrd_dimension(from_nrrd, to_nrrd);
@@ -247,9 +318,14 @@ namespace IJK {
     copy_nrrd_comments(from_nrrd, to_nrrd);
   }
 
+  ///@}
+
+
   // **************************************************
-  // WRITE FUNCTIONS
+  /// @name WRITE FUNCTIONS
   // **************************************************
+
+  ///@{
 
   /// Wrap scalar data in nrrd_data.
   template <typename DTYPE, typename ATYPE>
@@ -257,13 +333,16 @@ namespace IJK {
   (Nrrd * nrrd_data, const float * scalar, 
    const DTYPE dimension, const ATYPE * axis_size)
   {
-    IJK::ARRAY<size_t> nrrd_axis_size(dimension);
+    size_t nrrd_axis_size[NRRD_DIM_MAX];
+    IJK::PROCEDURE_ERROR error("wrap_scalar_grid_data");
+
+    if (!check_nrrd_dimension(dimension, error)) { throw error; };
 
     for (DTYPE d = 0; d < dimension; d++) 
       { nrrd_axis_size[d] = axis_size[d]; }
 
     nrrdWrap_nva(nrrd_data, (void *)(scalar), nrrdTypeFloat,
-                 dimension, nrrd_axis_size.Ptr());
+                 dimension, nrrd_axis_size);
   }
 
   /// Wrap scalar data in nrrd_data.
@@ -272,14 +351,18 @@ namespace IJK {
   (Nrrd * nrrd_data, const int * scalar, 
    const DTYPE dimension, const ATYPE * axis_size)
   {
-    IJK::ARRAY<size_t> nrrd_axis_size(dimension);
+    size_t nrrd_axis_size[NRRD_DIM_MAX];
+    IJK::PROCEDURE_ERROR error("wrap_scalar_grid_data");
+
+    if (!check_nrrd_dimension(dimension, error)) { throw error; };
 
     for (DTYPE d = 0; d < dimension; d++) 
       { nrrd_axis_size[d] = axis_size[d]; }
 
     nrrdWrap_nva(nrrd_data, (void *)(scalar), nrrdTypeInt,
-                 dimension, nrrd_axis_size.Ptr());
+                 dimension, nrrd_axis_size);
   }
+
 
   /// Wrap vector data in nrrd_data.
   template <typename DTYPE, typename ATYPE, typename LTYPE>
@@ -288,14 +371,17 @@ namespace IJK {
    const DTYPE dimension, const ATYPE * axis_size, 
    const LTYPE vector_length)
   {
-    IJK::ARRAY<size_t> nrrd_axis_size(dimension+1);
+    size_t nrrd_axis_size[NRRD_DIM_MAX];
+    IJK::PROCEDURE_ERROR error("wrap_vector_grid_data");
+
+    if (!check_nrrd_dimension(dimension+1, error)) { throw error; };
 
     nrrd_axis_size[0] = vector_length;
     for (DTYPE d = 0; d < dimension; d++) 
       { nrrd_axis_size[d+1] = axis_size[d]; }
 
     nrrdWrap_nva(nrrd_data, (void *)(scalar), nrrdTypeFloat,
-                 dimension+1, nrrd_axis_size.Ptr());
+                 dimension+1, nrrd_axis_size);
   }
 
   /// Write scalar grid in nrrd file.
@@ -636,6 +722,9 @@ namespace IJK {
       (output_filename.c_str(), grid, nrrd_header);
   }
 
+  ///@}
+
+
   // **************************************************
   // CLASS NRRD_DATA MEMBER FUNCTIONS
   // **************************************************
@@ -674,9 +763,11 @@ namespace IJK {
     DTYPE dimension = this->Dimension();
     if (dimension < 1) { return; }
 
-    IJK::ARRAY<double> nrrd_spacing(dimension, 1);
+    if (!check_nrrd_dimension(dimension, error)) { throw error; };
+
+    double nrrd_spacing[NRRD_DIM_MAX];
     nrrdAxisInfoGet_nva
-      (this->DataPtrConst(), nrrdAxisInfoSpacing, nrrd_spacing.Ptr());
+      (this->DataPtrConst(), nrrdAxisInfoSpacing, nrrd_spacing);
 
     grid_spacing.resize(dimension);
     for (DTYPE d = 0; d < dimension; d++) {
@@ -690,7 +781,7 @@ namespace IJK {
         
   }
 
-  /// Set dimensions and axis size.
+  // Set dimensions and axis size.
   template <typename DTYPE, typename ATYPE>
   template <typename DTYPE2, typename ATYPE2>
   void NRRD_DATA<DTYPE,ATYPE>::
@@ -699,7 +790,29 @@ namespace IJK {
     set_nrrd_size(dimension, axis_size, this->data);
   }
 
-  /// Copy header.
+
+  // Set spacing.
+  template <typename DTYPE, typename ATYPE>
+  template <typename SPACING_TYPE>
+  void NRRD_DATA<DTYPE,ATYPE>::
+  SetSpacing(const SPACING_TYPE spacing[])
+  {
+    set_nrrd_spacing(this->Dimension(), spacing, this->data);
+  }
+
+
+  // Set spacing.
+  // - Version using C++ STL vector for spacing.
+  template <typename DTYPE, typename ATYPE>
+  template <typename SPACING_TYPE>
+  void NRRD_DATA<DTYPE,ATYPE>::
+  SetSpacing(const std::vector<SPACING_TYPE> & spacing)
+  {
+    set_nrrd_spacing
+      (this->Dimension(), IJK::vector2pointer(spacing), this->data);
+  }
+
+  // Copy header.
   template <typename DTYPE, typename ATYPE>
   void NRRD_DATA<DTYPE,ATYPE>::
   CopyHeader(const Nrrd * from_data)
@@ -810,11 +923,13 @@ namespace IJK {
 
     if (dimension < 1) { return(true); };
 
-    IJK::ARRAY<size_t> axis_size(dimension);
-    nrrdAxisInfoGet_nva
-      (this->DataPtrConst(), nrrdAxisInfoSize, axis_size.Ptr());
+    if (!check_nrrd_dimension(dimension, error)) { throw error; };
 
-    return(CheckSize(dimension, axis_size.PtrConst(), error));
+    size_t axis_size[NRRD_DIM_MAX];
+    nrrdAxisInfoGet_nva
+      (this->DataPtrConst(), nrrdAxisInfoSize, axis_size);
+
+    return(CheckSize(dimension, axis_size, error));
   }
 
   /// Return true if dimension and axis sizes match.
