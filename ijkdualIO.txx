@@ -269,9 +269,18 @@ namespace IJKDUAL {
     VERTEX_INDEX num_poly = (plist.size())/numv_per_simplex;
     VERTEX_INDEX num_grid_cubes = dualiso_info.grid.num_cubes;
 
-    cout << "  Isovalue " << output_info.isovalue[0] << ".  " 
-         << numv << " isosurface vertices.  "
-         << num_poly << " isosurface polytopes." << endl;
+    if (output_info.flag_interval_volume) {
+      cout << "  Interval volume [" 
+           << output_info.isovalue[0] << ":"
+           << output_info.isovalue[1] << "].  "
+           << numv << " ivol vertices.  "
+           << num_poly << " ivol polytopes." << endl;
+    }
+    else {
+      cout << "  Isovalue " << output_info.isovalue[0] << ".  "
+           << numv << " isosurface vertices.  "
+           << num_poly << " isosurface polytopes." << endl;
+    }
 
     report_multi_isov_info(output_info, dualiso_info);
   }

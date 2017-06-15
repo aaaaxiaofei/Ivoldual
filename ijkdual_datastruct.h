@@ -258,6 +258,9 @@ namespace IJKDUAL {
     QUAD_TRI_METHOD quad_tri_method;
     QUAD_EDGE_INTERSECTION_METHOD quad_edge_intersection_method;
 
+    /// If true, constructing an interval volume.
+    bool flag_interval_volume;
+
     /// If true, allow triangulation of hexagons into 4 triangles
     ///  by adding an extra vertex.
     bool flag_tri4_quad;

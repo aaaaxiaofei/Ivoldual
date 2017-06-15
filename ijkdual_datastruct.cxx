@@ -86,6 +86,7 @@ FACET_INDEX GRID_CUBE_DATA_PLUS::GetSharedFacetIndex
 // Initialize DUALISO_DATA_FLAGS
 void DUALISO_DATA_FLAGS::Init()
 {
+  flag_interval_volume = false;
   interpolation_type = LINEAR_INTERPOLATION;
   vertex_position_method = CENTROID_EDGE_ISO;
   allow_multiple_iso_vertices = true;

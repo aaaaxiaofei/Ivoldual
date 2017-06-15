@@ -63,6 +63,9 @@ int main(int argc, char **argv)
 
     std::set_new_handler(memory_exhaustion);
 
+    // Set to interval volume.
+    io_info.flag_interval_volume = true;
+
     parse_command_line(argc, argv, io_info);
 
     DUALISO_SCALAR_GRID full_scalar_grid, scalar_grid_4D;
