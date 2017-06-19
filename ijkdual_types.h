@@ -62,6 +62,10 @@ namespace IJKDUAL {
   /// Facet vertex index type.
   typedef unsigned char FACET_VERTEX_INDEX;
 
+  /// Type for integer representing a set of facets.
+  /// - k'th bit is 1 if facet k is in the set.
+  typedef int FACET_BITS_TYPE;
+
   /// Vertex degree type.
   typedef unsigned char DEGREE_TYPE;
 

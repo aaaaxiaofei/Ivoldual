@@ -47,7 +47,8 @@ namespace IVOLDUAL {
   // **************************************************
 
   typedef typename IJKDUALTABLE::
-  IVOLDUAL_TABLE_ENTRY<int,ISO_VERTEX_INDEX,TABLE_INDEX> IVOLDUAL_TABLE_ENTRY;
+  IVOLDUAL_TABLE_ENTRY<int,ISO_VERTEX_INDEX,FACET_BITS_TYPE,TABLE_INDEX> 
+  IVOLDUAL_TABLE_ENTRY;
 
 
   // **************************************************

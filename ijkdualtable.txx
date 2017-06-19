@@ -765,7 +765,8 @@ namespace IJKDUALTABLE {
   };
 
   /// Entry in the dual interval volume lookup table.
-  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
+  template <typename NTYPE, typename ISOV_TYPE, typename FBITS_TYPE,
+            typename TI_TYPE>
   class IVOLDUAL_TABLE_ENTRY {
 
   protected:
@@ -776,6 +777,7 @@ namespace IJKDUALTABLE {
   public:
 
     typedef ISOV_TYPE IVOL_VERTEX_INDEX_TYPE;
+    typedef FBITS_TYPE FACET_BITS_TYPE;
 
     /// Lower isosurface table index.
     TI_TYPE lower_isosurface_table_index;
@@ -1024,8 +1026,7 @@ namespace IJKDUALTABLE {
     public ISODUAL_TABLE_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE> {
 
   public:
-    // *** TEMPORARY ***
-    typedef int FACET_BITS_TYPE;
+    typedef typename ENTRY_TYPE::FACET_BITS_TYPE FACET_BITS_TYPE;
 
   public:
     
@@ -1527,8 +1528,10 @@ namespace IJKDUALTABLE {
   }
 
   // constructor
-  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
-  IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,TI_TYPE>::IVOLDUAL_TABLE_ENTRY()
+  template <typename NTYPE, typename ISOV_TYPE, typename FBITS_TYPE,
+            typename TI_TYPE>
+  IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,FBITS_TYPE,TI_TYPE>::
+  IVOLDUAL_TABLE_ENTRY()
   {
     num_vertices = 0;
     lower_isosurface_table_index = 0;
@@ -1539,15 +1542,18 @@ namespace IJKDUALTABLE {
   }
 
   // destructor
-  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
-  IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,TI_TYPE>::~IVOLDUAL_TABLE_ENTRY()
+  template <typename NTYPE, typename ISOV_TYPE, typename FBITS_TYPE,
+            typename TI_TYPE>
+  IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,FBITS_TYPE,TI_TYPE>::
+  ~IVOLDUAL_TABLE_ENTRY()
   {
     FreeAll();
   }
 
-  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
+  template <typename NTYPE, typename ISOV_TYPE, typename FBITS_TYPE,
+            typename TI_TYPE>
   template <typename NUMV_TYPE, typename NUME_TYPE>
-  void IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,TI_TYPE>::
+  void IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,FBITS_TYPE,TI_TYPE>::
   Allocate(const NUMV_TYPE num_poly_vertices,
            const NUME_TYPE num_poly_edges)
   {
@@ -1561,9 +1567,10 @@ namespace IJKDUALTABLE {
 
 
   /// Create interval volume vertices.
-  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
+  template <typename NTYPE, typename ISOV_TYPE, typename FBITS_TYPE,
+            typename TI_TYPE>
   template <typename NUMV0_TYPE, typename NUMV1_TYPE>
-  void IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,TI_TYPE>::
+  void IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,FBITS_TYPE,TI_TYPE>::
   CreateIntervalVolumeVertices
   (const NUMV0_TYPE numv_in_lower_lifted, 
    const NUMV1_TYPE numv_in_upper_lifted)
@@ -1589,8 +1596,9 @@ namespace IJKDUALTABLE {
   }
 
 
-  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
-  bool IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,TI_TYPE>::
+  template <typename NTYPE, typename ISOV_TYPE, typename FBITS_TYPE,
+            typename TI_TYPE>
+  bool IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,FBITS_TYPE,TI_TYPE>::
   Check(IJK::ERROR & error_msg) const
   {
     if (num_vertices < 0) {
@@ -1616,8 +1624,9 @@ namespace IJKDUALTABLE {
   }
 
   // Free all memory.
-  template <typename NTYPE, typename ISOV_TYPE, typename TI_TYPE>
-  void IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,TI_TYPE>::FreeAll()
+  template <typename NTYPE, typename ISOV_TYPE, typename FBITS_TYPE,
+            typename TI_TYPE>
+  void IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,FBITS_TYPE,TI_TYPE>::FreeAll()
   {
     if (poly_vertex_info != NULL) {
       delete [] poly_vertex_info;
