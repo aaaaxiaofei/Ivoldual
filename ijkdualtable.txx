@@ -189,6 +189,37 @@ namespace IJKDUALTABLE {
 
 
   // **************************************************
+  // ISODUAL CUBE TABLE AMBIG ROUTINES
+  // **************************************************
+
+  /// Create isodual cube table ambig entry ientry.
+  /// @tparam TI_TYPE Table index type.
+  template <typename TI_TYPE, typename NTYPE, typename FIND_TYPE,
+            typename CUBE_TYPE, typename ENTRY_TYPE>
+  void create_isodual_cube_table_ambig_entry
+  (const TI_TYPE ientry, const NTYPE num_poly_vertices,
+   const bool flag_separate_neg, const bool flag_separate_opposite,
+   const CUBE_TYPE & cube,
+   FIND_TYPE & find_component, 
+   ENTRY_TYPE & table_entry)
+  {
+    const NTYPE num_cube_facets = cube.NumFacets();
+
+    create_isodual_cube_table_entry
+      (ientry, num_poly_vertices, flag_separate_neg, flag_separate_opposite,
+       cube, find_component, table_entry);
+
+    table_entry.is_ambiguous = is_cube_ambiguous(ientry, find_component);
+    compute_ambiguous_cube_facets
+      (ientry, num_cube_facets, table_entry.ambiguous_facet_bits, 
+       table_entry.num_ambiguous_facets, find_component);
+
+    table_entry.num_active_facets =
+      cube.ComputeNumActiveCubeFacets(ientry);
+  }
+
+
+  // **************************************************
   // IVOLDUAL CUBE TABLE ROUTINES
   // **************************************************
 
@@ -345,36 +376,66 @@ namespace IJKDUALTABLE {
   }
 
 
-  template <typename CUBE_TYPE, typename TI_TYPE_L, typename TI_TYPE_U,
-            typename FIND_TYPE>
+  template <typename NTYPE, typename CUBE_TYPE,
+            typename TI_TYPE_L, typename TI_TYPE_U, 
+            typename ISODUAL_ENTRY_TYPE>
   void modify_ambiguous_lifted_ivoldual_entries
-  (const CUBE_TYPE & lifted_cube, TI_TYPE_L & ilower, TI_TYPE_U & iupper,
-   FIND_TYPE & find_component)
-
+  (const NTYPE num_table_entries,
+   const CUBE_TYPE & lifted_cube,
+   const TI_TYPE_L ilower, const ISODUAL_ENTRY_TYPE & lower_isodual,
+   const TI_TYPE_U iupper, const ISODUAL_ENTRY_TYPE & upper_isodual,
+   TI_TYPE_L & new_ilower,
+   TI_TYPE_U & new_iupper)
   {
     typedef typename CUBE_TYPE::DIMENSION_TYPE DTYPE;
-    typedef typename CUBE_TYPE::NUMBER_TYPE NTYPE;
 
-    const NTYPE num_cube_facets = lifted_cube.NumFacets();
-    NTYPE num_ambig_lower, num_ambig_upper;
-    unsigned long lower_ambig, upper_ambig;
+    const DTYPE dimension = lifted_cube.Dimension();
+    const NTYPE num_facets = lifted_cube.NumFacets();
+    NTYPE ilower_facet, iupper_facet;
 
-    compute_ambiguous_facets
-      (ilower, num_cube_facets, lower_ambig, num_ambig_lower, find_component);
-    compute_ambiguous_facets
-      (iupper, num_cube_facets, upper_ambig, num_ambig_upper, find_component);
+    new_ilower = ilower;
+    new_iupper = iupper;
 
-    // TO BE CONTINUED...
+    if (lower_isodual.NumAmbiguousFacets() == 0 &&
+        upper_isodual.NumAmbiguousFacets() == 0) { return; }
+
+    if (lower_isodual.NumVertices() > 1 ||
+        upper_isodual.NumVertices() > 1) { return; }
+
+    if (dimension < 1) { return; }
+
+    ilower_facet = dimension-1;
+    iupper_facet = ilower_facet+dimension;
+
+    if (!lower_isodual.IsFacetAmbiguous(iupper_facet)) { return; }
+
+    for (NTYPE jf = 0; jf < num_facets; jf++) {
+      if (jf == ilower_facet || jf == iupper_facet) { continue; }
+
+      if (lower_isodual.IsFacetAmbiguous(jf) ||
+          upper_isodual.IsFacetAmbiguous(jf)) {
+        // Lower or upper cube has some ambiguous facet adjacent
+        //   to a third cube.
+        // Don't change table entry.
+        return;
+      }
+    }
+
+    // Flip ivoldual table entries.
+    new_ilower = compute_complement(ilower, num_table_entries);
+    new_iupper = compute_complement(iupper, num_table_entries);
   }
+
 
 
   /// Create ivoldual cube table entry ientry.
   /// @tparam TI_TYPE Table index type.
-  template <typename TI_TYPE, typename FIND_TYPE,
+  template <typename TI_TYPE, typename NTYPE, typename FIND_TYPE,
             typename CUBE_TYPE, typename ISODUAL_ENTRY_TYPE,
             typename ENTRY_TYPE>
   void create_ivoldual_cube_table_entry
   (const TI_TYPE ientry,
+   const NTYPE num_table_entries,
    const bool flag_separate_neg, const bool flag_separate_opposite,
    const CUBE_TYPE & cube,
    const CUBE_TYPE & lifted_cube,
@@ -384,7 +445,6 @@ namespace IJKDUALTABLE {
    ENTRY_TYPE & table_entry)
   {
     typedef typename CUBE_TYPE::DIMENSION_TYPE DTYPE;
-    typedef typename CUBE_TYPE::NUMBER_TYPE NTYPE;
 
     const DTYPE lifted_dimension = lifted_cube.Dimension();
     const NTYPE num_cube_vertices = cube.NumVertices();
@@ -397,14 +457,32 @@ namespace IJKDUALTABLE {
 
     compute_lifted_ivol_indices4
       (ientry, num_cube_vertices, ilower, iupper);
-    create_isodual_cube_table_entry
+    create_isodual_cube_table_ambig_entry
       (ilower, num_lifted_cube_vertices, 
        flag_separate_neg, flag_separate_opposite,
        lifted_cube, find_component, lower_isodual);
-    create_isodual_cube_table_entry
+    create_isodual_cube_table_ambig_entry
       (iupper, num_lifted_cube_vertices, 
        flag_separate_neg, flag_separate_opposite,
        lifted_cube, find_component, upper_isodual);
+
+    TI_TYPE new_ilower, new_iupper;
+    modify_ambiguous_lifted_ivoldual_entries
+      (num_table_entries, lifted_cube, ilower, lower_isodual,
+       iupper, upper_isodual, new_ilower, new_iupper);
+
+    if (new_ilower != ilower || new_iupper != iupper) {
+      ilower = new_ilower;
+      iupper = new_iupper;
+      create_isodual_cube_table_ambig_entry
+        (ilower, num_lifted_cube_vertices, 
+         flag_separate_neg, flag_separate_opposite,
+         lifted_cube, find_component, lower_isodual);
+      create_isodual_cube_table_ambig_entry
+        (iupper, num_lifted_cube_vertices, 
+         flag_separate_neg, flag_separate_opposite,
+         lifted_cube, find_component, upper_isodual);
+    }
 
     table_entry.CreateIntervalVolumeVertices
       (lower_isodual.NumVertices(), upper_isodual.NumVertices());
@@ -1088,11 +1166,6 @@ namespace IJKDUALTABLE {
     void CreateTableEntries
     (const bool flag_separate_neg, const bool flag_separate_opposite);
 
-    /// Compute ambiguity information.
-    void ComputeAmbiguityInformation();
-
-    /// Compute number of active facets.
-    void ComputeNumActiveFacets();
 
   public:
 
@@ -2022,51 +2095,15 @@ namespace IJKDUALTABLE {
     const DTYPE dimension = this->Dimension();
 
     FIND_COMPONENT<DTYPE,NTYPE> find_component(dimension);
-    IJK::CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> cube(dimension);
+    ISODUAL_CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> cube(dimension);
 
     for (TI_TYPE ientry = 0; ientry < this->NumTableEntries(); ientry++) {
-      create_isodual_cube_table_entry
+      create_isodual_cube_table_ambig_entry
         (ientry, this->NumPolyVertices(), 
          flag_separate_neg, flag_separate_opposite, cube,
          find_component, this->entry[ientry]);
     }
 
-    ComputeAmbiguityInformation();
-    ComputeNumActiveFacets();
-  }
-
-  // Compute ambiguity information.
-  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
-            typename ENTRY_TYPE>
-  void ISODUAL_CUBE_TABLE_AMBIG<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  ComputeAmbiguityInformation()
-  {
-    const DTYPE dimension = this->Dimension();
-    const NTYPE num_cube_facets = IJK::compute_num_cube_facets(dimension);
-    FIND_COMPONENT<DTYPE,NTYPE> find_component(dimension);
-
-    for (TI_TYPE ientry = 0; ientry < this->NumTableEntries(); ientry++) {
-      this->entry[ientry].is_ambiguous = 
-        is_cube_ambiguous(ientry, find_component);
-      compute_ambiguous_cube_facets
-        (ientry, num_cube_facets, this->entry[ientry].ambiguous_facet_bits, 
-         this->entry[ientry].num_ambiguous_facets, find_component);
-    }
-  }
-
-  // Compute number of active facets.
-  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
-            typename ENTRY_TYPE>
-  void ISODUAL_CUBE_TABLE_AMBIG<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  ComputeNumActiveFacets()
-  {
-    const DTYPE dimension = this->Dimension();
-    ISODUAL_CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> cube_face_info(dimension);
-
-    for (TI_TYPE ientry = 0; ientry < this->NumTableEntries(); ientry++) {
-      this->entry[ientry].num_active_facets =
-        cube_face_info.ComputeNumActiveCubeFacets(ientry);
-    }
   }
 
 
@@ -2176,6 +2213,7 @@ namespace IJKDUALTABLE {
   (const bool flag_separate_neg, const bool flag_separate_opposite)
   {
     typedef typename ENTRY_TYPE::IVOL_VERTEX_INDEX_TYPE ISOV_TYPE;
+    typedef typename ENTRY_TYPE::FACET_BITS_TYPE FACET_BITS_TYPE;
 
     IJK::PROCEDURE_ERROR error("IVOLDUAL_CUBE_TABLE::CreateTableEntries");
 
@@ -2188,10 +2226,11 @@ namespace IJKDUALTABLE {
     const DTYPE dimension = this->Dimension();
 
     FIND_COMPONENT<DTYPE,NTYPE> find_component(dimension+1);
-    IJK::CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> cube(dimension);
-    IJK::CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> lifted_cube(dimension+1);
+    ISODUAL_CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> cube(dimension);
+    ISODUAL_CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> lifted_cube(dimension+1);
 
-    ISODUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE> lower_isodual, upper_isodual;
+    ISODUAL_AMBIG_TABLE_ENTRY<NTYPE,ISOV_TYPE,FACET_BITS_TYPE> 
+      lower_isodual, upper_isodual;
 
     lower_isodual.Allocate
       (lifted_cube.NumVertices(), lifted_cube.NumEdges());
@@ -2202,7 +2241,8 @@ namespace IJKDUALTABLE {
          ientry++) {
       // Create ivoldual cube table entry
       create_ivoldual_cube_table_entry
-        (ientry, flag_separate_neg, flag_separate_opposite, cube, lifted_cube,
+        (ientry, this->NumTableEntries(), 
+         flag_separate_neg, flag_separate_opposite, cube, lifted_cube,
          find_component, lower_isodual, upper_isodual, this->entry[ientry]);
     }
 
