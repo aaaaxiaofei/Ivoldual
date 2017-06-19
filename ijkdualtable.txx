@@ -160,6 +160,11 @@ namespace IJKDUALTABLE {
       { return(false); }
   }
 
+
+  /// Compute ambiguous cube facets.
+  /// param[out] facet_set Integer representing set of ambiguous facets.
+  ///   k'th bit of facet_set is 1 if facet k is ambiguous.
+  /// @param[out] num_ambiguous_facets Number of ambiguous facets.
   template <typename TI_TYPE, typename NTYPE, typename NTYPE2,
             typename FSET_TYPE, typename FIND_TYPE>
   void compute_ambiguous_cube_facets
@@ -337,6 +342,29 @@ namespace IJKDUALTABLE {
           { table_entry.ivolv_info[ivolv0].SetToLowerIsosurface(); }
       }
     }
+  }
+
+
+  template <typename CUBE_TYPE, typename TI_TYPE_L, typename TI_TYPE_U,
+            typename FIND_TYPE>
+  void modify_ambiguous_lifted_ivoldual_entries
+  (const CUBE_TYPE & lifted_cube, TI_TYPE_L & ilower, TI_TYPE_U & iupper,
+   FIND_TYPE & find_component)
+
+  {
+    typedef typename CUBE_TYPE::DIMENSION_TYPE DTYPE;
+    typedef typename CUBE_TYPE::NUMBER_TYPE NTYPE;
+
+    const NTYPE num_cube_facets = lifted_cube.NumFacets();
+    NTYPE num_ambig_lower, num_ambig_upper;
+    unsigned long lower_ambig, upper_ambig;
+
+    compute_ambiguous_facets
+      (ilower, num_cube_facets, lower_ambig, num_ambig_lower, find_component);
+    compute_ambiguous_facets
+      (iupper, num_cube_facets, upper_ambig, num_ambig_upper, find_component);
+
+    // TO BE CONTINUED...
   }
 
 
@@ -551,6 +579,65 @@ namespace IJKDUALTABLE {
 
     bool Check(IJK::ERROR & error_msg) const;
     void FreeAll();                            // free all memory
+  };
+
+
+  // **************************************************
+  // ISODUAL AMBIG TABLE ENTRY
+  // **************************************************
+
+  /// Entry in the dual isosurface lookup table 
+  ///   with ambig cube/facet information.
+  template <typename NTYPE, typename ISOV_TYPE, 
+            typename FBITS_TYPE>
+  class ISODUAL_AMBIG_TABLE_ENTRY:
+    public ISODUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE> {
+
+  public:
+
+    typedef FBITS_TYPE FACET_BITS_TYPE;
+
+    /// True if cube is ambiguous.
+    bool is_ambiguous;
+    
+    /// Number of ambiguous facets.
+    NTYPE num_ambiguous_facets;
+
+    /// Number of active facets (with both positive and negative vertices.)
+    NTYPE num_active_facets;
+
+    /// Integer representing set of ambiguous facets.
+    /// - k'th bit of ambiguous_facet is 1 if facet k is ambiguous.
+    FBITS_TYPE ambiguous_facet_bits;    
+
+    ISODUAL_AMBIG_TABLE_ENTRY();      ///< constructor
+    ~ISODUAL_AMBIG_TABLE_ENTRY();     ///< destructor
+
+    // get functions
+
+    /// Return true if cube is ambiguous.
+    bool IsAmbiguous() const
+    { return(is_ambiguous); };
+
+    /// Return true if facet jf is ambiguous.
+    template <typename FTYPE>
+    bool IsFacetAmbiguous(const FTYPE jf) const
+    { return((ambiguous_facet_bits & (FBITS_TYPE(1) << jf)) != 0); };
+
+    /// Return ambiguous facet bits.
+    FBITS_TYPE AmbiguousFacetBits() const
+    { return(ambiguous_facet_bits); };
+
+    /// Return number of ambiguous facets.
+    NTYPE NumAmbiguousFacets() const
+    { return(num_ambiguous_facets); };
+
+    /// Return number of active facets.
+    NTYPE NumActiveFacets() const
+    { return(num_active_facets); };
+
+    /// Clear ambiguity information.
+    void ClearAmbig();
   };
 
 
@@ -937,53 +1024,41 @@ namespace IJKDUALTABLE {
     public ISODUAL_TABLE_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE> {
 
   public:
-    typedef unsigned char FACET_INDEX;          ///< Index of facet.
-    typedef int FACET;          ///< Bits representing vertices in facet.
-    typedef int FACET_SET;      ///< Bits representing set of facets.
-
-  protected:
-    bool * is_ambiguous;            ///< True for ambiguous configurations.
-    FACET_SET * ambiguous_facet;    ///< k'th bit is 1 if facet k is ambiguous
-
-    /// Number of ambiguous facets.
-    FACET_INDEX * num_ambiguous_facets;           
-
-    /// Number of active facets (with both positive and negative vertices.)
-    FACET_INDEX * num_active_facets;
-
-    void Init();                    ///< Initialization routine.
-    void Alloc();                   ///< Allocate memory.
-    void FreeAll();                 ///< Free all memory.
+    // *** TEMPORARY ***
+    typedef int FACET_BITS_TYPE;
 
   public:
     
     // constructors
-    ISODUAL_TABLE_AMBIG_BASE()
-    { Init(); };
+    ISODUAL_TABLE_AMBIG_BASE() {};
 
     template <typename DTYPE2>
     ISODUAL_TABLE_AMBIG_BASE(const DTYPE2 dimension) :
-      ISODUAL_TABLE_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension)
-    { Init(); };
+      ISODUAL_TABLE_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension) {};
 
-    ~ISODUAL_TABLE_AMBIG_BASE();                // destructor
 
     // get functions
-    bool IsAmbiguous(const TI_TYPE it) const
-    { return(is_ambiguous[it]); };
-    bool IsFacetAmbiguous
-      (const TI_TYPE it, const FACET_INDEX jf) const
-    { return((ambiguous_facet[it] & ((1L) << jf)) != 0); };
-    FACET_SET AmbiguousFacetBits(const TI_TYPE it) const
-    { return(ambiguous_facet[it]); };
-    FACET_INDEX NumAmbiguousFacets(const TI_TYPE it) const
-    { return(num_ambiguous_facets[it]); };
-    FACET_INDEX NumActiveFacets(const TI_TYPE it) const
-    { return(num_active_facets[it]); };
 
-    /// Allocate table with ambiguity information.
-    template <typename NTYPE2>
-    void SetNumTableEntries(const NTYPE2 num_table_entries);
+    /// Return true if cube in configuration it is ambiguous.
+    bool IsAmbiguous(const TI_TYPE it) const
+    { return(this->entry[it].IsAmbiguous()); }
+
+    /// Return true if cube facet jf in configuration it is ambiguous.
+    template <typename FTYPE>
+    bool IsFacetAmbiguous
+    (const TI_TYPE it, const FTYPE jf) const
+    { return(this->entry[it].IsFacetAmbiguous(jf)); }
+
+    FACET_BITS_TYPE AmbiguousFacetBits(const TI_TYPE it) const
+    { return(this->entry[it].AmbiguousFacetBits()); }
+
+    /// Return number of ambiguous facets.
+    NTYPE NumAmbiguousFacets(const TI_TYPE it) const
+    { return(this->entry[it].NumAmbiguousFacets()); }
+
+    /// Return number of activefacets.
+    NTYPE NumActiveFacets(const TI_TYPE it) const
+    { return(this->entry[it].NumActiveFacets()); }
   };
 
 
@@ -1375,6 +1450,36 @@ namespace IJKDUALTABLE {
     }
 
     num_vertices = 0;
+  }
+
+
+  // **************************************************
+  // ISODUAL AMBIG TABLE ENTRY MEMBER FUNCTIONS
+  // **************************************************
+
+  // constructor
+  template <typename NTYPE, typename ISOV_TYPE, typename FACET_SET>
+  ISODUAL_AMBIG_TABLE_ENTRY<NTYPE,ISOV_TYPE,FACET_SET>::
+  ISODUAL_AMBIG_TABLE_ENTRY()
+  {
+    ClearAmbig();
+  }
+
+  template <typename NTYPE, typename ISOV_TYPE, typename FACET_SET>
+  void ISODUAL_AMBIG_TABLE_ENTRY<NTYPE,ISOV_TYPE,FACET_SET>::ClearAmbig()
+  {
+    is_ambiguous = false;
+    num_ambiguous_facets = 0;
+    num_active_facets = 0;
+    ambiguous_facet_bits = 0;
+  }
+
+  // destructor
+  template <typename NTYPE, typename ISOV_TYPE, typename FACET_SET>
+  ISODUAL_AMBIG_TABLE_ENTRY<NTYPE,ISOV_TYPE,FACET_SET>::
+  ~ISODUAL_AMBIG_TABLE_ENTRY()
+  {
+    ClearAmbig();
   }
 
 
@@ -1851,77 +1956,6 @@ namespace IJKDUALTABLE {
 
 
   // **************************************************
-  // ISODUAL TABLE AMBIG BASE MEMBER FUNCTIONS
-  // **************************************************
-
-  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
-            typename ENTRY_TYPE>
-  void ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  Init()
-  {
-    is_ambiguous = NULL;
-    ambiguous_facet = NULL;
-    num_ambiguous_facets = NULL;
-    num_active_facets = NULL;
-  }
-
-
-  // Destructor.
-  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
-            typename ENTRY_TYPE>
-  ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  ~ISODUAL_TABLE_AMBIG_BASE()
-  {
-    FreeAll();
-  }
-
-  // Free all memory.
-  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
-            typename ENTRY_TYPE>
-  void ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  FreeAll()
-  {
-    delete [] is_ambiguous;
-    is_ambiguous = NULL;
-    delete [] ambiguous_facet;
-    ambiguous_facet = NULL;
-    delete [] num_ambiguous_facets;
-    num_ambiguous_facets = NULL;
-    delete [] num_active_facets;
-    num_active_facets = NULL;
-    this->num_table_entries = 0;
-  }
-
-  // Allocate memory.
-  // Free any previously allocated memory.
-  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
-            typename ENTRY_TYPE>
-  void ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  Alloc()
-  {
-    if (is_ambiguous != NULL) { FreeAll(); }
-
-    is_ambiguous = new bool[this->NumTableEntries()];
-    ambiguous_facet = new FACET_SET[this->NumTableEntries()];
-    num_ambiguous_facets = new FACET_INDEX[this->NumTableEntries()];
-    num_active_facets = new FACET_INDEX[this->NumTableEntries()];
-  }
-
-
-  // Set number of table entries
-  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
-            typename ENTRY_TYPE>
-  template <typename NTYPE2>
-  void ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  SetNumTableEntries(const NTYPE2 num_table_entries)
-  {
-    ISODUAL_TABLE_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-      SetNumTableEntries(num_table_entries);
-    Alloc();
-  }
-
-
-  // **************************************************
   // ISODUAL CUBE TABLE AMBIG MEMBER FUNCTIONS
   // **************************************************
 
@@ -2003,11 +2037,11 @@ namespace IJKDUALTABLE {
     FIND_COMPONENT<DTYPE,NTYPE> find_component(dimension);
 
     for (TI_TYPE ientry = 0; ientry < this->NumTableEntries(); ientry++) {
-      this->is_ambiguous[ientry] = is_cube_ambiguous(ientry, find_component);
-
+      this->entry[ientry].is_ambiguous = 
+        is_cube_ambiguous(ientry, find_component);
       compute_ambiguous_cube_facets
-        (ientry, num_cube_facets, this->ambiguous_facet[ientry], 
-         this->num_ambiguous_facets[ientry], find_component);
+        (ientry, num_cube_facets, this->entry[ientry].ambiguous_facet_bits, 
+         this->entry[ientry].num_ambiguous_facets, find_component);
     }
   }
 
@@ -2021,7 +2055,7 @@ namespace IJKDUALTABLE {
     ISODUAL_CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> cube_face_info(dimension);
 
     for (TI_TYPE ientry = 0; ientry < this->NumTableEntries(); ientry++) {
-      this->num_active_facets[ientry] = 
+      this->entry[ientry].num_active_facets =
         cube_face_info.ComputeNumActiveCubeFacets(ientry);
     }
   }
@@ -2150,10 +2184,13 @@ namespace IJKDUALTABLE {
 
     ISODUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE> lower_isodual, upper_isodual;
 
-    lower_isodual.Allocate(lifted_cube.NumVertices(), lifted_cube.NumEdges());
-    upper_isodual.Allocate(lifted_cube.NumVertices(), lifted_cube.NumEdges());
+    lower_isodual.Allocate
+      (lifted_cube.NumVertices(), lifted_cube.NumEdges());
+    upper_isodual.Allocate
+      (lifted_cube.NumVertices(), lifted_cube.NumEdges());
 
-    for (TI_TYPE ientry = 0; ientry < this->NumTableEntries(); ientry++) {
+    for (TI_TYPE ientry = 0; ientry < this->NumTableEntries(); 
+         ientry++) {
       // Create ivoldual cube table entry
       create_ivoldual_cube_table_entry
         (ientry, flag_separate_neg, flag_separate_opposite, cube, lifted_cube,
