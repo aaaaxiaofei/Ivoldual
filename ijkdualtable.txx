@@ -1214,48 +1214,37 @@ namespace IJKDUALTABLE {
   };
 
 
-
   // **************************************************
-  // IVOLDUAL CUBE TABLE
+  // IVOLDUAL CUBE TABLE BASE
   // **************************************************
 
-  //! Interval volume cube table.
+
+  //! Base class for interval volume cube table.<br>
+  //! Does not include any routines to create table entries.
   //! @tparam TI_TYPE Table index type.
   template <const int NUM_VERTEX_TYPES,
             typename DTYPE, typename NTYPE, typename TI_TYPE,
             typename ENTRY_TYPE>
-  class IVOLDUAL_CUBE_TABLE:
+  class IVOLDUAL_CUBE_TABLE_BASE:
     public ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE> {
 
-
   protected:
+    void Init();
+
     //! If true, separate negative vertices.
     bool flag_separate_neg;
-
-    /* OBSOLETE
-    //! If true, always separate two diagonally opposite
-    //!   positive or negative vertices.
-    bool flag_always_separate_opposite;     
-    */
-
-    /// Create table entries.
-    /// @param flag_separate_neg Set flag_separate_neg to given value.
-    void CreateTableEntries(const bool flag_separate_neg);
-
-    void Init();
 
   public:
 
     /// Constructor
-    IVOLDUAL_CUBE_TABLE() { Init(); };
+    IVOLDUAL_CUBE_TABLE_BASE() { Init(); };
 
     template <typename DTYPE2>
-    IVOLDUAL_CUBE_TABLE(const DTYPE2 dimension);
+    IVOLDUAL_CUBE_TABLE_BASE(const DTYPE2 dimension);
 
     template <typename DTYPE2>
-    IVOLDUAL_CUBE_TABLE
+    IVOLDUAL_CUBE_TABLE_BASE
     (const DTYPE2 dimension, const bool flag_separate_neg);
-
 
     // Get functions.
 
@@ -1335,11 +1324,6 @@ namespace IJKDUALTABLE {
     bool OnUpperIsosurface(const TI_TYPE2 ientry, const VTYPE ivolv) const
     { return(this->entry[ientry].ivolv_info[ivolv].flag_upper_isosurface); }
 
-    template <typename DTYPE2>
-    void Create(const DTYPE2 dimension);
-    template <typename DTYPE2>
-    void Create(const DTYPE2 dimension, const bool flag_separate_neg);
-
     /// Check number of vertex types.
     /// - Should be 4.
     bool CheckNumVertexTypes(IJK::ERROR & error);
@@ -1348,6 +1332,46 @@ namespace IJKDUALTABLE {
     template <typename TI_TYPE2>
     NTYPE IncidentIsoVertex
     (const TI_TYPE2 it, const NTYPE kf) const;
+  };
+
+
+  // **************************************************
+  // IVOLDUAL CUBE TABLE
+  // **************************************************
+
+
+  //! Interval volume cube table.
+  //! @tparam TI_TYPE Table index type.
+  template <const int NUM_VERTEX_TYPES,
+            typename DTYPE, typename NTYPE, typename TI_TYPE,
+            typename ENTRY_TYPE>
+  class IVOLDUAL_CUBE_TABLE:
+    public IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES,DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE> {
+
+  protected:
+
+    void Init();
+
+    /// Create table entries.
+    /// @param flag_separate_neg Set flag_separate_neg to given value.
+    void CreateTableEntries(const bool flag_separate_neg);
+
+  public:
+
+    /// Constructor
+    IVOLDUAL_CUBE_TABLE() { Init(); };
+
+    template <typename DTYPE2>
+    IVOLDUAL_CUBE_TABLE(const DTYPE2 dimension);
+
+    template <typename DTYPE2>
+    IVOLDUAL_CUBE_TABLE
+    (const DTYPE2 dimension, const bool flag_separate_neg);
+
+    template <typename DTYPE2>
+    void Create(const DTYPE2 dimension);
+    template <typename DTYPE2>
+    void Create(const DTYPE2 dimension, const bool flag_separate_neg);
   };
 
 
@@ -2164,6 +2188,65 @@ namespace IJKDUALTABLE {
 
 
   // **************************************************
+  // IVOLDUAL CUBE TABLE BASE MEMBER FUNCTIONS
+  // **************************************************
+
+  // Constructor.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename DTYPE2>
+  IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  IVOLDUAL_CUBE_TABLE_BASE(const DTYPE2 dimension) :
+    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension) 
+  {
+    Init();
+  }
+
+
+  // Constructor.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename DTYPE2>
+  IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  IVOLDUAL_CUBE_TABLE_BASE(const DTYPE2 dimension, const bool flag_separate_neg) :
+    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>
+    (dimension) 
+  {
+    Init();
+  }
+
+  // Initialize.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  void IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  Init()
+  {
+    IJK::PROCEDURE_ERROR error("IVOLDUAL_CUBE_TABLE_BASE::Init");
+
+    if (!CheckNumVertexTypes(error)) { throw error; }
+  }
+
+  // Check number of vertex types.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  bool IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  CheckNumVertexTypes(IJK::ERROR & error)
+  {
+    if (NUM_VERTEX_TYPES != 4) {
+      error.AddMessage
+        ("Programming error.  Illegal number of vertex types.");
+      error.AddMessage
+        ("  Number of vertex types: ", NUM_VERTEX_TYPES, "");
+      error.AddMessage
+        ("  Number of vertex types should be 4.");
+      return(false);
+    }
+
+    return(true);
+  }
+
+
+  // **************************************************
   // IVOLDUAL CUBE TABLE MEMBER FUNCTIONS
   // **************************************************
 
@@ -2173,7 +2256,7 @@ namespace IJKDUALTABLE {
   template <typename DTYPE2>
   IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
   IVOLDUAL_CUBE_TABLE(const DTYPE2 dimension) :
-    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension) 
+    IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES,DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension) 
   {
     Init();
     Create(dimension); 
@@ -2186,7 +2269,7 @@ namespace IJKDUALTABLE {
   IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
   IVOLDUAL_CUBE_TABLE
   (const DTYPE2 dimension, const bool flag_separate_neg) :
-    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension)
+    IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES,DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension)
   {
     Init();
     Create(dimension, flag_separate_neg); 
@@ -2201,7 +2284,7 @@ namespace IJKDUALTABLE {
   {
     IJK::PROCEDURE_ERROR error("IVOLDUAL_CUBE_TABLE::Init");
 
-    if (!CheckNumVertexTypes(error)) { throw error; }
+    if (!this->CheckNumVertexTypes(error)) { throw error; }
   }
 
 
@@ -2214,7 +2297,7 @@ namespace IJKDUALTABLE {
   {
     this->SetToCube(dimension);
     TI_TYPE n = calculate_num_entries<TI_TYPE>
-      (this->NumPolyVertices(), NumVertexTypes());
+      (this->NumPolyVertices(), this->NumVertexTypes());
     this->SetNumTableEntries(n);
     CreateTableEntries(flag_separate_neg);
   }
@@ -2245,7 +2328,7 @@ namespace IJKDUALTABLE {
     IJK::PROCEDURE_ERROR error("IVOLDUAL_CUBE_TABLE::CreateTableEntries");
 
     // Make sure that number of vertex types is correct (4).
-    if (!CheckNumVertexTypes(error)) { throw error; }
+    if (!this->CheckNumVertexTypes(error)) { throw error; }
 
     this->flag_separate_neg = flag_separate_neg;
 
@@ -2273,33 +2356,6 @@ namespace IJKDUALTABLE {
     }
 
   }
-
-  // Check number of vertex types.
-  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
-            typename TI_TYPE, typename ENTRY_TYPE>
-  bool IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  CheckNumVertexTypes(IJK::ERROR & error)
-  {
-    if (NUM_VERTEX_TYPES != 4) {
-      error.AddMessage
-        ("Programming error.  Illegal number of vertex types.");
-      error.AddMessage
-        ("  Number of vertex types: ", NUM_VERTEX_TYPES, "");
-      error.AddMessage
-        ("  Number of vertex types should be 4.");
-      return(false);
-    }
-
-    return(true);
-  }
-
-
-
-
-
-
-
-
 
 
   // **************************************************
