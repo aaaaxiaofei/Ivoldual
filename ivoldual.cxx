@@ -87,11 +87,9 @@ void IVOLDUAL::dual_contouring_interval_volume
 {
   const int dimension = scalar_grid.Dimension();
   const bool flag_separate_neg = param.SeparateNegFlag();
-  const bool flag_always_separate_opposite(true);
 
   IVOLDUAL_CUBE_TABLE
-    ivoldual_table(dimension, flag_separate_neg, 
-                   flag_always_separate_opposite);
+    ivoldual_table(dimension, flag_separate_neg);
 
   dual_contouring_interval_volume
     (scalar_grid, isovalue0, isovalue1, ivoldual_table, param, ivolpoly_vert, 

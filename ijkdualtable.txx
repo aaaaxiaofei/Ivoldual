@@ -436,7 +436,7 @@ namespace IJKDUALTABLE {
   void create_ivoldual_cube_table_entry
   (const TI_TYPE ientry,
    const NTYPE num_table_entries,
-   const bool flag_separate_neg, const bool flag_separate_opposite,
+   const bool flag_separate_neg,
    const CUBE_TYPE & cube,
    const CUBE_TYPE & lifted_cube,
    FIND_TYPE & find_component,
@@ -455,6 +455,7 @@ namespace IJKDUALTABLE {
     set_position_relative_to_interval_volume4
       (ientry, num_cube_vertices, table_entry);
 
+    const bool flag_separate_opposite = true;
     compute_lifted_ivol_indices4
       (ientry, num_cube_vertices, ilower, iupper);
     create_isodual_cube_table_ambig_entry
@@ -860,7 +861,7 @@ namespace IJKDUALTABLE {
     /// Lower isosurface table index.
     TI_TYPE lower_isosurface_table_index;
 
-    /// Upper table index.
+    /// Upper isosurface table index.
     TI_TYPE upper_isosurface_table_index;
 
     IVOLDUAL_POLY_VERTEX_INFO<ISOV_TYPE> * poly_vertex_info;
@@ -1218,7 +1219,7 @@ namespace IJKDUALTABLE {
   // IVOLDUAL CUBE TABLE
   // **************************************************
 
-  //! Isodual cube table plus ambiguity information.
+  //! Interval volume cube table.
   //! @tparam TI_TYPE Table index type.
   template <const int NUM_VERTEX_TYPES,
             typename DTYPE, typename NTYPE, typename TI_TYPE,
@@ -1231,15 +1232,15 @@ namespace IJKDUALTABLE {
     //! If true, separate negative vertices.
     bool flag_separate_neg;
 
+    /* OBSOLETE
     //! If true, always separate two diagonally opposite
     //!   positive or negative vertices.
     bool flag_always_separate_opposite;     
+    */
 
     /// Create table entries.
-    /// @param flag_separate_opposite If true, always separate two
-    ///        diagonally opposite positive or negative vertices.
-    void CreateTableEntries
-    (const bool flag_separate_neg, const bool flag_separate_opposite);
+    /// @param flag_separate_neg Set flag_separate_neg to given value.
+    void CreateTableEntries(const bool flag_separate_neg);
 
     void Init();
 
@@ -1253,12 +1254,7 @@ namespace IJKDUALTABLE {
 
     template <typename DTYPE2>
     IVOLDUAL_CUBE_TABLE
-    (const DTYPE2 dimension, const bool flag_separate_opposite);
-
-    template <typename DTYPE2>
-    IVOLDUAL_CUBE_TABLE
-    (const DTYPE2 dimension, const bool flag_separate_neg,
-     const bool flag_separate_opposite);
+    (const DTYPE2 dimension, const bool flag_separate_neg);
 
 
     // Get functions.
@@ -1342,11 +1338,7 @@ namespace IJKDUALTABLE {
     template <typename DTYPE2>
     void Create(const DTYPE2 dimension);
     template <typename DTYPE2>
-    void Create(const DTYPE2 dimension, const bool flag_separate_opposite);
-    template <typename DTYPE2>
-    void Create(const DTYPE2 dimension, const bool flag_separate_neg, 
-                const bool flag_separate_opposite);
-
+    void Create(const DTYPE2 dimension, const bool flag_separate_neg);
 
     /// Check number of vertex types.
     /// - Should be 4.
@@ -1356,6 +1348,70 @@ namespace IJKDUALTABLE {
     template <typename TI_TYPE2>
     NTYPE IncidentIsoVertex
     (const TI_TYPE2 it, const NTYPE kf) const;
+  };
+
+
+  // **************************************************
+  // IVOLDUAL CUBE DOUBLE TABLE
+  // **************************************************
+
+  //! Interval volume cube table storing storing both interval volume patches
+  //!   which separate negative cube vertices and interval volume patches
+  //!   which separate positive cube vertices.  
+  //!   Equivalent, to two interval volume tables, one separating negative
+  //!   cube vertices and one separating positive cube vertices.
+  //! - This table has double the entries of IVOLDUAL_CUBE_TABLE.
+  //! - Half the entries have interval volume patches which separate 
+  //!     negative cube vertices and half have interval volume patches
+  //!     which separate positive cube vertices.
+  //! - If flag_separate_neg is true, then the first half of the table
+  //!     stores interval volume patches which separate negative cube vertices 
+  //!     and the second half stores interval volume patches which separate
+  //!     positive cube vertices.
+  //! - If flag_separate_neg is false, then the first half of the table
+  //!     stores interval volume patches which separate positive cube vertices 
+  //!     and the second half stores interval volume patches which separate
+  //!     negative cube vertices.
+  //! @tparam TI_TYPE Table index type.
+  template <const int NUM_VERTEX_TYPES,
+            typename DTYPE, typename NTYPE, typename TI_TYPE,
+            typename ENTRY_TYPE>
+  class IVOLDUAL_CUBE_DOUBLE_TABLE:
+    public IVOLDUAL_CUBE_TABLE
+  <NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE> {
+
+  protected:
+
+    /// Number of table entries with isosurface patches separating
+    ///   negative cube vertices.
+    /// - Also equals number of table entries with isosurface patches
+    ///   separating positive cube vertices.
+    NTYPE num_negative_table_entries;
+
+    /// Create table entries.
+    /// @param flag_separate_neg If true, first half of table stores
+    ///        interval volume patches separating negative cube vertices.
+    void CreateTableEntries(const bool flag_separate_neg);
+
+    /// Initialize.
+    void Init();
+
+  public:
+
+    /// Constructor
+    IVOLDUAL_CUBE_DOUBLE_TABLE() { Init(); };
+
+    template <typename DTYPE2>
+    IVOLDUAL_CUBE_DOUBLE_TABLE(const DTYPE2 dimension);
+
+    template <typename DTYPE2>
+    IVOLDUAL_CUBE_DOUBLE_TABLE
+    (const DTYPE2 dimension, const bool flag_separate_neg);
+
+    template <typename DTYPE2>
+    void Create(const DTYPE2 dimension);
+    template <typename DTYPE2>
+    void Create(const DTYPE2 dimension, const bool flag_separate_neg);
   };
 
 
@@ -2129,26 +2185,11 @@ namespace IJKDUALTABLE {
   template <typename DTYPE2>
   IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
   IVOLDUAL_CUBE_TABLE
-  (const DTYPE2 dimension, const bool flag_separate_opposite) :
+  (const DTYPE2 dimension, const bool flag_separate_neg) :
     ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension)
   {
     Init();
-    Create(dimension, flag_separate_opposite); 
-  }
-
-
-  // Constructor.
-  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
-            typename TI_TYPE, typename ENTRY_TYPE>
-  template <typename DTYPE2>
-  IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  IVOLDUAL_CUBE_TABLE
-  (const DTYPE2 dimension, const bool flag_separate_neg,
-   const bool flag_separate_opposite) :
-    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension)
-  {
-    Init();
-    Create(dimension, flag_separate_neg, flag_separate_opposite); 
+    Create(dimension, flag_separate_neg); 
   }
 
 
@@ -2169,27 +2210,14 @@ namespace IJKDUALTABLE {
             typename TI_TYPE, typename ENTRY_TYPE>
   template <typename DTYPE2>
   void IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  Create(const DTYPE2 dimension, const bool flag_separate_neg,
-         const bool flag_separate_opposite)
+  Create(const DTYPE2 dimension, const bool flag_separate_neg)
   {
     this->SetToCube(dimension);
     TI_TYPE n = calculate_num_entries<TI_TYPE>
       (this->NumPolyVertices(), NumVertexTypes());
     this->SetNumTableEntries(n);
-    CreateTableEntries(flag_separate_neg, flag_separate_opposite);
+    CreateTableEntries(flag_separate_neg);
   }
-
-
-  // Create table.
-  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
-            typename TI_TYPE, typename ENTRY_TYPE>
-  template <typename DTYPE2>
-  void IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  Create(const DTYPE2 dimension, const bool flag_separate_opposite)
-  {
-    Create(dimension, true, flag_separate_opposite);
-  }
-
 
   // Create table.
   template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
@@ -2209,8 +2237,7 @@ namespace IJKDUALTABLE {
   template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
             typename TI_TYPE, typename ENTRY_TYPE>
   void IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  CreateTableEntries
-  (const bool flag_separate_neg, const bool flag_separate_opposite)
+  CreateTableEntries(const bool flag_separate_neg)
   {
     typedef typename ENTRY_TYPE::IVOL_VERTEX_INDEX_TYPE ISOV_TYPE;
     typedef typename ENTRY_TYPE::FACET_BITS_TYPE FACET_BITS_TYPE;
@@ -2221,7 +2248,6 @@ namespace IJKDUALTABLE {
     if (!CheckNumVertexTypes(error)) { throw error; }
 
     this->flag_separate_neg = flag_separate_neg;
-    this->flag_always_separate_opposite = flag_separate_opposite;
 
     const DTYPE dimension = this->Dimension();
 
@@ -2242,7 +2268,7 @@ namespace IJKDUALTABLE {
       // Create ivoldual cube table entry
       create_ivoldual_cube_table_entry
         (ientry, this->NumTableEntries(), 
-         flag_separate_neg, flag_separate_opposite, cube, lifted_cube,
+         flag_separate_neg, cube, lifted_cube,
          find_component, lower_isodual, upper_isodual, this->entry[ientry]);
     }
 
@@ -2265,6 +2291,134 @@ namespace IJKDUALTABLE {
     }
 
     return(true);
+  }
+
+
+
+
+
+
+
+
+
+
+  // **************************************************
+  // IVOLDUAL CUBE DOUBLE TABLE MEMBER FUNCTIONS
+  // **************************************************
+
+  // Constructor.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename DTYPE2>
+  IVOLDUAL_CUBE_DOUBLE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  IVOLDUAL_CUBE_DOUBLE_TABLE(const DTYPE2 dimension) :
+    IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES,DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>
+    (dimension) 
+  {
+    Init();
+    Create(dimension); 
+  }
+
+
+  // Constructor.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename DTYPE2>
+  IVOLDUAL_CUBE_DOUBLE_TABLE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  IVOLDUAL_CUBE_DOUBLE_TABLE
+  (const DTYPE2 dimension, const bool flag_separate_neg) :
+    IVOLDUAL_CUBE_TABLE<NUM_VERTEX_TYPES,DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>
+    (dimension, flag_separate_neg)
+  {
+    Init();
+    Create(dimension, flag_separate_neg);
+  }
+
+
+  // Initialize.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  void IVOLDUAL_CUBE_DOUBLE_TABLE
+  <NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  Init()
+  {
+    IJK::PROCEDURE_ERROR error("IVOLDUAL_CUBE_DOUBLE_TABLE::Init");
+
+    if (!this->CheckNumVertexTypes(error)) { throw error; }
+  }
+
+
+  // Create table.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename DTYPE2>
+  void IVOLDUAL_CUBE_DOUBLE_TABLE
+  <NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  Create(const DTYPE2 dimension, const bool flag_separate_neg)
+  {
+    this->SetToCube(dimension);
+    TI_TYPE n = calculate_num_entries<TI_TYPE>
+      (this->NumPolyVertices(), this->NumVertexTypes());
+    this->SetNumTableEntries(n);
+    CreateTableEntries(flag_separate_neg);
+  }
+
+  // Create table.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename DTYPE2>
+  void IVOLDUAL_CUBE_DOUBLE_TABLE
+  <NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  Create(const DTYPE2 dimension)
+  {
+    Create(dimension, true);
+  }
+
+
+  // Create table entries.
+  // @param flag_separate_neg  If true, separate negative vertices.
+  // @param flag_separate_opposite If true, always separate two diagonally 
+  //        opposite negative or positive vertices 
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  void IVOLDUAL_CUBE_DOUBLE_TABLE
+  <NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  CreateTableEntries(const bool flag_separate_neg)
+  {
+    typedef typename ENTRY_TYPE::IVOL_VERTEX_INDEX_TYPE ISOV_TYPE;
+    typedef typename ENTRY_TYPE::FACET_BITS_TYPE FACET_BITS_TYPE;
+
+    IJK::PROCEDURE_ERROR error
+      ("IVOLDUAL_CUBE_DOUBLE_TABLE::CreateTableEntries");
+
+    // Make sure that number of vertex types is correct (4).
+    if (!this->CheckNumVertexTypes(error)) { throw error; }
+
+    this->flag_separate_neg = flag_separate_neg;
+
+    const DTYPE dimension = this->Dimension();
+
+    FIND_COMPONENT<DTYPE,NTYPE> find_component(dimension+1);
+    ISODUAL_CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> cube(dimension);
+    ISODUAL_CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> lifted_cube(dimension+1);
+
+    ISODUAL_AMBIG_TABLE_ENTRY<NTYPE,ISOV_TYPE,FACET_BITS_TYPE> 
+      lower_isodual, upper_isodual;
+
+    lower_isodual.Allocate
+      (lifted_cube.NumVertices(), lifted_cube.NumEdges());
+    upper_isodual.Allocate
+      (lifted_cube.NumVertices(), lifted_cube.NumEdges());
+
+    for (TI_TYPE ientry = 0; ientry < this->NumTableEntries(); 
+         ientry++) {
+      // Create ivoldual cube table entry
+      create_ivoldual_cube_table_entry
+        (ientry, this->NumTableEntries(), 
+         flag_separate_neg, cube, lifted_cube,
+         find_component, lower_isodual, upper_isodual, this->entry[ientry]);
+    }
+
   }
 
 
