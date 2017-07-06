@@ -249,6 +249,25 @@ namespace IJKDUALTABLE {
   }
 
 
+  /// Set vertex type.
+  template <typename TI_TYPE, typename NTYPE, typename ENTRY_TYPE>
+  void set_vertex_type4
+  (const TI_TYPE ientry, const NTYPE num_poly_vertices, 
+   ENTRY_TYPE & table_entry)
+  {
+    const int NUM_VERTEX_TYPES = 4;
+
+    TI_TYPE x = ientry;
+    for (NTYPE iv = 0; iv < num_poly_vertices; iv++) {
+      TI_TYPE y = x%NUM_VERTEX_TYPES;
+
+      table_entry.poly_vertex_info[iv].vertex_type = y;
+
+      x = x/NUM_VERTEX_TYPES;
+    }
+  }
+
+
   /// Compute lifted ivol indices.
   /// @param num_cube_vertices Number of vertices of cube (not lifted cube).
   template <typename TI_TYPE, typename NTYPE, 
@@ -427,6 +446,55 @@ namespace IJKDUALTABLE {
   }
 
 
+  /// Compute ivoldual cube ambiguity information
+  /// @tparam TI_TYPE Table index type.
+  template <typename CUBE_TYPE, typename ISODUAL_ENTRY_TYPE,
+            typename ENTRY_TYPE>
+  void compute_ivoldual_cube_ambiguity_information
+  (const CUBE_TYPE & cube,
+   const ISODUAL_ENTRY_TYPE & lower_isodual,
+   const ISODUAL_ENTRY_TYPE & upper_isodual,
+   ENTRY_TYPE & table_entry)
+  {
+    typedef typename CUBE_TYPE::DIMENSION_TYPE DTYPE;
+    typedef typename CUBE_TYPE::NUMBER_TYPE NTYPE;
+    typedef typename ENTRY_TYPE::FACET_BITS_TYPE FBITS_TYPE;
+
+    table_entry.is_ambiguous = false;
+
+    FBITS_TYPE facet_bits = 0;
+    FBITS_TYPE lower_facet_bits = 0;
+    FBITS_TYPE upper_facet_bits = 0;
+    FBITS_TYPE mask = FBITS_TYPE(1);
+    for (NTYPE jf = 0; jf < cube.NumFacets(); jf++) {
+
+      NTYPE jf_lifted = jf;
+      if (jf >= cube.Dimension()) { 
+        // Skip facet orthogonal to lifting direction.
+        jf_lifted++;  
+      }
+
+      if (lower_isodual.IsFacetAmbiguous(jf_lifted) ||
+          upper_isodual.IsFacetAmbiguous(jf_lifted)) {
+        facet_bits = (facet_bits | mask);
+        table_entry.is_ambiguous = true;
+        table_entry.num_ambiguous_facets++;
+
+        if (lower_isodual.IsFacetAmbiguous(jf_lifted)) 
+          { lower_facet_bits = (lower_facet_bits | mask); }
+
+        if (upper_isodual.IsFacetAmbiguous(jf_lifted)) 
+          { upper_facet_bits = (upper_facet_bits | mask); }
+      }
+
+      mask = (mask << FBITS_TYPE(1));
+    }
+
+    table_entry.ambiguous_facet_bits = facet_bits;
+    table_entry.ambiguous_facet_bits_in_lower_lifted = lower_facet_bits;
+    table_entry.ambiguous_facet_bits_in_upper_lifted = upper_facet_bits;
+  }
+
 
   /// Create ivoldual cube table entry ientry.
   /// @tparam TI_TYPE Table index type.
@@ -454,6 +522,7 @@ namespace IJKDUALTABLE {
 
     set_position_relative_to_interval_volume4
       (ientry, num_cube_vertices, table_entry);
+    set_vertex_type4(ientry, num_cube_vertices, table_entry);
 
     const bool flag_separate_opposite = true;
     compute_lifted_ivol_indices4
@@ -541,6 +610,9 @@ namespace IJKDUALTABLE {
         }
       }
     }
+
+    compute_ivoldual_cube_ambiguity_information
+      (cube, lower_isodual, upper_isodual, table_entry);
 
     determine_isosurface_containing_ivol_vertices4
       (ientry, cube, lifted_cube, lower_isodual, upper_isodual, table_entry);
@@ -764,7 +836,7 @@ namespace IJKDUALTABLE {
 
   /// Information about the interval volume vertices in an isosurface cube
   /// dual to a grid vertex.
-  template <typename ISOV_TYPE>
+  template <typename ISOV_TYPE, typename VERTEX_TYPE>
   class IVOLDUAL_POLY_VERTEX_INFO {
 
   protected:
@@ -778,6 +850,9 @@ namespace IJKDUALTABLE {
 
     /// Position of polytope vertex relative to interval volume.
     RELATIVE_POSITION relative_position;
+
+    /// Type of vertex.
+    VERTEX_TYPE vertex_type;
 
     /// Interval volume vertex incident on isosurface polytope dual to edge.
     /// - incident_ivol_vertex is defined if and only if relative_position
@@ -795,6 +870,10 @@ namespace IJKDUALTABLE {
     /// True, if above interval volume.
     bool IsAboveIntervalVolume() const
     { return(relative_position == ABOVE_INTERVAL_VOLUME); }
+
+    /// Return vertex_type
+    VERTEX_TYPE VertexType() const
+    { return(vertex_type); }
 
     /// Set incident_ivol_vertex.
     template <typename IVOLV_TYPE2>
@@ -858,8 +937,11 @@ namespace IJKDUALTABLE {
 
   protected:
 
-    /// Number of interval volume vertices in cube.
-    NTYPE num_vertices;
+    /// Number of interval volume vertices in lower lifted cube.
+    NTYPE num_vertices_in_lower_lifted;
+
+    /// Number of interval volume vertices in upper lifted cube.
+    NTYPE num_vertices_in_upper_lifted;
 
   public:
 
@@ -872,18 +954,51 @@ namespace IJKDUALTABLE {
     /// Upper isosurface table index.
     TI_TYPE upper_isosurface_table_index;
 
-    IVOLDUAL_POLY_VERTEX_INFO<ISOV_TYPE> * poly_vertex_info;
+    IVOLDUAL_POLY_VERTEX_INFO<ISOV_TYPE,NTYPE> * poly_vertex_info;
     IVOLDUAL_POLY_EDGE_INFO<ISOV_TYPE> * poly_edge_info;
     IVOLDUAL_IVOLV_INFO * ivolv_info;
+
+
+    // Ambiguous/active facet information
+
+    /// True if configuration is ambiguous.
+    bool is_ambiguous;
+    
+    /// Number of ambiguous facets.
+    NTYPE num_ambiguous_facets;
+
+    /// Number of active facets (dual to some interval volume edge.)
+    NTYPE num_active_facets;
+
+    /// Integer representing set of ambiguous facets.
+    /// - k'th bit of ambiguous_facet is 1 if facet k is ambiguous.
+    FBITS_TYPE ambiguous_facet_bits;    
+
+    /// Integer representing set of ambiguous facets in lower lifted cube.
+    /// - k'th bit of ambiguous_facet is 1 if facet k is ambiguous.
+    FBITS_TYPE ambiguous_facet_bits_in_lower_lifted;    
+
+    /// Integer representing set of ambiguous facets in upper lifted cube.
+    /// - k'th bit of ambiguous_facet is 1 if facet k is ambiguous.
+    FBITS_TYPE ambiguous_facet_bits_in_upper_lifted;
+
+
+  public:
 
     IVOLDUAL_TABLE_ENTRY();      ///< constructor
     ~IVOLDUAL_TABLE_ENTRY();     ///< destructor
 
     // get functions
 
+    NTYPE NumVerticesInLowerLifted() const
+    { return(num_vertices_in_lower_lifted); }
+
+    NTYPE NumVerticesInUpperLifted() const
+    { return(num_vertices_in_upper_lifted); }
+
     /// Return number of dual interval volume vertices in cube.
     NTYPE NumVertices() const
-    { return(num_vertices); }
+    { return(NumVerticesInLowerLifted() + NumVerticesInUpperLifted()); }
 
     /// True, if below interval volume.
     template <typename ITYPE>
@@ -900,6 +1015,11 @@ namespace IJKDUALTABLE {
     bool IsAboveIntervalVolume(const ITYPE iv) const
     { return(poly_vertex_info[iv].IsAboveIntervalVolume()); }
 
+    /// Return vertex type.
+    template <typename ITYPE>
+    NTYPE VertexType(const ITYPE iv) const
+    { return(poly_vertex_info[iv].VertexType()); }
+
     /// Return lower isosurface table index.
     TI_TYPE LowerIsosurfaceTableIndex() const
     { return(lower_isosurface_table_index); }
@@ -907,6 +1027,31 @@ namespace IJKDUALTABLE {
     /// Return upper isosurface table index.
     TI_TYPE UpperIsosurfaceTableIndex() const
     { return(upper_isosurface_table_index); }
+
+    /// True, if configuration is ambiguous.
+    bool IsAmbiguous() const
+    { return(is_ambiguous); }
+
+    /// Return number of ambiguous facets.
+    NTYPE NumAmbiguousFacets() const
+    { return(num_ambiguous_facets); };
+
+    /// True, if facet jf is ambiguous.
+    template <typename FTYPE>
+    bool IsFacetAmbiguous(const FTYPE jf) const
+    { return((ambiguous_facet_bits & (FBITS_TYPE(1) << jf)) != 0); };
+
+    /// True, if facet jf in lower lifted cube is ambiguous.
+    template <typename FTYPE>
+    bool IsFacetInLowerLiftedAmbiguous(const FTYPE jf) const
+    { return((ambiguous_facet_bits_in_lower_lifted & 
+              (FBITS_TYPE(1) << jf)) != 0); };
+
+    /// True, if facet jf in upper lifted cube is ambiguous.
+    template <typename FTYPE>
+    bool IsFacetInUpperLiftedAmbiguous(const FTYPE jf) const
+    { return((ambiguous_facet_bits_in_upper_lifted & 
+              (FBITS_TYPE(1) << jf)) != 0); };
 
     /// Create interval volume vertices.
     template <typename NUMV0_TYPE, typename NUMV1_TYPE>
@@ -1292,8 +1437,18 @@ namespace IJKDUALTABLE {
 
     /// Return number of interval volume vertices.
     template <typename TI_TYPE2>
-    NTYPE NumVertices(const TI_TYPE2 ientry) const
+    NTYPE NumIVolVertices(const TI_TYPE2 ientry) const
     { return(this->entry[ientry].NumVertices()); }
+
+    /// Return number of interval volume vertices in lower lifted cube.
+    template <typename TI_TYPE2>
+    NTYPE NumVerticesInLowerLifted(const TI_TYPE2 ientry) const
+    { return(this->entry[ientry].NumVerticesInLowerLifted()); }
+
+    /// Return number of interval volume vertices in upper lifted cube.
+    template <typename TI_TYPE2>
+    NTYPE NumVerticesInUpperLifted(const TI_TYPE2 ientry) const
+    { return(this->entry[ientry].NumVerticesInUpperLifted()); }
 
     /// True, if interval volume vertex was generated in lower lifted cube.
     template <typename TI_TYPE2, typename VTYPE>
@@ -1316,6 +1471,11 @@ namespace IJKDUALTABLE {
     bool IsAboveIntervalVolume(const TI_TYPE2 ientry, const VTYPE iv) const
     { return(this->entry[ientry].IsAboveIntervalVolume(iv)); }
 
+    /// Return vertex type.
+    template <typename TI_TYPE2, typename VTYPE>
+    NTYPE VertexType(const TI_TYPE2 ientry, const VTYPE iv) const
+    { return(this->entry[ientry].VertexType(iv)); }
+
     /// Return lower isosurface table index.
     template <typename TI_TYPE2>
     TI_TYPE LowerIsosurfaceTableIndex(const TI_TYPE2 ientry) const
@@ -1335,6 +1495,18 @@ namespace IJKDUALTABLE {
     template <typename TI_TYPE2, typename VTYPE>
     bool OnUpperIsosurface(const TI_TYPE2 ientry, const VTYPE ivolv) const
     { return(this->entry[ientry].ivolv_info[ivolv].flag_upper_isosurface); }
+
+    /// Return true if facet jf in lower lifted cube is ambiguous.
+    template <typename FTYPE>
+    bool IsFacetInLowerLiftedAmbiguous
+    (const TI_TYPE it, const FTYPE jf) const
+    { return(this->entry[it].IsFacetInLowerLiftedAmbiguous(jf)); }
+
+    /// Return true if facet jf in upper lifted cube is ambiguous.
+    template <typename FTYPE>
+    bool IsFacetInUpperLiftedAmbiguous
+    (const TI_TYPE it, const FTYPE jf) const
+    { return(this->entry[it].IsFacetInUpperLiftedAmbiguous(jf)); }
 
     /// Check number of vertex types.
     /// - Should be 4.
@@ -1695,14 +1867,16 @@ namespace IJKDUALTABLE {
   }
 
   // IVOLDUAL_POLY_VERTEX_INFO initalization routine
-  template <typename ISOV_TYPE>
-  void IVOLDUAL_POLY_VERTEX_INFO<ISOV_TYPE>::Init()
-  {}
+  template <typename IVOLV_TYPE, typename VERTEX_TYPE>
+  void IVOLDUAL_POLY_VERTEX_INFO<IVOLV_TYPE,VERTEX_TYPE>::Init()
+  {
+    vertex_type = 0;
+  }
 
   // Set incident_ivol_vertex.
-  template <typename IVOLV_TYPE>
+  template <typename IVOLV_TYPE, typename VERTEX_TYPE>
   template <typename IVOLV_TYPE2>
-  void IVOLDUAL_POLY_VERTEX_INFO<IVOLV_TYPE>::
+  void IVOLDUAL_POLY_VERTEX_INFO<IVOLV_TYPE,VERTEX_TYPE>::
   SetIncident(const IVOLV_TYPE2 ivolv)
   {
     incident_ivol_vertex = ivolv;
@@ -1714,12 +1888,21 @@ namespace IJKDUALTABLE {
   IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,FBITS_TYPE,TI_TYPE>::
   IVOLDUAL_TABLE_ENTRY()
   {
-    num_vertices = 0;
+    num_vertices_in_lower_lifted = 0;
+    num_vertices_in_upper_lifted = 0;
     lower_isosurface_table_index = 0;
     upper_isosurface_table_index = 0;
     poly_vertex_info = NULL;
     poly_edge_info = NULL;
     ivolv_info = NULL;
+
+    // Ambiguity or active facet information.
+    is_ambiguous = false;
+    num_ambiguous_facets = 0;
+    num_active_facets = 0;
+    ambiguous_facet_bits = 0;
+    ambiguous_facet_bits_in_lower_lifted = 0;
+    ambiguous_facet_bits_in_upper_lifted = 0;
   }
 
   // destructor
@@ -1741,7 +1924,7 @@ namespace IJKDUALTABLE {
     FreeAll();
 
     poly_vertex_info = 
-      new IVOLDUAL_POLY_VERTEX_INFO<ISOV_TYPE>[num_poly_vertices];
+      new IVOLDUAL_POLY_VERTEX_INFO<ISOV_TYPE,NTYPE>[num_poly_vertices];
     poly_edge_info = 
       new IVOLDUAL_POLY_EDGE_INFO<ISOV_TYPE>[num_poly_edges];
   }
@@ -1758,6 +1941,10 @@ namespace IJKDUALTABLE {
   {
     const NTYPE numv = numv_in_lower_lifted + numv_in_upper_lifted;
 
+    num_vertices_in_lower_lifted = numv_in_lower_lifted;
+    num_vertices_in_upper_lifted = numv_in_upper_lifted;
+
+
     if (ivolv_info != NULL) {
       delete [] ivolv_info;
       ivolv_info = NULL;
@@ -1765,8 +1952,6 @@ namespace IJKDUALTABLE {
 
     if (numv > 0) 
       { ivolv_info = new IVOLDUAL_IVOLV_INFO[numv]; }
-
-    num_vertices = numv;
 
     for (NTYPE i = 0; i < numv; i++) {
       if (i < numv_in_lower_lifted) 
@@ -1782,10 +1967,17 @@ namespace IJKDUALTABLE {
   bool IVOLDUAL_TABLE_ENTRY<NTYPE,ISOV_TYPE,FBITS_TYPE,TI_TYPE>::
   Check(IJK::ERROR & error_msg) const
   {
-    if (num_vertices < 0) {
+    if (num_vertices_in_lower_lifted < 0) {
       error_msg.AddMessage
         ("Programming error.  Dual interval volume table entry contains negative number");
-      error_msg.AddMessage("  of interval volume vertices.");
+      error_msg.AddMessage("  of interval volume vertices in lower lifted cube.");
+      return(false);
+    }
+
+    if (num_vertices_in_upper_lifted < 0) {
+      error_msg.AddMessage
+        ("Programming error.  Dual interval volume table entry contains negative number");
+      error_msg.AddMessage("  of interval volume vertices in upper lifted cube.");
       return(false);
     }
 
@@ -1824,7 +2016,8 @@ namespace IJKDUALTABLE {
       ivolv_info = NULL;
     }
 
-    num_vertices = 0;
+    num_vertices_in_lower_lifted = 0;
+    num_vertices_in_upper_lifted = 0;
     lower_isosurface_table_index = 0;
     upper_isosurface_table_index = 0;
   }
