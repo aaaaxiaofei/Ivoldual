@@ -46,9 +46,9 @@ namespace IVOLDUAL {
 
   /// Construct interval volume using dual contouring.
   void dual_contouring_interval_volume
-    (const DUALISO_DATA & dualiso_data, 
-     const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
-     DUAL_INTERVAL_VOLUME & dual_interval_volume, DUALISO_INFO & dualiso_info);
+  (const IVOLDUAL_DATA & ivoldual_data, 
+   const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
+   DUAL_INTERVAL_VOLUME & dual_interval_volume, DUALISO_INFO & dualiso_info);
 
   /// Construct interval volume using dual contouring.
   /// - Returns list of isosurface polytope vertices
@@ -57,7 +57,7 @@ namespace IVOLDUAL {
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
-   const DUALISO_DATA_FLAGS & param,
+   const IVOLDUAL_DATA_FLAGS & param,
    std::vector<ISO_VERTEX_INDEX> & ivolpoly_vert,
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
    COORD_ARRAY & vertex_coord,
@@ -70,7 +70,7 @@ namespace IVOLDUAL {
   void dual_contouring_interval_volume
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
-   const DUALISO_DATA_FLAGS & param,
+   const IVOLDUAL_DATA_FLAGS & param,
    std::vector<ISO_VERTEX_INDEX> & ivolpoly_vert,
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
    COORD_ARRAY & vertex_coord,
@@ -84,7 +84,7 @@ namespace IVOLDUAL {
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
-   const DUALISO_DATA_FLAGS & param,
+   const IVOLDUAL_DATA_FLAGS & param,
    std::vector<ISO_VERTEX_INDEX> & ivolpoly_vert,
    std::vector<GRID_CUBE_DATA> & cube_ivolv_list,
    std::vector<DUAL_ISOVERT> & ivolv_list,
@@ -117,6 +117,11 @@ namespace IVOLDUAL {
   // COMPUTE IVOLTABLE INFO FOR EACH ACTIVE GRID CUBE
   // **************************************************
 
+  /// Compute ivoltable information for each cube in cube_ivolv_list.
+  /// @param encoded_grid Encoded grid.  
+  ///    Each grid vertex has value 0,1,2 or 3, indicating vertex type.
+  /// @param ivoldual_table Interval volume lookup table.
+  /// @param[out] cube_ivolv_list Array of active grid cubes.
   void compute_cube_ivoltable_info
   (const IVOLDUAL_ENCODED_GRID & encoded_grid,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
@@ -127,6 +132,7 @@ namespace IVOLDUAL {
   // EXTRACT DUAL INTERVAL VOLUME POLYTOPES
   // **************************************************
 
+  /// Extract dual interval volume polytopes.
   void extract_dual_ivolpoly
   (const IVOLDUAL_ENCODED_GRID & encoded_grid,
    std::vector<ISO_VERTEX_INDEX> & ivolpoly,
@@ -134,6 +140,7 @@ namespace IVOLDUAL {
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
    DUALISO_INFO & dualiso_info);
 
+  /// Extract interval volume polytopes dual to grid edges.
   void extract_ivolpoly_dual_to_grid_edges
   (const IVOLDUAL_ENCODED_GRID & encoded_grid,
    std::vector<ISO_VERTEX_INDEX> & ivolpoly,
@@ -141,6 +148,7 @@ namespace IVOLDUAL {
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
    DUALISO_INFO & dualiso_info);
 
+  /// Extract interval volume polytopes dual to grid vertices.
   void extract_ivolpoly_dual_to_grid_vertices
   (const IVOLDUAL_ENCODED_GRID & encoded_grid,
    std::vector<ISO_VERTEX_INDEX> & ivolpoly,
@@ -153,6 +161,10 @@ namespace IVOLDUAL {
   // SPLIT DUAL INTERVAL VOLUME VERTICES
   // **************************************************
 
+  /// Split interval volume vertices in each cube.
+  /// - Number of vertices in each cube is determined by the cube
+  ///   configuration and the interval volume looku table.
+  /// @param ivoldual_table Interval volume lookup table.
   void split_dual_ivolvert
   (const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    const std::vector<VERTEX_INDEX> & ivolpoly_cube, 
@@ -164,10 +176,46 @@ namespace IVOLDUAL {
    int & num_split);
 
 
+  /// Split interval volume vertex pairs which create non-manifold edges.
+  /// - Cubes containing vertices have only one ambiguous facet.
+  /// @param grid Grid of cubes.
+  /// @param ivoldual_table Interval volume lookup table.
+  /// @pre Must be a double lookup table containing both the table
+  ///      which separates negative cube vertices and the table
+  ///      which separates positive cube vertices.
+  /// @param index_to_cube_list[] Index to array cube_list[].
+  ///      - index_to_cube_list[icube] is the location in cube_list[]
+  ///        containing cube icube.
+  ///      - index_to_cube_list[icube] is defined only if cube icube
+  ///        is active.
+  /// @pre index_to_cube_list[] has size at least grid.NumVertices().
+  /// @param cube_list[] List of active cubes.
+  ///      - Routine may change cube_list[icube].table_index
+  ///        for cubes with ambiguous facets.
+  /// @param[out] num_split
+  void split_non_manifold_ivolv_pairs_ambig
+  (const DUALISO_GRID & grid,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   const VERTEX_INDEX index_to_cube_list[],
+   std::vector<GRID_CUBE_DATA> & cube_list,
+   int & num_split);
+
+  /// Split interval volume vertex pairs which create non-manifold edges.
+  /// - Version which creates array index_to_cube_list[].
+  void split_non_manifold_ivolv_pairs_ambig
+  (const DUALISO_GRID & grid,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   std::vector<GRID_CUBE_DATA> & cube_list,
+   int & num_split);
+
+
   // **************************************************
   // POSITION INTERVAL VOLUME VERTICES
   // **************************************************
 
+  /// Position all the dual interval volume vertices
+  /// at the centroid of the interpolated isosurface-grid edge
+  /// intersection points.
   void position_all_dual_ivol_vertices
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
@@ -177,6 +225,8 @@ namespace IVOLDUAL {
    const std::vector<DUAL_ISOVERT> & ivolv_list, 
    COORD_TYPE * vertex_coord);
 
+  /// Position all the dual interval volume vertices.
+  /// - Version with vertex coordinates stored in C++ STL vector vertex_coord.
   void position_all_dual_ivol_vertices
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
@@ -186,6 +236,9 @@ namespace IVOLDUAL {
    const std::vector<DUAL_ISOVERT> & ivolv_list, 
    COORD_ARRAY & vertex_coord);
 
+  /// Position interval volume vertex described by ivolv_info
+  /// at the centroid of the interpolated isosurface-grid edge
+  /// intersection points.
   void position_dual_ivolv_centroid_multi
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
@@ -197,6 +250,8 @@ namespace IVOLDUAL {
    COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, 
    COORD_TYPE * temp_coord2);
 
+  /// Position interval volume vertex described by ivolv_info
+  /// on the lower or upper isosurface.
   void position_dual_ivolv_on_isosurface_centroid_multi
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
@@ -207,6 +262,8 @@ namespace IVOLDUAL {
    COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, 
    COORD_TYPE * temp_coord2);
 
+  /// Position interval volume vertex described by ivolv_info
+  /// in the volume interior.
   void position_dual_ivolv_in_interval_volume_centroid_multi
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,

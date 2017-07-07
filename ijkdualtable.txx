@@ -1036,6 +1036,18 @@ namespace IJKDUALTABLE {
     NTYPE NumAmbiguousFacets() const
     { return(num_ambiguous_facets); };
 
+    /// Return ambiguous facet bits.
+    FBITS_TYPE AmbiguousFacetBits() const
+    { return(ambiguous_facet_bits); };
+
+    /// Return ambiguous facet bits in lower lifted cube.
+    FBITS_TYPE AmbiguousFacetBitsInLowerLifted() const
+    { return(ambiguous_facet_bits_in_lower_lifted); };
+
+    /// Return ambiguous facet bits in upper lifted cube.
+    FBITS_TYPE AmbiguousFacetBitsInUpperLifted() const
+    { return(ambiguous_facet_bits_in_upper_lifted); };
+
     /// True, if facet jf is ambiguous.
     template <typename FTYPE>
     bool IsFacetAmbiguous(const FTYPE jf) const
@@ -1387,6 +1399,11 @@ namespace IJKDUALTABLE {
     //! If true, separate negative vertices.
     bool flag_separate_neg;
 
+
+  public:
+    typedef typename ENTRY_TYPE::FACET_BITS_TYPE FACET_BITS_TYPE;
+
+
   public:
 
     /// Constructor
@@ -1495,6 +1512,14 @@ namespace IJKDUALTABLE {
     template <typename TI_TYPE2, typename VTYPE>
     bool OnUpperIsosurface(const TI_TYPE2 ientry, const VTYPE ivolv) const
     { return(this->entry[ientry].ivolv_info[ivolv].flag_upper_isosurface); }
+
+    /// Return ambiguous facet bits in lower lifted cube.
+    FACET_BITS_TYPE AmbiguousFacetBitsInLowerLifted(const TI_TYPE it) const
+    { return(this->entry[it].AmbiguousFacetBitsInLowerLifted()); }
+
+    /// Return ambiguous facet bits in upper lifted cube.
+    FACET_BITS_TYPE AmbiguousFacetBitsInUpperLifted(const TI_TYPE it) const
+    { return(this->entry[it].AmbiguousFacetBitsInUpperLifted()); }
 
     /// Return true if facet jf in lower lifted cube is ambiguous.
     template <typename FTYPE>
@@ -1631,6 +1656,18 @@ namespace IJKDUALTABLE {
     ///   set num_negative_table_entries.
     template <typename NTYPE2>
     void SetNumTableEntries(const NTYPE2 num_table_entries);
+
+    /// Return opposite table index.
+    /// - Opposite table index has same configuration of vertex labels
+    ///   as table_index.
+    /// - Opposite table index separates positive vertices if table_index
+    ///   separates negative vertices.
+    /// - Opposite table index separates negative vertices if table_index
+    ///   separates negative vertices.
+    template <typename TI_TYPE2>
+    TI_TYPE OppositeTableIndex(const TI_TYPE2 table_index) const
+    { return((table_index +
+              NumNegativeTableEntries())%(this->NumTableEntries())); };
 
     template <typename DTYPE2>
     void Create(const DTYPE2 dimension);

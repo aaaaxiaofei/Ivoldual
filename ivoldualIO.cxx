@@ -51,6 +51,7 @@ namespace {
 
   typedef enum
     {SUBSAMPLE_OPT, SUPERSAMPLE_OPT, POSITION_OPT, CUBE_CENTER_OPT,
+     SPLIT_AMBIG_PAIRS_OPT, NO_SPLIT_AMBIG_PAIRS_OPT,
      MANIFOLD_OPT, MULTI_ISOV_OPT, SINGLE_ISOV_OPT, 
      SELECT_SPLIT_OPT, CONNECT_AMBIG_OPT,
      SEP_NEG_OPT, SEP_POS_OPT,
@@ -181,6 +182,19 @@ namespace {
        "Position isosurface vertices at cube_centers.");
     options.AddToHelpMessage
       (CUBE_CENTER_OPT, "Equivalent to \"-position cube_center\".");
+
+    options.AddUsageOptionEndOr(REGULAR_OPTG);
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+
+    options.AddUsageOptionBeginOr(REGULAR_OPTG);
+
+    options.AddOptionNoArg
+      (SPLIT_AMBIG_PAIRS_OPT, "SPLIT_AMBIG_PAIRS_OPT", REGULAR_OPTG, 
+       "-split_ambig_pairs", "Split ambiguous pairs.");
+
+    options.AddOptionNoArg
+      (NO_SPLIT_AMBIG_PAIRS_OPT, "NO_SPLIT_AMBIG_PAIRS_OPT", REGULAR_OPTG, 
+       "-no_split_ambig_pairs", "Do not split ambiguous pairs.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -478,6 +492,14 @@ bool process_option
 
   case CUBE_CENTER_OPT:
     io_info.vertex_position_method = CUBE_CENTER;
+    break;
+
+  case SPLIT_AMBIG_PAIRS_OPT:
+    io_info.flag_split_ambig_pairs = true;
+    break;
+
+  case NO_SPLIT_AMBIG_PAIRS_OPT:
+    io_info.flag_split_ambig_pairs = false;
     break;
 
   case MANIFOLD_OPT:
@@ -1721,9 +1743,9 @@ void IVOLDUAL::rescale_vertex_coord
 
 void IVOLDUAL::report_num_cubes
 (const DUALISO_GRID & full_scalar_grid, const IO_INFO & io_info, 
- const DUALISO_DATA & dualiso_data)
+ const IVOLDUAL_DATA & ivoldual_data)
 {
-  report_num_cubes(full_scalar_grid, io_info, dualiso_data.ScalarGrid());
+  report_num_cubes(full_scalar_grid, io_info, ivoldual_data.ScalarGrid());
 }
 
 

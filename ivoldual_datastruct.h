@@ -56,7 +56,7 @@ namespace IVOLDUAL {
   // **************************************************
 
   typedef typename IJKDUALTABLE::
-  IVOLDUAL_CUBE_TABLE<4,int,int,TABLE_INDEX,IVOLDUAL_TABLE_ENTRY>
+  IVOLDUAL_CUBE_DOUBLE_TABLE<4,int,int,TABLE_INDEX,IVOLDUAL_TABLE_ENTRY>
   IVOLDUAL_CUBE_TABLE;
 
 
@@ -134,6 +134,24 @@ namespace IVOLDUAL {
 
 
   // **************************************************
+  // DUAL CONTOURING INTERVAL VOLUME FLAGS
+  // **************************************************
+
+  class IVOLDUAL_DATA_FLAGS:public IJKDUAL::DUALISO_DATA_FLAGS {
+
+  public:
+    bool flag_split_ambig_pairs;
+
+  public:
+    IVOLDUAL_DATA_FLAGS();
+
+    /// Set
+    void Set(const IVOLDUAL_DATA_FLAGS & data_flags)
+    { *this = data_flags; };
+  };
+
+
+  // **************************************************
   // DUAL CONTOURING INTERVAL VOLUME
   // **************************************************
 
@@ -145,8 +163,7 @@ namespace IVOLDUAL {
   // DUAL CONTOURING INPUT DATA AND DATA STRUCTURES
   // **************************************************
 
-  typedef IJKDUAL::DUALISO_DATA_FLAGS DUALISO_DATA_FLAGS;
-  typedef IJKDUAL::DUALISO_DATA DUALISO_DATA;
+  typedef IJKDUAL::DUALISO_DATA_BASE<IVOLDUAL_DATA_FLAGS> IVOLDUAL_DATA;
 
 
   // **************************************************

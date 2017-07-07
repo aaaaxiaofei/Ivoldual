@@ -40,7 +40,7 @@ using namespace std;
 // local subroutines
 void memory_exhaustion();
 void construct_interval_volume
-(const IO_INFO & io_info, const DUALISO_DATA & dualiso_data,
+(const IO_INFO & io_info, const IVOLDUAL_DATA & ivoldual_data,
  DUALISO_TIME & dualiso_time, IO_TIME & io_time);
 
 
@@ -79,19 +79,19 @@ int main(int argc, char **argv)
     nrrd_header.GetSpacing(io_info.grid_spacing);
 
     // set DUAL datastructures and flags
-    DUALISO_DATA dualiso_data;
+    IVOLDUAL_DATA ivoldual_data;
 
-    // Note: dualiso_data.SetScalarGrid must be called before set_mesh_data.
+    // Note: ivoldual_data.SetScalarGrid must be called before set_mesh_data.
     // subsample and supersample parameters are hard-coded here.
-    dualiso_data.SetScalarGrid
+    ivoldual_data.SetScalarGrid
       (full_scalar_grid, io_info.flag_subsample, io_info.subsample_resolution, 
        io_info.flag_supersample, io_info.supersample_resolution);
-    dualiso_data.Set(io_info);
+    ivoldual_data.Set(io_info);
     warn_non_manifold(io_info);
-    report_num_cubes(full_scalar_grid, io_info, dualiso_data);
+    report_num_cubes(full_scalar_grid, io_info, ivoldual_data);
 
     construct_interval_volume
-      (io_info, dualiso_data, dualiso_time, io_time);
+      (io_info, ivoldual_data, dualiso_time, io_time);
 
     if (io_info.flag_report_time) {
 
@@ -120,18 +120,18 @@ int main(int argc, char **argv)
 }
 
 // forward declaration
-template <typename DUALISO_DATA_TYPE, typename DUAL_ISOSURFACE_TYPE>
+template <typename IVOLDUAL_DATA_TYPE, typename DUAL_ISOSURFACE_TYPE>
 void rescale_and_triangulate
-(const IO_INFO & io_info, const DUALISO_DATA_TYPE & dualiso_data,
+(const IO_INFO & io_info, const IVOLDUAL_DATA_TYPE & ivoldual_data,
  const SCALAR_TYPE isovalue, DUAL_ISOSURFACE_TYPE & dual_isosurface);
 
 void construct_interval_volume
-(const IO_INFO & io_info, const DUALISO_DATA & dualiso_data,
+(const IO_INFO & io_info, const IVOLDUAL_DATA & ivoldual_data,
  DUALISO_TIME & dualiso_time, IO_TIME & io_time)
 {
-  int dimension = dualiso_data.ScalarGrid().Dimension();
+  int dimension = ivoldual_data.ScalarGrid().Dimension();
   const int num_cube_vertices = IJK::compute_num_cube_vertices(dimension);
-  const int num_cubes = dualiso_data.ScalarGrid().ComputeNumCubes();
+  const int num_cubes = ivoldual_data.ScalarGrid().ComputeNumCubes();
 
   io_time.write_time = 0;
 
@@ -147,7 +147,7 @@ void construct_interval_volume
     DUAL_INTERVAL_VOLUME dual_interval_volume(dimension, num_cube_vertices);
 
     dual_contouring_interval_volume
-      (dualiso_data, isovalue0, isovalue1, dual_interval_volume,
+      (ivoldual_data, isovalue0, isovalue1, dual_interval_volume,
        dualiso_info);
 
     // Time info
@@ -155,7 +155,7 @@ void construct_interval_volume
 
     // Rescale 
     rescale_vertex_coord
-      (dimension, dualiso_data.ScalarGrid().SpacingPtrConst(),
+      (dimension, ivoldual_data.ScalarGrid().SpacingPtrConst(),
        dual_interval_volume.vertex_coord);
 
     OUTPUT_INFO output_info;
@@ -163,7 +163,7 @@ void construct_interval_volume
     output_info.SetDimension(dimension, num_cube_vertices);
 
     output_dual_isosurface
-      (output_info, dualiso_data, dual_interval_volume, dualiso_info, io_time);
+      (output_info, ivoldual_data, dual_interval_volume, dualiso_info, io_time);
   }
 }
 
