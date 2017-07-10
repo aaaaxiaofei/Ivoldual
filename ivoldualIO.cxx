@@ -69,7 +69,7 @@ namespace {
      OUTPUT_FILENAME_OPT, OUTPUT_FILENAME_PREFIX_OPT, STDOUT_OPT, 
      LABEL_WITH_ISOVALUE_OPT,
      NO_WRITE_OPT, SILENT_OPT, NO_WARN_OPT,
-     INFO_OPT, TIME_OPT, OUT_ISOV_OPT, UNKNOWN_OPT} OPTION_TYPE;
+     INFO_OPT, TIME_OPT, OUT_IVOLV_OPT, UNKNOWN_OPT} OPTION_TYPE;
 
   typedef enum {
     REGULAR_OPTG, EXTENDED_OPTG, QDUAL_OPTG, TESTING_OPTG
@@ -441,11 +441,11 @@ namespace {
 
 
     options.AddOption1Arg
-      (OUT_ISOV_OPT, "OUT_ISOV_OPT", EXTENDED_OPTG, 
-       "-out_isov", "{output_filename}", 
-       "Write information about isosurface vertices");
+      (OUT_IVOLV_OPT, "OUT_IVOLV_OPT", EXTENDED_OPTG, 
+       "-out_ivolv", "{output_filename}", 
+       "Write information about interval volume vertices");
     options.AddToHelpMessage
-      (OUT_ISOV_OPT, "to file {output_filename}.");
+      (OUT_IVOLV_OPT, "to file {output_filename}.");
   }
 
 };
@@ -669,7 +669,7 @@ bool process_option
     help_all();
     break;
 
-  case OUT_ISOV_OPT:
+  case OUT_IVOLV_OPT:
     iarg++;
     if (iarg >= argc) usage_error();
     io_info.report_isov_filename = argv[iarg];
@@ -1797,19 +1797,63 @@ void IVOLDUAL::warn_non_manifold(const IO_INFO & io_info)
 
 
 // **************************************************
-// REPORT INDIVIDUAL INTERVAL VOLUMES
+// REPORT INTERVAL VOLUME VERTICES
 // **************************************************
 
 namespace {
 
-  /*
   void report_ivol_vert
   (std::ostream & out,
    const DUALISO_GRID & grid,
-   const 
-   // TO BE CONINUED...
-   */
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
+   const std::vector<COORD_TYPE> & vertex_coord,
+   const ISO_VERTEX_INDEX ivolv)
+  {
+    const int DIM3(3);
+
+    out << "Ivolv: " << ivolv << ".";
+    grid.PrintIndexAndCoord
+      (out, "  Cube ", ivolv_list[ivolv].cube_index, ".");
+    IJK::print_coord3D(out, "  Coord: ", &(vertex_coord[DIM3*ivolv]), ".\n");
+    out << "  Table index: " << ivolv_list[ivolv].table_index << endl;
+  }
 }
+
+
+void IVOLDUAL::report_all_ivol_vert
+(std::ostream & out,
+ const DUALISO_GRID & grid, 
+ const DUAL_INTERVAL_VOLUME & interval_volume)
+{
+  out << "Interval volume vertices: " << endl << endl;
+  for (int ivolv = 0; ivolv < interval_volume.ivolv_list.size(); ivolv++) {
+    report_ivol_vert
+      (out, grid, interval_volume.ivolv_list, interval_volume.vertex_coord, 
+       ivolv);
+  }
+}
+
+
+void IVOLDUAL::report_all_ivol_vert
+(const OUTPUT_INFO & output_info,
+ const DUALISO_GRID & grid, const DUAL_INTERVAL_VOLUME & interval_volume)
+{
+  ofstream output_file;
+
+  output_file.open(output_info.report_isov_filename.c_str(), ios::out);
+  if (output_file) {
+    report_all_ivol_vert(output_file, grid, interval_volume);
+  }
+  else {
+    cout << "***Warning: Unable to open file " 
+         << output_info.report_isov_filename
+         << " for interval volume vertex reporting." << endl;
+    cout << "  Skipping report." << endl;
+  }
+
+  output_file.close();
+}
+
 
 // **************************************************
 // REPORT TIMING INFORMATION

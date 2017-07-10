@@ -161,7 +161,8 @@ namespace IVOLDUAL {
   class DUAL_INTERVAL_VOLUME:
     public IJKDUAL::DUAL_ISOSURFACE_BASE<IVOLDUAL_POLY_INFO> {
 
-    /// List of inteval volume vertices.
+  public:
+    /// List of interval volume vertices.
     DUAL_IVOLVERT_ARRAY ivolv_list;
 
   public:

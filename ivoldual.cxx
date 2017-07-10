@@ -64,6 +64,7 @@ void IVOLDUAL::dual_contouring_interval_volume
   dual_contouring_interval_volume
     (ivoldual_data.ScalarGrid(), isovalue0, isovalue1, ivoldual_data,
      dual_interval_volume.isopoly_vert, dual_interval_volume.isopoly_info, 
+     dual_interval_volume.ivolv_list,
      dual_interval_volume.vertex_coord, merge_data, dualiso_info);
 
   // store times
@@ -73,8 +74,9 @@ void IVOLDUAL::dual_contouring_interval_volume
 
 
 // Construct interval volume using dual contouring.
-// Returns list of isosurface polytope vertices
-// Version which creates ivoldual_table.
+// - Returns list of interval volume polytope vertices
+//   and list of interval volume vertex coordinates.
+// - Version which creates ivoldual_table and ivolv_list.
 void IVOLDUAL::dual_contouring_interval_volume
 (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
  const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
@@ -90,16 +92,45 @@ void IVOLDUAL::dual_contouring_interval_volume
 
   IVOLDUAL_CUBE_TABLE
     ivoldual_table(dimension, flag_separate_neg);
+  DUAL_IVOLVERT_ARRAY ivolv_list;
 
   dual_contouring_interval_volume
     (scalar_grid, isovalue0, isovalue1, ivoldual_table, param, ivolpoly_vert, 
-     ivolpoly_info, vertex_coord, merge_data, dualiso_info);
+     ivolpoly_info, ivolv_list, vertex_coord, merge_data, dualiso_info);
 }
 
 
 // Construct interval volume using dual contouring.
-// Returns list of isosurface polytope vertices
-//   and list of isosurface vertex coordinates
+// - Returns list of interval volume polytope vertices
+//   and list of interval volume vertex coordinates.
+// - Version which creates ivoldual_table.
+void IVOLDUAL::dual_contouring_interval_volume
+(const DUALISO_SCALAR_GRID_BASE & scalar_grid,
+ const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
+ const IVOLDUAL_DATA_FLAGS & param,
+ std::vector<ISO_VERTEX_INDEX> & ivolpoly_vert,
+ IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
+ DUAL_IVOLVERT_ARRAY & ivolv_list,
+ COORD_ARRAY & vertex_coord,
+ MERGE_DATA & merge_data, 
+ DUALISO_INFO & dualiso_info)
+{
+  const int dimension = scalar_grid.Dimension();
+  const bool flag_separate_neg = param.SeparateNegFlag();
+
+  IVOLDUAL_CUBE_TABLE
+    ivoldual_table(dimension, flag_separate_neg);
+
+  dual_contouring_interval_volume
+    (scalar_grid, isovalue0, isovalue1, ivoldual_table, param, ivolpoly_vert, 
+     ivolpoly_info, ivolv_list, vertex_coord, merge_data, dualiso_info);
+}
+
+
+// Construct interval volume using dual contouring.
+// - Returns list of interval volume polytope vertices
+//   and list of interval volume vertex coordinates.
+// - Version which creates cube_ivolv_list.
 void IVOLDUAL::dual_contouring_interval_volume
 (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
  const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
@@ -107,11 +138,11 @@ void IVOLDUAL::dual_contouring_interval_volume
  const IVOLDUAL_DATA_FLAGS & param,
  std::vector<ISO_VERTEX_INDEX> & ivolpoly_vert,
  IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
+ DUAL_IVOLVERT_ARRAY & ivolv_list,
  COORD_ARRAY & vertex_coord,
  MERGE_DATA & merge_data, 
  DUALISO_INFO & dualiso_info)
 {
-  DUAL_IVOLVERT_ARRAY ivolv_list;
   std::vector<GRID_CUBE_DATA> cube_ivolv_list;
 
   dual_contouring_interval_volume

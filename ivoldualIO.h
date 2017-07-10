@@ -464,6 +464,23 @@ namespace IVOLDUAL {
 
 
   // **************************************************
+  // REPORT INTERVAL VOLUME VERTICES
+  // **************************************************
+
+  /// Report all interval volume vertices.
+  void report_all_ivol_vert
+  (std::ostream & out,
+   const DUALISO_GRID & grid, 
+   const DUAL_INTERVAL_VOLUME & interval_volume);
+
+  /// Report all interval volume vertices.
+  /// - Version which opens output stream from output info.
+  void report_all_ivol_vert
+  (const OUTPUT_INFO & output_info,
+   const DUALISO_GRID & grid, const DUAL_INTERVAL_VOLUME & interval_volume);
+
+
+  // **************************************************
   // REPORT TIMING INFORMATION
   // **************************************************
 

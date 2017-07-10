@@ -144,10 +144,10 @@ void construct_interval_volume
     dualiso_info.grid.num_cubes = num_cubes;
 
     // Dual contouring.  
-    DUAL_INTERVAL_VOLUME dual_interval_volume(dimension, num_cube_vertices);
+    DUAL_INTERVAL_VOLUME interval_volume(dimension, num_cube_vertices);
 
     dual_contouring_interval_volume
-      (ivoldual_data, isovalue0, isovalue1, dual_interval_volume,
+      (ivoldual_data, isovalue0, isovalue1, interval_volume,
        dualiso_info);
 
     // Time info
@@ -156,14 +156,19 @@ void construct_interval_volume
     // Rescale 
     rescale_vertex_coord
       (dimension, ivoldual_data.ScalarGrid().SpacingPtrConst(),
-       dual_interval_volume.vertex_coord);
+       interval_volume.vertex_coord);
 
     OUTPUT_INFO output_info;
     set_output_info(io_info, i, output_info);
     output_info.SetDimension(dimension, num_cube_vertices);
 
     output_dual_isosurface
-      (output_info, ivoldual_data, dual_interval_volume, dualiso_info, io_time);
+      (output_info, ivoldual_data, interval_volume, dualiso_info, io_time);
+
+    if (output_info.flag_report_all_isov) {
+      report_all_ivol_vert
+        (output_info, ivoldual_data.ScalarGrid(), interval_volume);
+    }
   }
 }
 
