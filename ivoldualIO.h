@@ -55,9 +55,6 @@ namespace IVOLDUAL {
   // **************************************************
 
   //! IO information
-  /* OBSOLETE
-  class IO_INFO:public IJKDUAL::DUALISO_DATA_FLAGS {
-  */
   class IO_INFO:public IVOLDUAL_DATA_FLAGS {
 
   protected:
