@@ -1797,6 +1797,21 @@ void IVOLDUAL::warn_non_manifold(const IO_INFO & io_info)
 
 
 // **************************************************
+// REPORT INDIVIDUAL INTERVAL VOLUMES
+// **************************************************
+
+namespace {
+
+  /*
+  void report_ivol_vert
+  (std::ostream & out,
+   const DUALISO_GRID & grid,
+   const 
+   // TO BE CONINUED...
+   */
+}
+
+// **************************************************
 // REPORT TIMING INFORMATION
 // **************************************************
 

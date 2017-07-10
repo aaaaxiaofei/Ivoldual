@@ -87,7 +87,7 @@ namespace IVOLDUAL {
    const IVOLDUAL_DATA_FLAGS & param,
    std::vector<ISO_VERTEX_INDEX> & ivolpoly_vert,
    std::vector<GRID_CUBE_DATA> & cube_ivolv_list,
-   std::vector<DUAL_ISOVERT> & ivolv_list,
+   DUAL_IVOLVERT_ARRAY & ivolv_list,
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
    COORD_ARRAY & vertex_coord,
    MERGE_DATA & merge_data, 
@@ -171,7 +171,7 @@ namespace IVOLDUAL {
    const std::vector<POLY_VERTEX_INDEX> & poly_vertex,
    const IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
    std::vector<GRID_CUBE_DATA> & cube_list,
-   std::vector<DUAL_ISOVERT> & ivolv_list, 
+   DUAL_IVOLVERT_ARRAY & ivolv_list,
    std::vector<ISO_VERTEX_INDEX> & isopoly,
    int & num_split);
 
@@ -222,7 +222,7 @@ namespace IVOLDUAL {
    const IJKDUAL::ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
    const SCALAR_TYPE isovalue0,
    const SCALAR_TYPE isovalue1,
-   const std::vector<DUAL_ISOVERT> & ivolv_list, 
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
    COORD_TYPE * vertex_coord);
 
   /// Position all the dual interval volume vertices.
@@ -233,7 +233,7 @@ namespace IVOLDUAL {
    const IJKDUAL::ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
    const SCALAR_TYPE isovalue0,
    const SCALAR_TYPE isovalue1,
-   const std::vector<DUAL_ISOVERT> & ivolv_list, 
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
    COORD_ARRAY & vertex_coord);
 
   /// Position interval volume vertex described by ivolv_info
@@ -244,7 +244,7 @@ namespace IVOLDUAL {
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    const SCALAR_TYPE isovalue0,
    const SCALAR_TYPE isovalue1,
-   const DUAL_ISOVERT & ivolv_info,
+   const DUAL_IVOLVERT & ivolv_info,
    const CUBE_FACE_INFO & cube,
    COORD_TYPE * vcoord, 
    COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, 
@@ -256,7 +256,7 @@ namespace IVOLDUAL {
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    const SCALAR_TYPE isovalue,
-   const DUAL_ISOVERT & ivolv_info,
+   const DUAL_IVOLVERT & ivolv_info,
    const CUBE_FACE_INFO & cube,
    COORD_TYPE * vcoord, 
    COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, 
@@ -269,7 +269,7 @@ namespace IVOLDUAL {
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    const SCALAR_TYPE isovalue0,
    const SCALAR_TYPE isovalue1,
-   const DUAL_ISOVERT & ivolv_info,
+   const DUAL_IVOLVERT & ivolv_info,
    const CUBE_FACE_INFO & cube,
    COORD_TYPE * vcoord, 
    COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, 

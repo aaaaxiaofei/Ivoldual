@@ -437,15 +437,6 @@ namespace IVOLDUAL {
   // SET ROUTINES
   // **************************************************
 
-  /* OBSOLETE
-  /// Set dualiso_data based on io_info.
-  /// Precondition: Scalar field in dualiso_data must be set before
-  ///   this routines is called.
-  void set_dualiso_data
-  (const IO_INFO & io_info, DUALISO_DATA & dualiso_data, 
-   DUALISO_TIME & dualiso_time);
-  */
-
   /// Set output_info based on isotable, io_info and isovalue index i.
   void set_output_info
   (const IO_INFO & io_info, 
@@ -461,11 +452,6 @@ namespace IVOLDUAL {
   // REPORT SCALAR FIELD OR ISOSURFACE INFORMATION
   // **************************************************
 
-  /* OBSOLETE
-  void report_num_cubes
-    (const DUALISO_GRID & full_grid, const IO_INFO & io_info, 
-     const DUALISO_DATA & dualiso_data);
-  */
   void report_num_cubes
     (const DUALISO_GRID & full_grid, const IO_INFO & io_info, 
      const IVOLDUAL_DATA & ivoldual_data);

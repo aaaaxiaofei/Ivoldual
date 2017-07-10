@@ -111,7 +111,7 @@ void IVOLDUAL::dual_contouring_interval_volume
  MERGE_DATA & merge_data, 
  DUALISO_INFO & dualiso_info)
 {
-  std::vector<DUAL_ISOVERT> ivolv_list;
+  DUAL_IVOLVERT_ARRAY ivolv_list;
   std::vector<GRID_CUBE_DATA> cube_ivolv_list;
 
   dual_contouring_interval_volume
@@ -131,7 +131,7 @@ void IVOLDUAL::dual_contouring_interval_volume
  const IVOLDUAL_DATA_FLAGS & param,
  std::vector<ISO_VERTEX_INDEX> & ivolpoly_vert,
  std::vector<GRID_CUBE_DATA> & cube_ivolv_list,
- std::vector<DUAL_ISOVERT> & ivolv_list,
+ DUAL_IVOLVERT_ARRAY & ivolv_list,
  IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
  COORD_ARRAY & vertex_coord,
  MERGE_DATA & merge_data, 
@@ -535,7 +535,7 @@ void IVOLDUAL::split_dual_ivolvert
  const std::vector<POLY_VERTEX_INDEX> & poly_vertex,
  const IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
  std::vector<GRID_CUBE_DATA> & cube_list,
- std::vector<DUAL_ISOVERT> & ivolv_list, 
+ DUAL_IVOLVERT_ARRAY & ivolv_list,
  std::vector<ISO_VERTEX_INDEX> & ivolpoly_vert,
  int & num_split)
 {
@@ -632,11 +632,10 @@ void IVOLDUAL::position_all_dual_ivol_vertices
  const IJKDUAL::ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
  const SCALAR_TYPE isovalue0,
  const SCALAR_TYPE isovalue1,
- const std::vector<DUAL_ISOVERT> & ivolv_list, 
+ const DUAL_IVOLVERT_ARRAY & ivolv_list,
  COORD_TYPE * vertex_coord)
 {
   const int dimension = scalar_grid.Dimension();
-  DUAL_ISOVERT dual_isovert;
 
   if (dimension < 1) { return; }
 
@@ -661,7 +660,7 @@ void IVOLDUAL::position_all_dual_ivol_vertices
  const IJKDUAL::ISODUAL_CUBE_TABLE_AMBIG & isodual_table,
  const SCALAR_TYPE isovalue0,
  const SCALAR_TYPE isovalue1,
- const std::vector<DUAL_ISOVERT> & ivolv_list, 
+ const DUAL_IVOLVERT_ARRAY & ivolv_list,
  COORD_ARRAY & vertex_coord)
 {
   const int dimension = scalar_grid.Dimension();
@@ -678,7 +677,7 @@ void IVOLDUAL::position_dual_ivolv_centroid_multi
  const IVOLDUAL_CUBE_TABLE & ivoldual_table,
  const SCALAR_TYPE isovalue0,
  const SCALAR_TYPE isovalue1,
- const DUAL_ISOVERT & ivolv_info,
+ const DUAL_IVOLVERT & ivolv_info,
  const CUBE_FACE_INFO & cube,
  COORD_TYPE * vcoord, 
  COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, COORD_TYPE * temp_coord2)
@@ -710,7 +709,7 @@ void IVOLDUAL::position_dual_ivolv_on_isosurface_centroid_multi
 (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
  const IVOLDUAL_CUBE_TABLE & ivoldual_table,
  const SCALAR_TYPE isovalue,
- const DUAL_ISOVERT & ivolv_info,
+ const DUAL_IVOLVERT & ivolv_info,
  const CUBE_FACE_INFO & cube,
  COORD_TYPE * vcoord, 
  COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, COORD_TYPE * temp_coord2)
@@ -889,7 +888,7 @@ void IVOLDUAL::position_dual_ivolv_in_interval_volume_centroid_multi
  const IVOLDUAL_CUBE_TABLE & ivoldual_table,
  const SCALAR_TYPE isovalue0,
  const SCALAR_TYPE isovalue1,
- const DUAL_ISOVERT & ivolv_info,
+ const DUAL_IVOLVERT & ivolv_info,
  const CUBE_FACE_INFO & cube,
  COORD_TYPE * vcoord, 
  COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, COORD_TYPE * temp_coord2)

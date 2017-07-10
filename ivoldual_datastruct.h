@@ -84,8 +84,9 @@ namespace IVOLDUAL {
   // DUAL ISOSURFACE VERTICES
   // **************************************************
 
-  typedef IJKDUAL::DUAL_ISOVERT DUAL_ISOVERT;
-
+  typedef IJKDUAL::DUAL_ISOVERT DUAL_IVOLVERT;
+  typedef std::vector<DUAL_IVOLVERT> DUAL_IVOLVERT_ARRAY;
+  
 
   // **************************************************
   // GRID CUBE DATA
@@ -155,8 +156,20 @@ namespace IVOLDUAL {
   // DUAL CONTOURING INTERVAL VOLUME
   // **************************************************
 
-  typedef typename IJKDUAL::DUAL_ISOSURFACE_BASE<IVOLDUAL_POLY_INFO> 
-  DUAL_INTERVAL_VOLUME;
+  /// Representation of dDual contouring interval volume created
+  /// by dual contouring interval volume algorithm.
+  class DUAL_INTERVAL_VOLUME:
+    public IJKDUAL::DUAL_ISOSURFACE_BASE<IVOLDUAL_POLY_INFO> {
+
+    /// List of inteval volume vertices.
+    DUAL_IVOLVERT_ARRAY ivolv_list;
+
+  public:
+    DUAL_INTERVAL_VOLUME
+    (const int dimension, const VERTEX_INDEX numv_per_ivolpoly):
+      DUAL_ISOSURFACE_BASE<IVOLDUAL_POLY_INFO>(dimension, numv_per_ivolpoly)
+    {};
+  };
 
 
   // **************************************************
