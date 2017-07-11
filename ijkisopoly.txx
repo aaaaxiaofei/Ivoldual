@@ -1059,6 +1059,7 @@ namespace IJK {
     typedef typename GRID_TYPE::NUMBER_TYPE NUM_TYPE;
     typedef typename std::vector<GRID_CUBE_TYPE>::size_type SIZE_TYPE;
     typedef typename ISODUAL_TABLE::TABLE_INDEX TABLE_INDEX;
+    typedef typename ISODUAL_TABLE::FACET_BITS_TYPE FACET_BITS_TYPE;
 
     const DTYPE dimension = grid.Dimension();
     const NUM_TYPE num_cube_facets = IJK::compute_num_cube_facets(dimension);
@@ -1072,20 +1073,21 @@ namespace IJK {
 
       if (num_isov0 == 1) {
         if (isodual_table.NumAmbiguousFacets(it0) == 1) {
-          VTYPE cube_index0 = cube_list[i0].cube_index;
-          int facet_set = isodual_table.AmbiguousFacetBits(it0);
-          NUM_TYPE kf = get_first_one_bit(facet_set, num_cube_facets);
+          const VTYPE cube_index0 = cube_list[i0].cube_index;
+          const FACET_BITS_TYPE facet_set = 
+            isodual_table.AmbiguousFacetBits(it0);
+          const NUM_TYPE kf = get_first_one_bit(facet_set, num_cube_facets);
 
-          DTYPE orth_dir = IJK::cube_facet_orth_dir(dimension, kf);
-          NUM_TYPE side = IJK::cube_facet_side(dimension, kf);
+          const DTYPE orth_dir = IJK::cube_facet_orth_dir(dimension, kf);
+          const NUM_TYPE side = IJK::cube_facet_side(dimension, kf);
 
           if (!grid.IsCubeFacetOnGridBoundary(cube_index0, orth_dir, side)) {
 
-            VTYPE cube_index1 =
+            const VTYPE cube_index1 =
               grid.AdjacentVertex(cube_index0, orth_dir, side);
-            SIZE_TYPE i1 = index_to_cube_list[cube_index1];
+            const SIZE_TYPE i1 = index_to_cube_list[cube_index1];
             TABLE_INDEX it1 = cube_list[i1].table_index;
-            NUM_TYPE num_isov1 = cube_list[i1].num_isov;
+            const NUM_TYPE num_isov1 = cube_list[i1].num_isov;
             if (num_isov1 == 1) {
               if (isodual_table.NumAmbiguousFacets(it1) == 1) {
                 complement_cube_table_indices
@@ -1274,6 +1276,7 @@ namespace IJK {
     typedef typename GRID_TYPE::VERTEX_INDEX_TYPE VTYPE;
     typedef typename std::vector<GRID_CUBE_TYPE>::size_type SIZE_TYPE;
     typedef typename ISODUAL_TABLE::TABLE_INDEX TABLE_INDEX;
+    typedef typename ISODUAL_TABLE::FACET_BITS_TYPE FACET_BITS_TYPE;
 
     const DTYPE dimension = grid.Dimension();
     const NUM_TYPE num_cube_vertices = compute_num_cube_vertices(dimension);
@@ -1293,22 +1296,23 @@ namespace IJK {
 
       if (isodual_table.NumAmbiguousFacets(it0) == 1) {
 
-        VTYPE cube_index0 = cube_list[i0].cube_index;
-        int facet_set = isodual_table.AmbiguousFacetBits(it0);
-        NUM_TYPE kf = get_first_one_bit(facet_set, num_cube_facets);
+        const VTYPE cube_index0 = cube_list[i0].cube_index;
+        const FACET_BITS_TYPE facet_set = 
+          isodual_table.AmbiguousFacetBits(it0);
+        const NUM_TYPE kf = get_first_one_bit(facet_set, num_cube_facets);
 
-        DTYPE orth_dir = IJK::cube_facet_orth_dir(dimension, kf);
-        NUM_TYPE side = IJK::cube_facet_side(dimension, kf);
+        const DTYPE orth_dir = IJK::cube_facet_orth_dir(dimension, kf);
+        const NUM_TYPE side = IJK::cube_facet_side(dimension, kf);
 
         if (!grid.IsCubeFacetOnGridBoundary(cube_index0, orth_dir, side)) {
 
           // Only process facets on top/right to avoid processing a facet twice.
           if (side) {
-            VTYPE cube_index1 =
+            const VTYPE cube_index1 =
               grid.AdjacentVertex(cube_index0, orth_dir, side);
-            SIZE_TYPE i1 = index_to_cube_list[cube_index1];
+            const SIZE_TYPE i1 = index_to_cube_list[cube_index1];
             TABLE_INDEX it1 = cube_list[i1].table_index;
-            NUM_TYPE num_isov1 = isodual_table.NumIsoVertices(it1);
+            const NUM_TYPE num_isov1 = isodual_table.NumIsoVertices(it1);
 
             // if (num_isov0 == 1 and num_isov1 == 2) or 
             //    (num_isov1 == 1 and num_isov0 == 2) or 
@@ -1317,7 +1321,8 @@ namespace IJK {
               if (isodual_table.NumAmbiguousFacets(it1) == 1) {
 
                 NUM_TYPE num_neg_in_plane, num_pos_in_plane;
-                VTYPE iv0 = grid.AdjacentVertex(cube_index0, orth_dir, side);
+                const VTYPE iv0 = 
+                  grid.AdjacentVertex(cube_index0, orth_dir, side);
 
                 count_adjacent_vertices_in_facet_plane
                   (grid, isovalue, iv0, orth_dir, 
