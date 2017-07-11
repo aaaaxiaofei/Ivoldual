@@ -610,6 +610,13 @@ void IVOLDUAL::split_non_manifold_ivolv_pairs_ambig
 
       if (grid.IsCubeFacetOnGridBoundary(cube_index0, orth_dir, side)) {
 
+        // Change table index of cube i0 opposite table
+        //   indices to split interval volume vertex.
+        cube_list[i0].table_index = 
+          ivoldual_table.OppositeTableIndex(it0);
+        num_split++;
+      }
+      else {
         const VERTEX_INDEX cube_index1 =
           grid.AdjacentVertex(cube_index0, orth_dir, side);
         const VERTEX_INDEX i1 = index_to_cube_list[cube_index1];
@@ -624,13 +631,6 @@ void IVOLDUAL::split_non_manifold_ivolv_pairs_ambig
             ivoldual_table.OppositeTableIndex(it1);
           num_split += 2;
         }
-      }
-      else {
-        // Change table index of cube i0 opposite table
-        //   indices to split interval volume vertex.
-        cube_list[i0].table_index = 
-          ivoldual_table.OppositeTableIndex(it0);
-        num_split++;
       }
     }
   }
