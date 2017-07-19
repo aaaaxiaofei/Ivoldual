@@ -107,6 +107,9 @@ namespace IVOLDUAL {
     /// Else dual to grid vertex.
     bool flag_dual_to_edge;
 
+    /// If true, reverse the orientation of the polytope.
+    bool flag_reverse_orient;
+
     /// Grid vertex or lower/leftmost endoint of grid edge.
     ISO_VERTEX_INDEX v0;
 
@@ -119,6 +122,17 @@ namespace IVOLDUAL {
       flag_dual_to_edge = true;
       v0 = iv0;
       this->edge_direction = edge_direction;
+      flag_reverse_orient = false;
+    }
+
+    void SetDualToEdge
+    (const ISO_VERTEX_INDEX iv0, const int edge_direction,
+     const bool flag_reverse_orient)
+    {
+      flag_dual_to_edge = true;
+      v0 = iv0;
+      this->edge_direction = edge_direction;
+      this->flag_reverse_orient = flag_reverse_orient;
     }
 
     void SetDualToVertex(const ISO_VERTEX_INDEX iv0)
@@ -141,7 +155,14 @@ namespace IVOLDUAL {
   class IVOLDUAL_DATA_FLAGS:public IJKDUAL::DUALISO_DATA_FLAGS {
 
   public:
+
+    /// If true, split vertices in ambiguous cubes sharing facets.
     bool flag_split_ambig_pairs;
+    bool flag_split_ambig_pairsB;
+
+    /// Default encoded value (1 or 2) for vertices in the interior
+    ///   of the interval volume.
+    GRID_VERTEX_ENCODING default_interior_code;
 
   public:
     IVOLDUAL_DATA_FLAGS();

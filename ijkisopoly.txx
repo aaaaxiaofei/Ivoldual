@@ -1,10 +1,10 @@
 /// \file ijkisopoly.txx
 /// ijk templates for extracting an isosurface patch from a polyhedron
-/// Version 0.3.1
+/// Version 0.3.2
 
 /*
   IJK: Isosurface Jeneration Kode
-  Copyright (C) 2009-2016 Rephael Wenger
+  Copyright (C) 2009-2017 Rephael Wenger
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public License
@@ -1040,6 +1040,38 @@ namespace IJK {
   }
 
 
+  /// Return true if ambiguous cube facet is on grid boundary.
+  /// @pre Cube has one ambiguous facet.
+  /// @param[out] orth_dir Direction orthogonal to ambiguous facet.
+  /// @param[out] side  Side (0 or 1) of cube containing ambiguous facet.
+  template <typename GRID_TYPE, typename ISODUAL_TABLE,
+            typename CUBE_INDEX_TYPE, typename TABLE_INDEX_TYPE,
+            typename DIR_TYPE, typename SIDE_TYPE>
+  bool is_ambiguous_cube_facet_on_grid_boundary
+  (const GRID_TYPE & grid,
+   const ISODUAL_TABLE & isodual_table,
+   const CUBE_INDEX_TYPE cube_index,
+   const TABLE_INDEX_TYPE table_index,
+   DIR_TYPE & orth_dir,
+   SIDE_TYPE & side)
+  {
+    typedef typename GRID_TYPE::DIMENSION_TYPE DTYPE;
+    typedef typename ISODUAL_TABLE::FACET_BITS_TYPE FACET_BITS_TYPE;
+    typedef typename GRID_TYPE::NUMBER_TYPE NUM_TYPE;
+
+    const DTYPE dimension = isodual_table.Dimension();
+    const NUM_TYPE num_cube_facets = isodual_table.NumPolyFacets();
+
+    const FACET_BITS_TYPE facet_set = 
+      isodual_table.AmbiguousFacetBits(table_index);
+    const NUM_TYPE kf = get_first_one_bit(facet_set, num_cube_facets);
+    orth_dir = IJK::cube_facet_orth_dir(dimension, kf);
+    side = IJK::cube_facet_side(dimension, kf);
+
+    return(grid.IsCubeFacetOnGridBoundary(cube_index, orth_dir, side));
+  }
+
+
   /// Split isosurface vertex pairs which create non-manifold edges.
   ///   - Cubes containing vertices have only one ambiguous facet.
   /// @param isodual_table Dual isosurface lookup table.
@@ -1059,10 +1091,18 @@ namespace IJK {
     typedef typename GRID_TYPE::NUMBER_TYPE NUM_TYPE;
     typedef typename std::vector<GRID_CUBE_TYPE>::size_type SIZE_TYPE;
     typedef typename ISODUAL_TABLE::TABLE_INDEX TABLE_INDEX;
-    typedef typename ISODUAL_TABLE::FACET_BITS_TYPE FACET_BITS_TYPE;
 
-    const DTYPE dimension = grid.Dimension();
-    const NUM_TYPE num_cube_facets = IJK::compute_num_cube_facets(dimension);
+    const DTYPE dimension = isodual_table.Dimension();
+    const NUM_TYPE num_cube_facets = isodual_table.NumPolyFacets();
+    IJK::PROCEDURE_ERROR error("split_non_manifold_isov_pairs_ambig1");
+
+    if (grid.Dimension() != isodual_table.Dimension()) {
+      error.AddMessage
+        ("Programming error.  Grid dimension does not match isotable dimension.");
+      error.AddMessage("  Grid dimension: ", grid.Dimension());
+      error.AddMessage("  Isotable dimension: ", isodual_table.Dimension());
+      throw error;
+    }
 
     num_split = 0;
 
@@ -1073,15 +1113,11 @@ namespace IJK {
 
       if (num_isov0 == 1) {
         if (isodual_table.NumAmbiguousFacets(it0) == 1) {
+          DTYPE orth_dir;
+          NUM_TYPE side;
           const VTYPE cube_index0 = cube_list[i0].cube_index;
-          const FACET_BITS_TYPE facet_set = 
-            isodual_table.AmbiguousFacetBits(it0);
-          const NUM_TYPE kf = get_first_one_bit(facet_set, num_cube_facets);
-
-          const DTYPE orth_dir = IJK::cube_facet_orth_dir(dimension, kf);
-          const NUM_TYPE side = IJK::cube_facet_side(dimension, kf);
-
-          if (!grid.IsCubeFacetOnGridBoundary(cube_index0, orth_dir, side)) {
+          if (!is_ambiguous_cube_facet_on_grid_boundary
+              (grid, isodual_table, cube_index0, it0, orth_dir, side)) {
 
             const VTYPE cube_index1 =
               grid.AdjacentVertex(cube_index0, orth_dir, side);
@@ -1170,8 +1206,17 @@ namespace IJK {
     typedef typename std::vector<GRID_CUBE_TYPE>::size_type SIZE_TYPE;
     typedef typename ISODUAL_TABLE::TABLE_INDEX TABLE_INDEX;
 
-    const DTYPE dimension = grid.Dimension();
-    const NUM_TYPE num_cube_facets = IJK::compute_num_cube_facets(dimension);
+    const DTYPE dimension = isodual_table.Dimension();
+    IJK::PROCEDURE_ERROR error("split_non_manifold_isov_pairs_ambig2");
+
+    if (grid.Dimension() != isodual_table.Dimension()) {
+      error.AddMessage
+        ("Programming error.  Grid dimension does not match isotable dimension.");
+      error.AddMessage("  Grid dimension: ", grid.Dimension());
+      error.AddMessage("  Isotable dimension: ", isodual_table.Dimension());
+      throw error;
+    }
+
     NUM_TYPE num_ambig_facets0, num_ambig_facets1, jfacet;
 
     num_split = 0;
@@ -1280,7 +1325,6 @@ namespace IJK {
 
     const DTYPE dimension = grid.Dimension();
     const NUM_TYPE num_cube_vertices = compute_num_cube_vertices(dimension);
-    const NUM_TYPE num_cube_facets = compute_num_cube_facets(dimension);
     const NUM_TYPE num_vertices = grid.NumVertices();
     IJK::ARRAY<SIZE_TYPE> index_to_cube_list(num_vertices);
 
@@ -1295,16 +1339,11 @@ namespace IJK {
       NUM_TYPE num_isov0 = isodual_table.NumIsoVertices(it0);
 
       if (isodual_table.NumAmbiguousFacets(it0) == 1) {
-
+        DTYPE orth_dir;
+        NUM_TYPE side;
         const VTYPE cube_index0 = cube_list[i0].cube_index;
-        const FACET_BITS_TYPE facet_set = 
-          isodual_table.AmbiguousFacetBits(it0);
-        const NUM_TYPE kf = get_first_one_bit(facet_set, num_cube_facets);
-
-        const DTYPE orth_dir = IJK::cube_facet_orth_dir(dimension, kf);
-        const NUM_TYPE side = IJK::cube_facet_side(dimension, kf);
-
-        if (!grid.IsCubeFacetOnGridBoundary(cube_index0, orth_dir, side)) {
+        if (!is_ambiguous_cube_facet_on_grid_boundary
+            (grid, isodual_table, cube_index0, it0, orth_dir, side)) {
 
           // Only process facets on top/right to avoid processing a facet twice.
           if (side) {

@@ -1104,6 +1104,7 @@ namespace IJKDUALTABLE {
     DTYPE dimension;               ///< Dimension.
     NTYPE num_poly_vertices;       ///< Number of polytope vertices.
     NTYPE num_poly_edges;          ///< Number of polytope edges;
+    NTYPE num_poly_facets;          ///< Number of polytope facets;
     ENTRY_TYPE * entry;            ///< Array of dual isosurface table entries.
     TI_TYPE num_table_entries;     ///< Number of entries in table.
 
@@ -1122,7 +1123,7 @@ namespace IJKDUALTABLE {
     ISODUAL_TABLE_BASE();
     template <typename DTYPE2>
     ISODUAL_TABLE_BASE(const DTYPE2 d);
-    ~ISODUAL_TABLE_BASE();                ///< Destructor
+    ~ISODUAL_TABLE_BASE();             ///< Destructor
 
     // Get functions.
     DTYPE Dimension() const            ///< Return dimension.
@@ -1131,6 +1132,8 @@ namespace IJKDUALTABLE {
     { return(num_poly_vertices); };
     NTYPE NumPolyEdges() const         ///< Return number of polytope edges.
     { return(num_poly_edges); };
+    NTYPE NumPolyFacets() const        ///< Return number of polytope facets.
+    { return(num_poly_facets); };
 
     /// Return number of lookup table entries.
     NTYPE NumTableEntries() const { return(num_table_entries); };
@@ -1173,6 +1176,7 @@ namespace IJKDUALTABLE {
     void SetDimension(const DTYPE2 d);
     void SetNumPolyVertices(const NTYPE num_vertices);
     void SetNumPolyEdges(const NTYPE num_edges);
+    void SetNumPolyFacets(const NTYPE num_facets);
 
     /// Set polytope to be a cube.
     template <typename DTYPE2>
@@ -2165,6 +2169,22 @@ namespace IJKDUALTABLE {
     num_poly_edges = num_edges;
   }
 
+  // Set number of polytope edges
+  template <typename DTYPE, typename NTYPE, typename TI_TYPE,
+            typename ENTRY_TYPE>
+  void ISODUAL_TABLE_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  SetNumPolyFacets(const NTYPE num_facets)
+  {
+    const char * procname = "ISODUAL_TABLE_BASE::SetNumFacets";
+
+    if (IsTableAllocated()) {
+      throw IJK::PROCEDURE_ERROR
+        (procname, "Dual isosurface table already allocated.");
+    }
+
+    num_poly_facets = num_facets;
+  }
+
   // Set polytope to be a cube.
   template <typename DTYPE, typename NTYPE, typename TI_TYPE,
             typename ENTRY_TYPE>
@@ -2181,11 +2201,14 @@ namespace IJKDUALTABLE {
 
     this->SetDimension(dimension);
 
-    NTYPE num_vertices = IJK::compute_num_cube_vertices(dimension);
+    const NTYPE num_vertices = IJK::compute_num_cube_vertices(dimension);
     this->SetNumPolyVertices(num_vertices);
 
-    NTYPE num_edges = IJK::compute_num_cube_edges(dimension);
+    const NTYPE num_edges = IJK::compute_num_cube_edges(dimension);
     this->SetNumPolyEdges(num_edges);
+
+    const NTYPE num_facets = IJK::compute_num_cube_facets(dimension);
+    this->SetNumPolyFacets(num_facets);
   }
 
 

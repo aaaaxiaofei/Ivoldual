@@ -47,7 +47,7 @@ namespace IVOLDUAL {
   //! Nrrd header.
   typedef IJK::NRRD_DATA<int, AXIS_SIZE_TYPE> NRRD_HEADER; 
 
-  typedef enum { OFF, IV, PLY } OUTPUT_FORMAT;    //!< Output format.
+  typedef enum { OFF, PLY, VTK, IV } OUTPUT_FORMAT;    //!< Output format.
 
 
   // **************************************************
@@ -70,12 +70,14 @@ namespace IVOLDUAL {
     bool label_with_isovalue;
     std::string output_off_filename;
     std::string output_ply_filename;
+    std::string output_vtk_filename;
     std::string output_iv_filename;
     bool are_output_filenames_set;
     std::string isotable_directory;
     bool flag_output_off;    ///< Output Geomview .off file.
     bool flag_output_ply;    ///< Output PLY file.
     bool flag_output_iv;     ///< Output OpenInventor file.
+    bool flag_output_vtk;    ///< Output vtk file.
     bool flag_report_time;
     bool flag_report_info;
     bool flag_use_stdout;

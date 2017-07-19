@@ -51,10 +51,11 @@ namespace {
 
   typedef enum
     {SUBSAMPLE_OPT, SUPERSAMPLE_OPT, POSITION_OPT, CUBE_CENTER_OPT,
-     SPLIT_AMBIG_PAIRS_OPT, NO_SPLIT_AMBIG_PAIRS_OPT,
+     SPLIT_AMBIG_PAIRS_OPT, SPLIT_AMBIG_PAIRSB_OPT, NO_SPLIT_AMBIG_PAIRS_OPT,
      MANIFOLD_OPT, MULTI_ISOV_OPT, SINGLE_ISOV_OPT, 
      SELECT_SPLIT_OPT, CONNECT_AMBIG_OPT,
      SEP_NEG_OPT, SEP_POS_OPT,
+     ICODE1_OPT, ICODE2_OPT,
      TRIMESH_OPT, TRIMESH_UNIFORM_OPT,
      TRIMESH_SPLIT_MAX_OPT, TRIMESH_MAX_ANGLE_OPT,
      TRIMESH_ONLY_TRI4_OPT, TRIMESH_TRI4_BY_DISTANCE_OPT,
@@ -65,7 +66,7 @@ namespace {
      QEI_AVERAGE_OPT,
      COLOR_VERT_OPT,
      HELP_OPT, HELP_ALL_OPT, USAGE_OPT, ALL_OPTIONS_OPT,
-     OFF_OPT, IV_OPT, PLY_OPT,
+     OFF_OPT, IV_OPT, PLY_OPT, VTK_OPT,
      OUTPUT_FILENAME_OPT, OUTPUT_FILENAME_PREFIX_OPT, STDOUT_OPT, 
      LABEL_WITH_ISOVALUE_OPT,
      NO_WRITE_OPT, SILENT_OPT, NO_WARN_OPT,
@@ -193,6 +194,12 @@ namespace {
        "-split_ambig_pairs", "Split ambiguous pairs.");
 
     options.AddOptionNoArg
+      (SPLIT_AMBIG_PAIRSB_OPT, "SPLIT_AMBIG_PAIRSB_OPT", REGULAR_OPTG, 
+       "-split_ambig_pairsB", "Split ambiguous pairs.");
+    options.AddToHelpMessage
+      (SPLIT_AMBIG_PAIRSB_OPT, "Version which allows more splits.");
+
+    options.AddOptionNoArg
       (NO_SPLIT_AMBIG_PAIRS_OPT, "NO_SPLIT_AMBIG_PAIRS_OPT", REGULAR_OPTG, 
        "-no_split_ambig_pairs", "Do not split ambiguous pairs.");
 
@@ -263,6 +270,9 @@ namespace {
        "Output in Stanford Polygon File Format (PLY).");
     options.AddToHelpMessage
       (PLY_OPT, "(Allowed only with 3D scalar data.)");
+
+    options.AddOptionNoArg
+      (VTK_OPT, "VTK_OPT", REGULAR_OPTG, "-vtk", "Output in VTK format.");
     options.AddUsageOptionEndOr(REGULAR_OPTG);
 
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -346,6 +356,28 @@ namespace {
        "Isosurface patches separate positive grid vertices.");
 
     options.AddUsageOptionEndOr(EXTENDED_OPTG);
+
+    options.AddUsageOptionBeginOr(EXTENDED_OPTG);
+
+    options.AddOptionNoArg
+      (ICODE1_OPT, "ICODE1_OPT", EXTENDED_OPTG, "-icode1", 
+       "Set default interior code to 1.");
+    options.AddToHelpMessage
+      (ICODE1_OPT, 
+       "Set encoded value of grid vertices in the interior ",
+       "of the interval volume to 1.");
+
+    options.AddOptionNoArg
+      (ICODE2_OPT, "ICODE2_OPT", EXTENDED_OPTG, "-icode2", 
+       "Set default interior code to 2.");
+    options.AddToHelpMessage
+      (ICODE2_OPT, 
+       "Set encoded value of grid vertices in the interior ",
+       "of the interval volume to 2.");
+
+    options.AddUsageOptionEndOr(EXTENDED_OPTG);
+    options.AddUsageOptionNewline(EXTENDED_OPTG);
+
 
     options.AddOptionNoArg
       (SELECT_SPLIT_OPT, "SELECT_SPLIT_OPT", EXTENDED_OPTG, "-select_split", 
@@ -498,8 +530,13 @@ bool process_option
     io_info.flag_split_ambig_pairs = true;
     break;
 
+  case SPLIT_AMBIG_PAIRSB_OPT:
+    io_info.flag_split_ambig_pairsB = true;
+    break;
+
   case NO_SPLIT_AMBIG_PAIRS_OPT:
     io_info.flag_split_ambig_pairs = false;
+    io_info.flag_split_ambig_pairsB = false;
     break;
 
   case MANIFOLD_OPT:
@@ -534,6 +571,14 @@ bool process_option
   case SEP_POS_OPT:
     io_info.allow_multiple_iso_vertices = true;
     io_info.flag_separate_neg = false;
+    break;
+
+  case ICODE1_OPT:
+    io_info.default_interior_code = 1;
+    break;
+
+  case ICODE2_OPT:
+    io_info.default_interior_code = 2;
     break;
 
   case TRIMESH_OPT:
@@ -605,6 +650,11 @@ bool process_option
 
   case PLY_OPT:
     io_info.flag_output_ply = true;
+    io_info.is_file_format_set = true;
+    break;
+
+  case VTK_OPT:
+    io_info.flag_output_vtk = true;
     io_info.is_file_format_set = true;
     break;
 
@@ -961,6 +1011,25 @@ void IVOLDUAL::write_dual_mesh
     else throw error("Illegal dimension. PLY format is only for dimension 3.");
     break;
 
+  case VTK:
+    if (dimension == 3) {
+      if (!flag_use_stdout) {
+        ofilename = output_info.output_vtk_filename;
+        output_file.open(ofilename.c_str(), ios::out);
+        ijkoutHexahedraVTK
+          (output_file, "Dual interval volume hexahedral mesh", dimension,
+           vertex_coord, plist, true);
+        output_file.close();
+      }
+      else {
+        ijkoutHexahedraVTK
+          (cout, "Dual interval volume hexahedral mesh", dimension,
+           vertex_coord, plist, true);
+      }
+    }
+    else throw error("Illegal dimension. VTK format is only for dimension 3.");
+    break;
+
   case IV:
     if (dimension == 3) {
       if (!flag_use_stdout) {
@@ -1007,6 +1076,16 @@ void IVOLDUAL::write_dual_mesh
   if (output_info.flag_output_ply) {
     if (output_info.output_ply_filename != "") {
       write_dual_mesh(output_info, PLY, vertex_coord, plist);
+    }
+    else {
+      error.AddMessage("Programming error. PLY file name not set.");
+      throw error;
+    }
+  }
+
+  if (output_info.flag_output_vtk) {
+    if (output_info.output_vtk_filename != "") {
+      write_dual_mesh(output_info, VTK, vertex_coord, plist);
     }
     else {
       error.AddMessage("Programming error. PLY file name not set.");
@@ -2029,6 +2108,7 @@ void IVOLDUAL::IO_INFO::Init()
   flag_output_off = false;
   flag_output_ply = false;
   flag_output_iv = false;
+  flag_output_vtk = false;
   are_output_filenames_set = false;
   flag_report_time = false;
   flag_report_info = false;
@@ -2114,6 +2194,12 @@ void IVOLDUAL::IO_INFO::SetOutputFilename(const char * output_filename)
     are_output_filenames_set = true;
   }
 
+  if (flag_output_vtk) {
+    output_vtk_filename = output_filename;
+    num_output_formats++;
+    are_output_filenames_set = true;
+  }
+
   if (flag_output_iv) {
     output_iv_filename = output_filename;
     num_output_formats++;
@@ -2144,6 +2230,10 @@ void IVOLDUAL::IO_INFO::SetOutputFilename
 
   case PLY:
     output_ply_filename = output_filename;
+    break;
+
+  case VTK:
+    output_vtk_filename = output_filename;
     break;
 
   case IV:
@@ -2192,6 +2282,7 @@ void IVOLDUAL::IO_INFO::ConstructOutputFilenames(const int i)
 
   output_off_filename = ofilename + ".off";
   output_ply_filename = ofilename + ".ply";
+  output_vtk_filename = ofilename + ".vtk";
   output_iv_filename = ofilename + ".iv";
 }
 

@@ -171,6 +171,8 @@ void IVOLDUAL::dual_contouring_interval_volume
   const int dimension = scalar_grid.Dimension();
   const bool flag_separate_neg = param.SeparateNegFlag();
   const bool flag_always_separate_opposite(true);
+  const GRID_VERTEX_ENCODING default_interior_code =
+    param.default_interior_code;
   int num_non_manifold_split(0);
   IJK::PROCEDURE_ERROR error("dual_contouring_interval_volume");
   clock_t t0, t1, t2;
@@ -193,7 +195,6 @@ void IVOLDUAL::dual_contouring_interval_volume
   dualiso_info.time.Clear();
 
   IVOLDUAL_ENCODED_GRID encoded_grid;
-  const GRID_VERTEX_ENCODING default_interior_code = 2;
   encode_grid_vertices
     (scalar_grid, isovalue0, isovalue1, default_interior_code, 
      encoded_grid, dualiso_info);
@@ -214,7 +215,12 @@ void IVOLDUAL::dual_contouring_interval_volume
   compute_cube_ivoltable_info
     (encoded_grid, ivoldual_table, cube_ivolv_list);
 
-  if (param.flag_split_ambig_pairs) {
+  if (param.flag_split_ambig_pairsB) {
+    // *** Probably not necessary
+    split_non_manifold_ivolv_pairs_ambigB
+      (encoded_grid, ivoldual_table, cube_ivolv_list, num_non_manifold_split);
+  }
+  else if (param.flag_split_ambig_pairs) {
     split_non_manifold_ivolv_pairs_ambig
       (encoded_grid, ivoldual_table, cube_ivolv_list, num_non_manifold_split);
   }
@@ -366,15 +372,23 @@ namespace {
     }
   }
 
+  // \param[out] flag_reverse_orient True if orientation of dual polytope
+  //   should be reversed.
   bool does_grid_edge_have_dual_ivolpoly
   (const IVOLDUAL_ENCODED_GRID & encoded_grid,
-   const VERTEX_INDEX iend0, const int edge_dir)
+   const VERTEX_INDEX iend0, const int edge_dir,
+   bool & flag_reverse_orient)
   {
     VERTEX_INDEX iend1 = encoded_grid.NextVertex(iend0, edge_dir);
     GRID_VERTEX_ENCODING s0 = encoded_grid.Scalar(iend0);
     GRID_VERTEX_ENCODING s1 = encoded_grid.Scalar(iend1);
 
-    if (s0 > s1) { std::swap(s0,s1); }
+    flag_reverse_orient = false;
+
+    if (s0 > s1) { 
+      std::swap(s0,s1); 
+      flag_reverse_orient = true;
+    }
 
     if (s0 == 0) {
       if (s1 >= 2) { return(true); }
@@ -405,12 +419,14 @@ void IVOLDUAL::extract_ivolpoly_dual_to_grid_edges
  DUALISO_INFO & dualiso_info)
 {
   const int num_facet_vertices = encoded_grid.NumFacetVertices();
+  bool flag_reverse_orient;
 
   if (num_facet_vertices == 0) { return; }
 
   IJK_FOR_EACH_INTERIOR_GRID_EDGE(iend0, edge_dir, encoded_grid, VERTEX_INDEX) {
 
-    if (does_grid_edge_have_dual_ivolpoly(encoded_grid, iend0, edge_dir)) {
+    if (does_grid_edge_have_dual_ivolpoly
+        (encoded_grid, iend0, edge_dir, flag_reverse_orient)) {
 
       const VERTEX_INDEX increment = 
         encoded_grid.FacetVertexIncrement(edge_dir,num_facet_vertices-1);
@@ -422,7 +438,7 @@ void IVOLDUAL::extract_ivolpoly_dual_to_grid_edges
       }
 
       IVOLDUAL_POLY_INFO info;
-      info.SetDualToEdge(iend0, edge_dir);
+      info.SetDualToEdge(iend0, edge_dir, flag_reverse_orient);
       ivolpoly_info.push_back(info);
     }
   }
@@ -493,12 +509,14 @@ namespace {
 
       // Compute index of vertex opposite to poly_vertex[i]
       if (ivolpoly_info[ipoly].flag_dual_to_edge) {
+        const bool on_lower_cube_facet = (icorner < num_facet_vertices);
         const int ifacet = cube.FacetIndex(poly_vertex_i);
         const int j = poly_vertex_i - ifacet*num_facet_vertices;
         int opposite_vertex = (num_facet_vertices-1) - j;
         opposite_vertex += (ifacet*num_facet_vertices);
 
-        if (icorner < num_cube_vertices/2) {
+        if (ivolpoly_info[ipoly].flag_reverse_orient ^
+            on_lower_cube_facet) {
           // Vertex on lower facet.
           ivolpoly_vert[i] = cube_list[k].first_isov +
             ivoldual_table.LowerIncident(it, opposite_vertex);
@@ -518,6 +536,7 @@ namespace {
     }
   }
 
+
   // Return true if ivol vertices in cube are candidates for splitting
   //   to avoid pair ambiguity.
   bool is_cube_ambig_split_candidate
@@ -536,6 +555,51 @@ namespace {
       { return(false); }
     if (numv_in_lower_lifted > 1) { return(false); }
     if (numv_in_upper_lifted > 1) { return(false); }
+
+    if (ivoldual_table.AmbiguousFacetBitsInLowerLifted(table_index) != 0) {
+      // Lower lifted cube has an ambiguous facet.
+      if (ivoldual_table.NumVerticesInLowerLifted(opposite_table_index) < 2) {
+        // Switching to opposite_table_index does not solve
+        //   ambiguity problem.
+        return(false);
+      }
+    }
+
+    if (ivoldual_table.AmbiguousFacetBitsInUpperLifted(table_index) != 0) {
+      // Lower lifted cube has an ambiguous facet.
+      if (ivoldual_table.NumVerticesInUpperLifted(opposite_table_index) < 2) {
+        // Switching to opposite_table_index does not solve
+        //   ambiguity problem.
+        return(false);
+      }
+    }
+
+    return(true);
+  }
+
+
+  // *** Probably not necessary
+  // Return true if ivol vertices in cube are candidates for splitting
+  //   to avoid pair ambiguity.
+  // Version which allows more splits.
+  // Allow split if numv_in_lower_lifted > 1 but numv_in_upper_lifted = 1
+  //   or vice versa.
+  bool is_cube_ambig_split_candidateB
+  (const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   const GRID_CUBE_DATA & cube_data)
+  {
+    const TABLE_INDEX table_index = cube_data.table_index;
+    const int numv_in_lower_lifted = 
+      ivoldual_table.NumVerticesInLowerLifted(table_index);
+    const int numv_in_upper_lifted = 
+      ivoldual_table.NumVerticesInUpperLifted(table_index);
+    const TABLE_INDEX opposite_table_index =
+      ivoldual_table.OppositeTableIndex(table_index);
+
+    if (ivoldual_table.NumAmbiguousFacets(table_index) > 1) 
+      { return(false); }
+    if (numv_in_lower_lifted > 1 && numv_in_upper_lifted > 1) 
+      { return(false); }
 
     if (ivoldual_table.AmbiguousFacetBitsInLowerLifted(table_index) != 0) {
       // Lower lifted cube has an ambiguous facet.
@@ -588,7 +652,6 @@ void IVOLDUAL::split_non_manifold_ivolv_pairs_ambig
  int & num_split)
 {
   typedef typename DUALISO_GRID::NUMBER_TYPE NUM_TYPE;
-  typedef typename IVOLDUAL_CUBE_TABLE::FACET_BITS_TYPE FACET_BITS_TYPE;
 
   const int dimension = grid.Dimension();
   const NUM_TYPE num_cube_facets = IJK::compute_num_cube_facets(dimension);
@@ -600,15 +663,12 @@ void IVOLDUAL::split_non_manifold_ivolv_pairs_ambig
 
     if (ivoldual_table.NumAmbiguousFacets(it0) == 1 &&
         is_cube_ambig_split_candidate(ivoldual_table, cube_list[i0])) {
-
-      const FACET_BITS_TYPE facet_set0 =
-        ivoldual_table.AmbiguousFacetBits(it0);
-      const NUM_TYPE kf = get_first_one_bit(facet_set0, num_cube_facets);
-      const int orth_dir = IJK::cube_facet_orth_dir(dimension, kf);
-      const int side = IJK::cube_facet_side(dimension, kf);
+      int orth_dir;
+      int side;
       const VERTEX_INDEX cube_index0 = cube_list[i0].cube_index;
-
-      if (grid.IsCubeFacetOnGridBoundary(cube_index0, orth_dir, side)) {
+      
+      if (IJK::is_ambiguous_cube_facet_on_grid_boundary
+          (grid, ivoldual_table, cube_index0, it0, orth_dir, side)) {
 
         // Change table index of cube i0 opposite table
         //   indices to split interval volume vertex.
@@ -648,6 +708,77 @@ void IVOLDUAL::split_non_manifold_ivolv_pairs_ambig
   IJK::set_index_to_cube_list(cube_list, index_to_cube_list);
 
   split_non_manifold_ivolv_pairs_ambig
+    (grid, ivoldual_table, index_to_cube_list.PtrConst(), 
+     cube_list, num_split);
+}
+
+
+// *** Probably not necessary
+void IVOLDUAL::split_non_manifold_ivolv_pairs_ambigB
+(const DUALISO_GRID & grid,
+ const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+ const VERTEX_INDEX index_to_cube_list[],
+ std::vector<GRID_CUBE_DATA> & cube_list,
+ int & num_split)
+{
+  typedef typename DUALISO_GRID::NUMBER_TYPE NUM_TYPE;
+
+  const int dimension = grid.Dimension();
+  const NUM_TYPE num_cube_facets = IJK::compute_num_cube_facets(dimension);
+
+  num_split = 0;
+  for (NUM_TYPE i0 = 0; i0 < cube_list.size(); i0++) {
+
+    const TABLE_INDEX it0 = cube_list[i0].table_index;
+
+    if (ivoldual_table.NumAmbiguousFacets(it0) == 1 &&
+        is_cube_ambig_split_candidateB(ivoldual_table, cube_list[i0])) {
+      int orth_dir;
+      int side;
+      const VERTEX_INDEX cube_index0 = cube_list[i0].cube_index;
+      
+      if (IJK::is_ambiguous_cube_facet_on_grid_boundary
+          (grid, ivoldual_table, cube_index0, it0, orth_dir, side)) {
+
+        // Change table index of cube i0 opposite table
+        //   indices to split interval volume vertex.
+        cube_list[i0].table_index = 
+          ivoldual_table.OppositeTableIndex(it0);
+        num_split++;
+      }
+      else {
+        const VERTEX_INDEX cube_index1 =
+          grid.AdjacentVertex(cube_index0, orth_dir, side);
+        const VERTEX_INDEX i1 = index_to_cube_list[cube_index1];
+        if (is_cube_ambig_split_candidateB(ivoldual_table, cube_list[i1])) {
+          const TABLE_INDEX it1 = cube_list[i1].table_index;
+
+          // Change table indices of cubes i0 and i1 to opposite table
+          //   indices to split interval volume vertices.
+          cube_list[i0].table_index = 
+            ivoldual_table.OppositeTableIndex(it0);
+          cube_list[i1].table_index = 
+            ivoldual_table.OppositeTableIndex(it1);
+          num_split += 2;
+        }
+      }
+    }
+  }
+}
+
+
+// *** Probably not necessary
+void IVOLDUAL::split_non_manifold_ivolv_pairs_ambigB
+(const DUALISO_GRID & grid,
+ const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+ std::vector<GRID_CUBE_DATA> & cube_list,
+ int & num_split)
+{
+  IJK::ARRAY<VERTEX_INDEX> index_to_cube_list(grid.NumVertices());
+
+  IJK::set_index_to_cube_list(cube_list, index_to_cube_list);
+
+  split_non_manifold_ivolv_pairs_ambigB
     (grid, ivoldual_table, index_to_cube_list.PtrConst(), 
      cube_list, num_split);
 }
