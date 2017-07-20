@@ -104,6 +104,7 @@ namespace IVOLDUAL {
     bool is_qei_method_set;
     bool is_tri4_position_method_set;
     bool is_file_format_set;
+    bool is_flag_orient_in_set;
 
     /// Return number of selected output formats.
     int NumOutputFormats() const;

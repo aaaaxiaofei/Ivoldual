@@ -65,6 +65,7 @@ namespace {
      QEI_INTERPOLATE_SCALAR_OPT, QEI_INTERPOLATE_COORD_OPT, 
      QEI_AVERAGE_OPT,
      COLOR_VERT_OPT,
+     ORIENT_IN_OPT, ORIENT_OUT_OPT,
      HELP_OPT, HELP_ALL_OPT, USAGE_OPT, ALL_OPTIONS_OPT,
      OFF_OPT, IV_OPT, PLY_OPT, VTK_OPT,
      OUTPUT_FILENAME_OPT, OUTPUT_FILENAME_PREFIX_OPT, STDOUT_OPT, 
@@ -262,6 +263,22 @@ namespace {
 
     options.AddUsageOptionBeginOr(REGULAR_OPTG);
     options.AddOptionNoArg
+      (ORIENT_IN_OPT, "ORIENT_IN_OPT", REGULAR_OPTG, "-orient_in", 
+       "Orient hexahedra so that facet normals point in.");
+    options.AddToHelpMessage
+      (ORIENT_IN_OPT, "Default for .vtk output files.");
+
+    options.AddOptionNoArg
+      (ORIENT_OUT_OPT, "ORIENT_OUT_OPT", REGULAR_OPTG, "-orient_out", 
+       "Orient hexahedra so that facet normals point out.");
+    options.AddToHelpMessage
+      (ORIENT_OUT_OPT, "Default for .off output files.");
+
+    options.AddUsageOptionEndOr(REGULAR_OPTG);
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+    options.AddUsageOptionBeginOr(REGULAR_OPTG);
+
+    options.AddOptionNoArg
       (OFF_OPT, "OFF_OPT", REGULAR_OPTG, "-off", 
        "Output in geomview OFF format. (Default.)");
 
@@ -273,11 +290,11 @@ namespace {
 
     options.AddOptionNoArg
       (VTK_OPT, "VTK_OPT", REGULAR_OPTG, "-vtk", "Output in VTK format.");
+
     options.AddUsageOptionEndOr(REGULAR_OPTG);
-
     options.AddUsageOptionNewline(REGULAR_OPTG);
-
     options.AddUsageOptionBeginOr(REGULAR_OPTG);
+
     options.AddOption1Arg
       (OUTPUT_FILENAME_OPT, "OUTPUT_FILENAME_OPT", REGULAR_OPTG, 
        "-o", "{output_filename}", 
@@ -643,6 +660,16 @@ bool process_option
     io_info.flag_color_vert = true;
     break;
 
+  case ORIENT_IN_OPT:
+    io_info.flag_orient_in = true;
+    io_info.is_flag_orient_in_set = true;
+    break;
+
+  case ORIENT_OUT_OPT:
+    io_info.flag_orient_in = false;
+    io_info.is_flag_orient_in_set = true;
+    break;
+
   case OFF_OPT:
     io_info.flag_output_off = true;
     io_info.is_file_format_set = true;
@@ -832,7 +859,6 @@ void process_io_info(IO_INFO_TYPE & io_info)
       io_info.SetOutputFilename(io_info.output_filename);
     }
   }
-
 
   if (io_info.flag_subsample && io_info.flag_supersample) {
     cerr << "Error.  Can't use both -subsample and -supersample parameters."
@@ -1061,6 +1087,8 @@ void IVOLDUAL::write_dual_mesh
 (const OUTPUT_INFO & output_info,
  const vector<COORD_TYPE> & vertex_coord, const vector<VERTEX_INDEX> & plist)
 {
+  const int num_vert_per_cube_facet = 
+    compute_num_cube_facet_vertices(output_info.dimension);
   IJK::PROCEDURE_ERROR error("write_dual_mesh");
 
   if (output_info.flag_output_off) {
@@ -1085,10 +1113,19 @@ void IVOLDUAL::write_dual_mesh
 
   if (output_info.flag_output_vtk) {
     if (output_info.output_vtk_filename != "") {
-      write_dual_mesh(output_info, VTK, vertex_coord, plist);
+      if (output_info.is_flag_orient_in_set || output_info.flag_orient_in) {
+        write_dual_mesh(output_info, VTK, vertex_coord, plist);
+      }
+      else {
+        // output_info.flag_orient_in = false.
+        // Reverse hexahedra orientation.
+        std::vector<VERTEX_INDEX> plist2(plist);
+        reverse_orientations_cube_list(plist2, num_vert_per_cube_facet);
+        write_dual_mesh(output_info, VTK, vertex_coord, plist2);
+      }
     }
     else {
-      error.AddMessage("Programming error. PLY file name not set.");
+      error.AddMessage("Programming error. VTK file name not set.");
       throw error;
     }
   }
@@ -2128,6 +2165,7 @@ void IVOLDUAL::IO_INFO::Init()
   is_qei_method_set = false;
   is_tri4_position_method_set = false;
   is_file_format_set = false;
+  is_flag_orient_in_set = false;
 }
 
 

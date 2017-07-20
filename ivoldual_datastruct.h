@@ -160,6 +160,10 @@ namespace IVOLDUAL {
     bool flag_split_ambig_pairs;
     bool flag_split_ambig_pairsB;
 
+    /// Hexahedra orientation.
+    /// - If true, orient hexahedra so that facet normals point in.
+    bool flag_orient_in;
+
     /// Default encoded value (1 or 2) for vertices in the interior
     ///   of the interval volume.
     GRID_VERTEX_ENCODING default_interior_code;

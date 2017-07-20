@@ -23,6 +23,8 @@
 
 
 
+#include "ijkisopoly.txx"
+#include "ijkmesh.txx"
 #include "ijktime.txx"
 
 #include "ijkdual.txx"
@@ -31,8 +33,6 @@
 
 #include "ivoldual.h"
 #include "ivoldual_datastruct.h"
-
-#include "ijkisopoly.txx"
 
 using namespace IJK;
 using namespace IVOLDUAL;
@@ -235,6 +235,13 @@ void IVOLDUAL::dual_contouring_interval_volume
   position_all_dual_ivol_vertices
     (scalar_grid, ivoldual_table, isodual_table, isovalue0, isovalue1, 
      ivolv_list, vertex_coord);
+
+  if (param.flag_orient_in) {
+    const int num_vert_per_cube_facet =  
+      compute_num_cube_facet_vertices(dimension);
+    IJK::reverse_orientations_cube_list
+      (ivolpoly_vert, num_vert_per_cube_facet);
+  }
 
   dualiso_info.multi_isov.num_cubes_multi_isov = num_split;
   dualiso_info.multi_isov.num_cubes_single_isov =

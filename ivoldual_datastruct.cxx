@@ -32,6 +32,7 @@ IVOLDUAL::IVOLDUAL_DATA_FLAGS::IVOLDUAL_DATA_FLAGS()
 {
   flag_split_ambig_pairs = false;
   flag_split_ambig_pairsB = false;
+  flag_orient_in = false;
   default_interior_code = 2;
 }
 

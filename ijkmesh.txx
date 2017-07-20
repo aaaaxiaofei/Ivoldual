@@ -594,6 +594,7 @@ namespace IJK {
   ///@{
 
   /// Delete duplicate polytope vertices.
+  /// *** ORDER OF vlist and num_poly_vert INCONSISTENT WITH IO ROUTINES ***
   template <typename NUMV_TYPE, typename VTYPE, typename ITYPE, 
             typename NTYPE>
   void delete_poly_vert_duplicate
@@ -624,7 +625,9 @@ namespace IJK {
     }
   }
 
-  /// Delete polytope vertices with duplicate coodinates.
+
+  /// Delete polytope vertices with duplicate coordinates.
+  /// *** ORDER OF vlist and num_poly_vert INCONSISTENT WITH IO ROUTINES ***
   template <typename DTYPE, typename CTYPE, typename NUMV_TYPE, typename VTYPE,
             typename ITYPE, typename NTYPE>
   void delete_poly_vert_duplicate_coord
@@ -696,6 +699,7 @@ namespace IJK {
     return(true);
   }
 
+
   /// Return true if all polytope vertices are is in region.
   template <typename DTYPE, typename CTYPE0, typename CTYPE1, typename CTYPE2,
             typename VTYPE, typename NUMV_TYPE>
@@ -713,7 +717,9 @@ namespace IJK {
     return(true);
   }
 
+
   /// Delete any polytopes with vertices outside the given region.
+  /// *** ORDER OF vlist and num_poly_vert INCONSISTENT WITH IO ROUTINES ***
   template <typename DTYPE, typename CTYPE0, typename CTYPE1, typename CTYPE2,
             typename NUMV_TYPE, typename VTYPE, typename ITYPE, typename NTYPE>
   void delete_poly_outside_region
@@ -742,8 +748,10 @@ namespace IJK {
     num_poly = k;
   }
 
+
   /// Delete any vertices outside the given region.
   /// Also deletes any polytopes incident on those vertices
+  /// *** ORDER OF vlist and num_poly_vert INCONSISTENT WITH IO ROUTINES ***
   template <typename DTYPE, typename CTYPE0, typename CTYPE1, typename CTYPE2,
             typename NTYPE,
             typename NUM_POLYV_TYPE, typename VTYPE, typename ITYPE,
@@ -919,6 +927,53 @@ namespace IJK {
       reverse_orientations_polygon_list
         (&(poly_vert.front()), &(num_poly_vert.front()), 
          &(first_poly_vert.front()), num_poly_vert.size());
+    }
+  }
+
+  /// Reverse cube orientation.
+  /// @param cube_vertex[] Array of cube vertices.
+  /// @param num_cube_facet_vert Number of vertices per cube facet
+  template <typename VTYPE, typename NTYPE>
+  void reverse_cube_orientation
+  (VTYPE * cube_vertex, const NTYPE num_vert_per_cube_facet)
+  {
+    // Swap left and right facet vertices to reverse cube orientation.
+    for (NTYPE i = 0; i < num_vert_per_cube_facet; i++) {
+      std::swap(cube_vertex[i], cube_vertex[i+num_vert_per_cube_facet]);
+    }
+  }
+
+  /// Reverse orientations of cubes in list.
+  /// @param cube_vertex[] Array of cube vertices.
+  /// @param num_cubes Number of cubes.
+  /// @param num_cube_facet_vert Number of vertices per cube facet
+  template <typename VTYPE, typename NTYPE0, typename NTYPE1>
+  void reverse_orientations_cube_list
+  (VTYPE * cube_vertex, 
+   const NTYPE0 num_cubes, const NTYPE1 num_vert_per_cube_facet)
+  {
+    const NTYPE1 num_vert_per_cube = 2*num_vert_per_cube_facet;
+
+    for (NTYPE0 i = 0; i < num_cubes; i++) {
+      reverse_cube_orientation
+        (cube_vertex+i*num_vert_per_cube, num_vert_per_cube_facet);
+    }
+  }
+
+  /// Reverse orientations of cubes in list.
+  /// C++ STL vector format for cube_vertex[].
+  template <typename VTYPE, typename NTYPE>
+  void reverse_orientations_cube_list
+  (std::vector<VTYPE> & cube_vertex, const NTYPE num_vert_per_cube_facet)
+  {
+    typedef typename std::vector<VTYPE>::size_type SIZE_TYPE;
+
+    const NTYPE num_vert_per_cube = 2*num_vert_per_cube_facet;
+    const SIZE_TYPE num_cubes = cube_vertex.size()/num_vert_per_cube;
+
+    if (num_cubes > 0) {
+      reverse_orientations_cube_list
+        (&(cube_vertex.front()), num_cubes, num_vert_per_cube_facet);
     }
   }
 
