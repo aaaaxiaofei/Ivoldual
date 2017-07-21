@@ -1034,7 +1034,9 @@ void IVOLDUAL::write_dual_mesh
                       flag_reorder_quad_vertices);
       }
     }
-    else throw error("Illegal dimension. PLY format is only for dimension 3.");
+    else 
+      throw error
+        ("Illegal output mesh dimension. PLY format is only for dimension 3.");
     break;
 
   case VTK:
@@ -1053,7 +1055,9 @@ void IVOLDUAL::write_dual_mesh
            vertex_coord, plist, true);
       }
     }
-    else throw error("Illegal dimension. VTK format is only for dimension 3.");
+    else
+      throw error
+        ("Illegal output mesh dimension. VTK format is only for dimension 3.");
     break;
 
   case IV:
@@ -1274,8 +1278,8 @@ void IVOLDUAL::write_dual_tri_mesh
  const std::vector<COORD_TYPE> & vertex_coord,
  const std::vector<VERTEX_INDEX> & tri_vert)
 {
-  const int NUMV_PER_QUAD = 4;
-  const int NUMV_PER_TRI = 3;
+  const int NUMV_PER_HEXAHEDRON(8);
+  const int NUMV_PER_TETRAHEDRON(4);
   const int dimension = output_info.dimension;
   const bool flag_use_stdout = output_info.flag_use_stdout;
   ofstream output_file;
@@ -1294,38 +1298,38 @@ void IVOLDUAL::write_dual_tri_mesh
     if (!flag_use_stdout) {
       ofilename = output_info.output_off_filename;
       output_file.open(ofilename.c_str(), ios::out);
-      ijkoutOFF(output_file, dimension, NUMV_PER_TRI,
+      ijkoutOFF(output_file, dimension, NUMV_PER_TETRAHEDRON,
                 vertex_coord, tri_vert);
       output_file.close();
     }
     else {
-      ijkoutOFF(dimension, NUMV_PER_TRI, vertex_coord, tri_vert);
+      ijkoutOFF(dimension, NUMV_PER_TETRAHEDRON, vertex_coord, tri_vert);
     };
     break;
 
-  case PLY:
+  case VTK:
     if (dimension == 3) {
       if (!flag_use_stdout) {
-        ofilename = output_info.output_ply_filename;
+        ofilename = output_info.output_vtk_filename;
         output_file.open(ofilename.c_str(), ios::out);
-        ijkoutPLY(output_file, dimension, NUMV_PER_TRI, 
-                  vertex_coord, tri_vert);
+        ijkoutTetrahedraVTK
+          (output_file, "Dual interval volume tetrahedral mesh", dimension,
+           vertex_coord, tri_vert);
         output_file.close();
       }
       else {
-        ijkoutPLY(cout, dimension, NUMV_PER_TRI, 
-                  vertex_coord, tri_vert);
+        ijkoutTetrahedraVTK
+          (cout, "Dual interval volume tetrahedral mesh", dimension,
+           vertex_coord, tri_vert);
       }
     }
-    else throw error("Illegal dimension. PLY format is only for dimension 3.");
-    break;
-
-  case IV:
-    ijkoutIV(dimension, vertex_coord, tri_vert);
+    else
+      throw error
+        ("Illegal output mesh dimension. VTK format is only for dimension 3.");
     break;
 
   default:
-    throw error("Illegal output format.");
+    throw error("Output format not supported.");
     break;
   }
 
@@ -1351,6 +1355,16 @@ void IVOLDUAL::write_dual_tri_mesh
     }
     else {
       error.AddMessage("Programming error. Geomview OFF file name not set.");
+      throw error;
+    }
+  }
+
+  if (output_info.flag_output_vtk) {
+    if (output_info.output_vtk_filename != "") {
+      write_dual_tri_mesh(output_info, VTK, vertex_coord, tri_vert);
+    }
+    else {
+      error.AddMessage("Programming error. VTK file name not set.");
       throw error;
     }
   }
@@ -1800,8 +1814,9 @@ void IVOLDUAL::rescale_vertex_coord
   }
 }
 
-void IVOLDUAL::rescale_vertex_coord(const std::vector<COORD_TYPE> & grid_spacing,
-                                   std::vector<COORD_TYPE> & vertex_coord)
+void IVOLDUAL::rescale_vertex_coord
+(const std::vector<COORD_TYPE> & grid_spacing,
+ std::vector<COORD_TYPE> & vertex_coord)
 {
   const int dimension = grid_spacing.size();
   PROCEDURE_ERROR error("rescale_vertex_coord");
@@ -2333,7 +2348,7 @@ void IVOLDUAL::IO_INFO::ConstructOutputFilenames(const int i)
 void IVOLDUAL::OUTPUT_INFO::Init()
 {
   dimension = 3;
-  num_vertices_per_isopoly = 4;
+  num_vertices_per_isopoly = 8;
   isovalue[0] = 0;
   isovalue[1] = 0;
   grow_factor = 1;
@@ -2384,7 +2399,7 @@ void IVOLDUAL::set_output_info
   output_info.Set(io_info);
 
   if (output_info.use_triangle_mesh) {
-    output_info.num_vertices_per_isopoly = 3;
+    output_info.num_vertices_per_isopoly = 4;
   }
 
   output_info.grow_factor = 1;

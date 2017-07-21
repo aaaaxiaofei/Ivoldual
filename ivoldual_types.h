@@ -49,6 +49,7 @@ namespace IVOLDUAL {
 
   typedef IJKDUAL::COORD_ARRAY COORD_ARRAY;
   typedef IJKDUAL::SCALAR_ARRAY SCALAR_ARRAY;
+  typedef IJKDUAL::VERTEX_INDEX_ARRAY VERTEX_INDEX_ARRAY;
 
 
   // **************************************************

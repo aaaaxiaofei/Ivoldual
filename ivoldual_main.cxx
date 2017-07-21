@@ -28,7 +28,7 @@
 #include "ivoldualIO.h"
 #include "ivoldual.h"
 
-#include "ijkdual_triangulate.txx"
+#include "ivoldual_triangulate.h"
 
 using namespace IJK;
 using namespace IJKDUAL;
@@ -119,11 +119,6 @@ int main(int argc, char **argv)
 
 }
 
-// forward declaration
-template <typename IVOLDUAL_DATA_TYPE, typename DUAL_ISOSURFACE_TYPE>
-void rescale_and_triangulate
-(const IO_INFO & io_info, const IVOLDUAL_DATA_TYPE & ivoldual_data,
- const SCALAR_TYPE isovalue, DUAL_ISOSURFACE_TYPE & dual_isosurface);
 
 void construct_interval_volume
 (const IO_INFO & io_info, const IVOLDUAL_DATA & ivoldual_data,
@@ -153,14 +148,19 @@ void construct_interval_volume
     // Time info
     dualiso_time.Add(dualiso_info.time);
 
-    // Rescale 
+    // Rescale vertex coordinates. 
     rescale_vertex_coord
       (dimension, ivoldual_data.ScalarGrid().SpacingPtrConst(),
        interval_volume.vertex_coord);
 
+    if (ivoldual_data.UseTriangleMesh()) {
+      triangulate_interval_volume(ivoldual_data, interval_volume);
+    }
+
+
     OUTPUT_INFO output_info;
-    set_output_info(io_info, i, output_info);
     output_info.SetDimension(dimension, num_cube_vertices);
+    set_output_info(io_info, i, output_info);
 
     output_dual_isosurface
       (output_info, ivoldual_data, interval_volume, dualiso_info, io_time);

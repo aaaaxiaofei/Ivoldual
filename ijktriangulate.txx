@@ -430,6 +430,29 @@ namespace IJK {
        hex_vert[5], ear0, ear1, ear2, tri_vert);
   }
 
+
+  // **************************************************
+  // TRIANGULATE POLYTOPES
+  // **************************************************
+
+  template <typename VTYPE0, typename VTYPE1>
+  void triangulate_hexahedron_diagonal07
+  (const VTYPE0 hex_vert[], std::vector<VTYPE1> & tet_vert_list)
+  {
+    add_tetrahedron_vertices
+      (hex_vert[0], hex_vert[7], hex_vert[3], hex_vert[2], tet_vert_list);
+    add_tetrahedron_vertices
+      (hex_vert[0], hex_vert[7], hex_vert[2], hex_vert[6], tet_vert_list);
+    add_tetrahedron_vertices
+      (hex_vert[0], hex_vert[7], hex_vert[6], hex_vert[4], tet_vert_list);
+    add_tetrahedron_vertices
+      (hex_vert[0], hex_vert[7], hex_vert[4], hex_vert[5], tet_vert_list);
+    add_tetrahedron_vertices
+      (hex_vert[0], hex_vert[7], hex_vert[5], hex_vert[1], tet_vert_list);
+    add_tetrahedron_vertices
+      (hex_vert[0], hex_vert[7], hex_vert[1], hex_vert[3], tet_vert_list);
+  }
+
 }
 
 #endif

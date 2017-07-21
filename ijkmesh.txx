@@ -174,6 +174,7 @@ namespace IJK {
 
   ///@}
 
+
   // **************************************************
   /// @name ADD POLYGON VERTICES
   // **************************************************
@@ -300,6 +301,32 @@ namespace IJK {
 
   ///@}
 
+
+  // **************************************************
+  /// @name ADD POLYTOPE VERTICES
+  // **************************************************
+
+  ///@{
+
+  template <typename VTYPE0, typename VTYPE1, typename VTYPE2,
+            typename VTYPE3, typename VTYPEB>
+  void add_tetrahedron_vertices
+  (const VTYPE0 v0, const VTYPE1 v1, const VTYPE2 v2, const VTYPE3 v3,
+   std::vector<VTYPEB> & tet_vert_list)
+  {
+    typedef typename std::vector<VTYPEB>::size_type SIZE_TYPE;
+
+    const SIZE_TYPE NUM_VERT_PER_TETRAHEDRON(4);
+
+    const SIZE_TYPE k = tet_vert_list.size();
+    tet_vert_list.resize(k+NUM_VERT_PER_TETRAHEDRON);
+    tet_vert_list[k] = v0;
+    tet_vert_list[k+1] = v1;
+    tet_vert_list[k+2] = v2;
+    tet_vert_list[k+3] = v3;
+  }
+
+  ///@}
 
   // **************************************************
   /// @name DELETE ISOLATED VERTICES
