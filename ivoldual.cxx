@@ -856,12 +856,12 @@ void IVOLDUAL::position_dual_ivolv_centroid_multi
   const TABLE_INDEX it = ivolv_info.table_index;
 
   if (ivoldual_table.OnLowerIsosurface(it, ivolv)) {
-    position_dual_ivolv_on_isosurface_centroid_multi
+    position_dual_ivolv_on_lower_isosurface_centroid_multi
       (scalar_grid, ivoldual_table, isovalue0, ivolv_info, cube,
        vcoord, temp_coord0, temp_coord1, temp_coord2);
   }
   else if (ivoldual_table.OnUpperIsosurface(it, ivolv)) {
-    position_dual_ivolv_on_isosurface_centroid_multi
+    position_dual_ivolv_on_upper_isosurface_centroid_multi
       (scalar_grid, ivoldual_table, isovalue1, ivolv_info, cube,
        vcoord, temp_coord0, temp_coord1, temp_coord2);
   }
@@ -874,7 +874,7 @@ void IVOLDUAL::position_dual_ivolv_centroid_multi
 }
 
 
-void IVOLDUAL::position_dual_ivolv_on_isosurface_centroid_multi
+void IVOLDUAL::position_dual_ivolv_on_lower_isosurface_centroid_multi
 (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
  const IVOLDUAL_CUBE_TABLE & ivoldual_table,
  const SCALAR_TYPE isovalue,
@@ -893,66 +893,66 @@ void IVOLDUAL::position_dual_ivolv_on_isosurface_centroid_multi
   for (int ie = 0; ie < cube.NumEdges(); ie++) {
     int k0 = cube.EdgeEndpoint(ie, 0);
     int k1 = cube.EdgeEndpoint(ie, 1);
+
+    if (ivoldual_table.IsBelowIntervalVolume(table_index, k0) &&
+        ivoldual_table.IsBelowIntervalVolume(table_index, k1)) {
+      // Edge does not intersect upper isosurface.
+      continue;
+    }
+
+    if (!ivoldual_table.IsBelowIntervalVolume(table_index, k0) &&
+        !ivoldual_table.IsBelowIntervalVolume(table_index, k1)) {
+      // Edge does not intersect upper isosurface.
+      continue;
+    }
+
+    if (ivoldual_table.EdgeHasDualIVolPoly(table_index, ie)) {
+      if (ivoldual_table.LowerIncident(table_index, ie) != ivolv) {
+        // Dual polytope is not incident on vertex ivolv.
+        continue;
+      }
+    }
+    else {
+
+      if (ivoldual_table.IsInIntervalVolume(table_index, k0)) {
+        if (ivoldual_table.IncidentIVolVertex(table_index, k0) != ivolv) {
+          // Dual polytope is not incident on vertex ivolv.
+          continue;
+        }
+      }
+
+      if (ivoldual_table.IsInIntervalVolume(table_index, k1)) {
+        if (ivoldual_table.IncidentIVolVertex(table_index, k1) != ivolv) {
+          // Dual polytope is not incident on vertex ivolv.
+          continue;
+        }
+      }
+    }
+
     VERTEX_INDEX iend0 = scalar_grid.CubeVertex(icube, k0);
     VERTEX_INDEX iend1 = scalar_grid.CubeVertex(icube, k1);
 
-    bool flag_intersect = false;
-    if (ivoldual_table.EdgeHasDualIVolPoly(table_index, ie)) {
+    SCALAR_TYPE s0 = scalar_grid.Scalar(iend0);
+    SCALAR_TYPE s1 = scalar_grid.Scalar(iend1);
 
-      if (ivoldual_table.UpperIncident(table_index, ie) == ivolv ||
-          ivoldual_table.LowerIncident(table_index, ie) == ivolv) 
-        { flag_intersect = true; }
+    scalar_grid.ComputeCoord(iend0, temp_coord0);
+    scalar_grid.ComputeCoord(iend1, temp_coord1);
+
+
+    if ((s0 < isovalue && s1 < isovalue) || 
+        (s0 > isovalue && s1 > isovalue)) {
+      // Use edge midpoint.
+      IJK::linear_interpolate_coord
+        (dimension, 0.5, temp_coord0, temp_coord1, temp_coord2);
+    }
+    else {
+      IJK::linear_interpolate_coord
+        (dimension, s0, temp_coord0, s1, temp_coord1, isovalue, 
+         temp_coord2);
     }
 
-    if (ivoldual_table.IsInIntervalVolume(table_index, k0)) {
-      if (ivoldual_table.IncidentIVolVertex(table_index, k0) == ivolv) {
-        if (ivoldual_table.IsBelowIntervalVolume(table_index, k1)) {
-          if (ivoldual_table.OnLowerIsosurface(table_index, ivolv)) 
-            { flag_intersect = true;  }
-        }
-        else if (ivoldual_table.IsAboveIntervalVolume(table_index, k1)) {
-          if (ivoldual_table.OnUpperIsosurface(table_index, ivolv))
-            { flag_intersect = true; }
-        }
-      }
-    }
-    else if (ivoldual_table.IsInIntervalVolume(table_index, k1)) {
-      if (ivoldual_table.IncidentIVolVertex(table_index, k1) == ivolv) {
-        if (ivoldual_table.IsBelowIntervalVolume(table_index, k0)) {
-          if (ivoldual_table.OnLowerIsosurface(table_index, ivolv)) 
-            { flag_intersect = true; }
-        }
-        else if (ivoldual_table.IsAboveIntervalVolume(table_index, k0)) {
-          if (ivoldual_table.OnUpperIsosurface(table_index, ivolv))
-            { flag_intersect = true; }
-        }
-      }
-    }
-
-    if (flag_intersect) {
-
-      SCALAR_TYPE s0 = scalar_grid.Scalar(iend0);
-      SCALAR_TYPE s1 = scalar_grid.Scalar(iend1);
-
-      scalar_grid.ComputeCoord(iend0, temp_coord0);
-      scalar_grid.ComputeCoord(iend1, temp_coord1);
-
-
-      if ((s0 < isovalue && s1 < isovalue) || 
-          (s0 > isovalue && s1 > isovalue)) {
-        // Use edge midpoint.
-        IJK::linear_interpolate_coord
-          (dimension, 0.5, temp_coord0, temp_coord1, temp_coord2);
-      }
-      else {
-        IJK::linear_interpolate_coord
-          (dimension, s0, temp_coord0, s1, temp_coord1, isovalue, 
-           temp_coord2);
-      }
-
-      IJK::add_coord(dimension, vcoord, temp_coord2, vcoord);
-      num_intersected_edges++;
-    }
+    IJK::add_coord(dimension, vcoord, temp_coord2, vcoord);
+    num_intersected_edges++;
   }
 
   if (num_intersected_edges > 0) {
@@ -964,6 +964,99 @@ void IVOLDUAL::position_dual_ivolv_on_isosurface_centroid_multi
   }
 
 }
+
+
+void IVOLDUAL::position_dual_ivolv_on_upper_isosurface_centroid_multi
+(const DUALISO_SCALAR_GRID_BASE & scalar_grid,
+ const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+ const SCALAR_TYPE isovalue,
+ const DUAL_IVOLVERT & ivolv_info,
+ const CUBE_FACE_INFO & cube,
+ COORD_TYPE * vcoord, 
+ COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, COORD_TYPE * temp_coord2)
+{
+  const int dimension = scalar_grid.Dimension();
+  const VERTEX_INDEX icube = ivolv_info.cube_index;
+  const int ivolv = ivolv_info.patch_index;
+  const TABLE_INDEX table_index = ivolv_info.table_index;
+  int num_intersected_edges = 0;
+  IJK::set_coord(dimension, 0.0, vcoord);
+
+  for (int ie = 0; ie < cube.NumEdges(); ie++) {
+    int k0 = cube.EdgeEndpoint(ie, 0);
+    int k1 = cube.EdgeEndpoint(ie, 1);
+
+    if (ivoldual_table.IsAboveIntervalVolume(table_index, k0) &&
+        ivoldual_table.IsAboveIntervalVolume(table_index, k1)) {
+      // Edge does not intersect upper isosurface.
+      continue;
+    }
+
+    if (!ivoldual_table.IsAboveIntervalVolume(table_index, k0) &&
+        !ivoldual_table.IsAboveIntervalVolume(table_index, k1)) {
+      // Edge does not intersect upper isosurface.
+      continue;
+    }
+
+    if (ivoldual_table.EdgeHasDualIVolPoly(table_index, ie)) {
+      if (ivoldual_table.UpperIncident(table_index, ie) != ivolv) {
+        // Dual polytope is not incident on vertex ivolv.
+        continue;
+      }
+    }
+    else {
+
+      if (ivoldual_table.IsInIntervalVolume(table_index, k0)) {
+        if (ivoldual_table.IncidentIVolVertex(table_index, k0) != ivolv) {
+          // Dual polytope is not incident on vertex ivolv.
+          continue;
+        }
+      }
+
+      if (ivoldual_table.IsInIntervalVolume(table_index, k1)) {
+        if (ivoldual_table.IncidentIVolVertex(table_index, k1) != ivolv) {
+          // Dual polytope is not incident on vertex ivolv.
+          continue;
+        }
+      }
+    }
+
+    VERTEX_INDEX iend0 = scalar_grid.CubeVertex(icube, k0);
+    VERTEX_INDEX iend1 = scalar_grid.CubeVertex(icube, k1);
+
+    SCALAR_TYPE s0 = scalar_grid.Scalar(iend0);
+    SCALAR_TYPE s1 = scalar_grid.Scalar(iend1);
+
+    scalar_grid.ComputeCoord(iend0, temp_coord0);
+    scalar_grid.ComputeCoord(iend1, temp_coord1);
+
+
+    if ((s0 < isovalue && s1 < isovalue) || 
+        (s0 > isovalue && s1 > isovalue)) {
+      // Use edge midpoint.
+      IJK::linear_interpolate_coord
+        (dimension, 0.5, temp_coord0, temp_coord1, temp_coord2);
+    }
+    else {
+      IJK::linear_interpolate_coord
+        (dimension, s0, temp_coord0, s1, temp_coord1, isovalue, 
+         temp_coord2);
+    }
+
+    IJK::add_coord(dimension, vcoord, temp_coord2, vcoord);
+    num_intersected_edges++;
+  }
+
+  if (num_intersected_edges > 0) {
+    IJK::multiply_coord
+      (dimension, 1.0/num_intersected_edges, vcoord, vcoord);
+  }
+  else {
+    scalar_grid.ComputeCubeCenterCoord(icube, vcoord);
+  }
+
+}
+
 
 
 namespace {

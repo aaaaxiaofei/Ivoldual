@@ -303,9 +303,19 @@ namespace IVOLDUAL {
    COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, 
    COORD_TYPE * temp_coord2);
 
-  /// Position interval volume vertex described by ivolv_info
-  /// on the lower or upper isosurface.
-  void position_dual_ivolv_on_isosurface_centroid_multi
+  /// Position interval volume vertex on upper isosurface.
+  void position_dual_ivolv_on_upper_isosurface_centroid_multi
+  (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   const SCALAR_TYPE isovalue,
+   const DUAL_IVOLVERT & ivolv_info,
+   const CUBE_FACE_INFO & cube,
+   COORD_TYPE * vcoord, 
+   COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, 
+   COORD_TYPE * temp_coord2);
+
+  /// Position interval volume vertex on lower isosurface.
+  void position_dual_ivolv_on_lower_isosurface_centroid_multi
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    const SCALAR_TYPE isovalue,
