@@ -27,8 +27,8 @@
 // CLASS IVOLDUAL_DATA_FLAGS
 // **************************************************
 
-// Constructor.
-IVOLDUAL::IVOLDUAL_DATA_FLAGS::IVOLDUAL_DATA_FLAGS()
+// Initialize
+void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
 {
   flag_split_ambig_pairs = false;
   flag_split_ambig_pairsB = false;

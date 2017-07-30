@@ -152,7 +152,23 @@ namespace IVOLDUAL {
   // DUAL CONTOURING INTERVAL VOLUME FLAGS
   // **************************************************
 
+  /// Data structure for flags controlling interval volume construction.<br>
+  /// To add a flag:
+  /// - Add a field in this class;
+  /// - Initialize the field in IVOLDUAL_DATA_FLAGS::Init()
+  ///   in file ivoldual_datastruct.cxx;
+  /// - Add a command line option type to OPTION_TYPE in file ivoldualIO.cxx;
+  /// - Add a command line option using function option.AddOptionNoArg(),
+  ///   or option.AddOption1Arg, in procedure set_command_line_options 
+  ///   in file ivoldualIO.cxx.  Usage message and the help message are
+  ///   passed as parameters in those commands;
+  /// - Add a case to the switch statement in procedure process_option
+  ///   that sets the appropriate IVOLDUAL_DATA_FLAGS field when the
+  ///   option is invoked on the command line.
   class IVOLDUAL_DATA_FLAGS:public IJKDUAL::DUALISO_DATA_FLAGS {
+
+  protected:
+    void Init();
 
   public:
 
@@ -169,9 +185,11 @@ namespace IVOLDUAL {
     GRID_VERTEX_ENCODING default_interior_code;
 
   public:
-    IVOLDUAL_DATA_FLAGS();
 
-    /// Set
+    /// Constructor.
+    IVOLDUAL_DATA_FLAGS() { Init(); };
+
+    /// Set flags.
     void Set(const IVOLDUAL_DATA_FLAGS & data_flags)
     { *this = data_flags; };
   };
