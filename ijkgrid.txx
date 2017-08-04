@@ -109,6 +109,8 @@ namespace IJK {
     (const DTYPE2 orth_dir, const WTYPE boundary_width) const;
     template <typename DTYPE2>
     NTYPE ComputeNumCubesInFacet(const DTYPE2 orth_dir) const;
+    template <typename DTYPE2>
+    NTYPE ComputeNumFacetsInGridFacet(const DTYPE2 orth_dir) const;
     template <typename GTYPE>
     VTYPE ComputeVertexIndex(const GTYPE * coord) const;
     template <typename GTYPE>
@@ -844,6 +846,7 @@ namespace IJK {
     { return(GRID_VERTEX_LIST<VTYPE>::ListLength()); }
   };
 
+
   /// Class containing list of facet 0 cubes.
   template <typename VTYPE>
   class FACET0_CUBE_LIST:public GRID_CUBE_LIST<VTYPE> {
@@ -859,8 +862,60 @@ namespace IJK {
     void GetCubes(const GCLASS & grid);
   };
 
-  /// Class containing list of facet vertices.
-  /// List length is max size
+
+  /// Class containing list of grid facets orthogonal to a given direction.
+  template <typename DTYPE, typename VTYPE>
+  class GRID_FACET_LIST:protected GRID_VERTEX_LIST<VTYPE> {
+
+  protected:
+    DTYPE orth_dir;
+
+  public:
+    /// Constructor.
+    GRID_FACET_LIST() {};
+
+    /// Constructor. 
+    /// Set list to facets in lower/leftmost grid boundary facet
+    /// orthogonal to orth_dir.
+    template <typename GCLASS, typename DTYPE0>
+    GRID_FACET_LIST(const GCLASS & grid, const DTYPE0 orth_dir)
+    { GetFacetsInGridFacet(grid,orth_dir); }
+
+    /// Constructor. 
+    /// Set list to facets in grid boundary facet orthogonal to orth_dir.
+    /// @param side Side of grid boundary.
+    ///   - If false, facets lie on lower/leftmost grid boundary facet.
+    ///   - If true, facets lie on upper/rightmost grid boundary facet.
+    template <typename GCLASS, typename DTYPE0>
+    GRID_FACET_LIST
+    (const GCLASS & grid, const DTYPE0 orth_dir, const bool side)
+    { GetFacetsInGridFacet(grid,orth_dir,side); }
+
+    ~GRID_FACET_LIST() {};
+
+    // get functions
+    VTYPE FacetIndex(const VTYPE i) const
+    { return(this->VertexIndex(i)); }
+
+    VTYPE NumFacets() const
+    { return(this->NumVertices()); }
+
+    DTYPE OrthDir() const
+    { return(orth_dir); }
+
+    VTYPE ListLength() const
+    { return(GRID_VERTEX_LIST<VTYPE>::ListLength()); }
+
+    /// Get facets from grid and store in list.
+    /// Reallocates list if (current list length < num facets)
+    template <typename GCLASS, typename DTYPE0>
+    void GetFacetsInGridFacet
+    (const GCLASS & grid, const DTYPE0 orth_dir, 
+     const bool side=false);
+  };
+
+
+  /// Class containing list of grid facet vertices.
   template <typename VTYPE>
   class FACET_VERTEX_LIST:public GRID_VERTEX_LIST<VTYPE> {
 
@@ -882,8 +937,7 @@ namespace IJK {
     void GetVertices(const GCLASS & grid, const VTYPE orth_dir);
   };
 
-  /// Class containing list of facet interior vertices.
-  /// List length is max size
+  /// Class containing list of grid facet interior vertices.
   template <typename VTYPE>
   class FACET_INTERIOR_VERTEX_LIST:public GRID_VERTEX_LIST<VTYPE> {
 
@@ -1593,7 +1647,7 @@ namespace IJK {
 
   /// Return number of vertices along subsampled axis.
   /// @param axis_size  Array: <em>axis_size[d]</em> = Number of vertices along axis \a d.
-  /// @param subsample_period = Only count every k'th vertex along axis where k = \a subsample period.
+  /// @param subsample_period Only count every k'th vertex along axis where k = \a subsample period.
   /// @pre \a subsample_period > 0.
   template <typename ATYPE, typename PTYPE>
   ATYPE compute_subsample_size
@@ -1608,6 +1662,13 @@ namespace IJK {
   /// @param dimension Grid dimension.
   /// @param axis_size  Array: <em>axis_size[d]</em> = 
   ///                     Number of vertices along axis \a d.
+  /// @param subsample_period Subsample period, i.e., how often grid
+  ///    is subsampled along each axis.<br>
+  ///    For instance:
+  ///   - If subsample_period = 2, every other vertex is subsampled
+  ///     along each axis. 
+  ///   - If subsample_period = 3, every third vertex is subsampled
+  ///     along each axis. 
   /// @param[out] subsampled_axis_size Array: 
   ///     <em>subsampled_axis_size[d]</em> = 
   ///        Number of vertices along subsampled axis \a d.
@@ -1689,8 +1750,8 @@ namespace IJK {
     };
   }
 
-  /// Compute boundary bits for cube \a icube.
-  /// @param icube Cube index.
+  /// Compute boundary bits for cube \a iv.
+  /// @param iv Cube index.
   /// @param dimension Dimension of grid.
   /// @param axis_size  Array. 
   ///       <em>axis_size[d]</em> = Number of vertices along axis \a d.
@@ -2252,6 +2313,7 @@ namespace IJK {
 
   /// Compute increment to add to vertex 0 to compute vertex i of facet.
   /// @param dimension  Dimension of grid.
+  /// @param ifacet Facet index.
   /// @param cube_vertex_increment[] = Cube vertex increment. iv0+cube_vertex_increment[i] is the i'th vertex of the hypercube with primary vertex iv0.
   /// @param[out] facet_vertex_increment[] = Facet vertex increment. iv0+facet_vertex_increment[i] is the i'th vertex of the facet with primary vertex iv0.
   /// @pre Array facet_vertex_increment[] is allocated with size at least number of facet vertices
@@ -2315,7 +2377,9 @@ namespace IJK {
   }
 
   /// Compute increment to add to vertex 0 to compute vertex i of ridge.
-  /// @param dimension  Dimension of grid.
+  /// @param dimension Dimension of grid.
+  /// @param orth_dir0 Direction orthogonal to ridge.
+  /// @param orth_dir1 Second direction orthogonal to ridge.
   /// @param cube_vertex_increment[] = Cube vertex increment. iv0+cube_vertex_increment[i] is the i'th vertex of the hypercube with primary vertex iv0.
   /// @param[out] ridge_vertex_increment[] = Ridge vertex increment. iv0+ridge_vertex_increment[i] is the i'th vertex of the ridge with primary vertex iv0.
   /// @pre Array ridge_vertex_increment[] is allocated with size at least number of ridge vertices
@@ -2886,6 +2950,46 @@ namespace IJK {
   }
 
 
+  /// Return number of facets in specified grid facet.
+  /// Facet is lower facet orthogonal to the specified direction
+  template <typename DTYPE, typename ATYPE, typename NTYPE>
+  void compute_num_facets_in_grid_facet
+  (const DTYPE dimension, const ATYPE * axis_size, const DTYPE orth_dir,
+   NTYPE & num_facets)
+  {
+    num_facets = 1;
+
+    if (axis_size[orth_dir] <= 0) {
+      num_facets = 0;
+      return;
+    }
+
+    for (DTYPE d = 0; d < dimension; d++) {
+      if (d != orth_dir) {
+        if (axis_size[d] <= 1) { 
+          num_facets = 0;
+          return; 
+        };
+        num_facets = num_facets*(axis_size[d]-1);
+      };
+    }
+  }
+
+
+  /// Return number of facets in grid facet orthogonal to axis 0.
+  template <typename DTYPE, typename ATYPE, typename NTYPE>
+  void compute_num_facets_in_grid_facet0
+  (const DTYPE dimension, const ATYPE * axis_size, NTYPE & num_facets)
+  {
+    if (dimension < 1) 
+      { num_facets = 0; }
+    else {
+      compute_num_facets_in_grid_facet
+        (dimension, axis_size, DTYPE(0), num_facets);
+    }
+  }
+
+
   /// Return number of cubes in specified grid facet.
   /// Facet is lower facet orthogonal to the specified direction
   template <typename DTYPE, typename ATYPE, typename NTYPE>
@@ -3045,8 +3149,53 @@ namespace IJK {
       (dimension, axis_size, 0, subgrid_axis_size.PtrConst(), vlist);
   }
 
-  /// Get primary vertices of (d-1)-dimensional cubes in specified grid facet where d = \a dimension.
+
+  /// Get primary vertices of facets in specified grid facet.
   /// Does not return any vertices if \a axis_size[orth_dir] == 0.
+  /// @param dimension  Dimension of grid.
+  /// @param axis_size  Array: <em>axis_size[d]</em> = Number of vertices along axis \a d.
+  /// @param orth_dir = Direction orthogonal to facet.
+  /// @param side = Side of grid containing facet.  If false, facet contains (0,0,...,0) origin.
+  /// @param[out] vlist[] = List of primary vertices.
+  /// @pre Array vlist[] must be pre-allocated to size at least number of primary vertices in facet.
+  template <typename DTYPE, typename ATYPE, typename VTYPE>
+  void get_facets_in_grid_facet
+  (const DTYPE dimension, const ATYPE * axis_size,
+   const DTYPE orth_dir, const bool side, VTYPE * vlist)
+  {
+    IJK::ARRAY<ATYPE> subgrid_axis_size(dimension);
+
+    if (axis_size[orth_dir] < 1) { return; };
+    std::copy(axis_size, axis_size+dimension, subgrid_axis_size.Ptr());
+    subgrid_axis_size[orth_dir] = 2;
+
+    VTYPE subgrid_origin = 0;
+
+    if (side) {
+      IJK::ARRAY<VTYPE> axis_increment(dimension);
+      compute_increment(dimension, axis_size, axis_increment.Ptr());
+
+      subgrid_origin = axis_increment[orth_dir]*(axis_size[orth_dir]-1);
+    }
+
+    get_primary_cube_vertices
+      (dimension, axis_size, subgrid_origin, subgrid_axis_size.PtrConst(), 
+       vlist);
+  }
+
+  /// Get primary vertices of facets in specified grid facet.
+  /// - Version without side parameter.  (side=false is lower/leftmost side.)
+  template <typename DTYPE, typename ATYPE, typename VTYPE>
+  void get_facets_in_grid_facet
+  (const DTYPE dimension, const ATYPE * axis_size,
+   const DTYPE orth_dir, VTYPE * vlist)
+  {
+    get_facets_in_grid_facet(dimension, axis_size, orth_dir, false, vlist);
+  }
+
+
+  /// Get primary vertices of (d-1)-dimensional cubes in specified grid facet where d = \a dimension.
+  /// Does not return any vertices if \a axis_size[orth_dir] <= 0.
   /// @param dimension  Dimension of grid.
   /// @param axis_size  Array: <em>axis_size[d]</em> = Number of vertices along axis \a d.
   /// @param orth_dir = Direction orthogonal to facet.
@@ -3370,7 +3519,12 @@ namespace IJK {
 
   /// Get vertices on boundary of grid.
   /// Allows boundary_width to be greater than 1.
+  /// @param dimension  Dimension of grid.
+  /// @param axis_size  Array: <em>axis_size[d]</em> = Number of vertices along axis \a d.
   /// @param boundary_width Width of boundary, in vertices.
+  /// @param[out] vlist[] List of boundary vertices.
+  /// @pre Array vlist[] must be pre-allocated to size at least number
+  ///   of boundary vertices.
   template <typename DTYPE, typename ATYPE, typename VTYPE, typename WTYPE>
   void get_boundary_grid_vertices
   (const DTYPE dimension, const ATYPE * axis_size, 
@@ -3573,6 +3727,9 @@ namespace IJK {
 
   /// \brief Compute number of vertices in 2-faces containing an edge,
   ///        not including edge vertices.
+  /// @param dimension  Dimension of grid.
+  /// @param[out] num_neighbors Number of vertices in 2-faces 
+  ///    containing an edge, not including the edge vertices.
   template <typename DTYPE, typename NTYPE> 
   void compute_num_edge_neighborsF2
   (const DTYPE dimension, NTYPE & num_neighbors)
@@ -3584,6 +3741,8 @@ namespace IJK {
 
   /// \brief Compute integer to add to vertex index to compute vertex neighbors.
   ///        Use only for vertex neighbors of internal vertices.
+  /// @param dimension  Dimension of grid.
+  /// @param axis_size  Array: <em>axis_size[d]</em> = Number of vertices along axis \a d.
   /// @param[out] vertex_neighborC Array. 
   ///        iv + vertex_neighborC[k] = index of k'th vertex neighbor of iv
   ///        where iv is the index of an internal grid vertex.
@@ -4109,6 +4268,18 @@ namespace IJK {
       (Dimension(), AxisSize(), orth_dir, boundary_width,
        num_vertices_in_facet);
     return(num_vertices_in_facet);
+  }
+
+  /// Compute and return number of facets in grid facet.
+  template <typename DTYPE, typename ATYPE, typename VTYPE, typename NTYPE>
+  template <typename DTYPE2>
+  NTYPE GRID<DTYPE,ATYPE,VTYPE,NTYPE>::
+  ComputeNumFacetsInGridFacet(const DTYPE2 orth_dir) const
+  {
+    NTYPE num_facets;
+    compute_num_facets_in_grid_facet
+      (Dimension(), AxisSize(), orth_dir, num_facets);
+    return(num_facets);
   }
 
   /// Compute and return number of cubes in facet.
@@ -5326,6 +5497,30 @@ namespace IJK {
 
     this->num_vertices = num_cubes;
   }
+
+
+  /// Get facets from grid and store in list.
+  template <typename DTYPE, typename VTYPE>
+  template <typename GCLASS, typename DTYPE0>
+  void GRID_FACET_LIST<DTYPE,VTYPE>::GetFacetsInGridFacet
+  (const GCLASS & grid, const DTYPE0 orth_dir, const bool side)
+  {
+    VTYPE num_facets;
+    compute_num_facets_in_grid_facet
+      (grid.Dimension(), grid.AxisSize(), orth_dir, num_facets);
+
+    if (num_facets > this->ListLength()) 
+      { this->AllocateList(num_facets); }
+
+    if (num_facets > 0) {
+      get_facets_in_grid_facet
+        (grid.Dimension(), grid.AxisSize(), orth_dir, side,
+         this->vertex_list);
+    }
+
+    this->num_vertices = num_facets;
+  }
+
 
   /// GRID_BOUNDARY_VERTEX_LIST constructor.
   template <typename VTYPE>
