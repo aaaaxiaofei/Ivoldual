@@ -4,7 +4,7 @@
 
 /*
   IJK: Isosurface Jeneration Kode
-  Copyright (C) 2009-2016 Rephael Wenger
+  Copyright (C) 2009-2017 Rephael Wenger
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public License
@@ -247,6 +247,52 @@ namespace IJK {
   {
     compute_coord_centroid
       (dimension, point_list, num_points, IJK::vector2pointer(coord),
+       centroid_coord);
+  }
+
+
+  /// Compute centroid of quad.
+  template <typename DTYPE, typename ISOV_INDEX_TYPE, 
+            typename COORD_TYPE0, typename COORD_TYPE1>
+  void compute_quad_centroid
+  (const DTYPE dimension, const ISOV_INDEX_TYPE quad_vert[], 
+   const std::vector<COORD_TYPE0> & coord_array,
+   COORD_TYPE1 centroid_coord[])
+  {
+    const int NUM_VERT_PER_QUAD(4);
+
+    compute_coord_centroid
+      (dimension, quad_vert, NUM_VERT_PER_QUAD, coord_array, centroid_coord);
+  }
+
+
+  /// Compute centroid of a pentagon.
+  template <typename DTYPE, typename ISOV_INDEX_TYPE, 
+            typename COORD_TYPE0, typename COORD_TYPE1>
+  void compute_pentagon_centroid
+  (const DTYPE dimension, const ISOV_INDEX_TYPE pentagon_vert[], 
+   const std::vector<COORD_TYPE0> & coord_array,
+   COORD_TYPE1 centroid_coord[])
+  {
+    const int NUM_VERT_PER_PENTAGON(5);
+
+    compute_coord_centroid
+      (dimension, pentagon_vert, NUM_VERT_PER_PENTAGON, coord_array, 
+       centroid_coord);
+  }
+
+  /// Compute centroid of hexahedron.
+  template <typename DTYPE, typename ISOV_INDEX_TYPE, 
+            typename COORD_TYPE0, typename COORD_TYPE1>
+  void compute_hexahedron_centroid
+  (const DTYPE dimension, const ISOV_INDEX_TYPE hexahedron_vert[], 
+   const std::vector<COORD_TYPE0> & coord_array,
+   COORD_TYPE1 centroid_coord[])
+  {
+    const int NUM_VERT_PER_HEXAHEDRON(8);
+
+    compute_coord_centroid
+      (dimension, hexahedron_vert, NUM_VERT_PER_HEXAHEDRON, coord_array, 
        centroid_coord);
   }
 

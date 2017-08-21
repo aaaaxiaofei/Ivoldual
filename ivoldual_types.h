@@ -56,6 +56,12 @@ namespace IVOLDUAL {
   // ENUMERATED TYPES
   // **************************************************
 
+  /// Hexahedra triangulation method.
+  typedef enum
+    { UNDEFINED_HEX_TRI, UNIFORM_HEX_TRI_DIAGONAL07, ONLY_TRI12,
+    TRI12_MAX_MIN_ANGLE }
+    HEX_TRI_METHOD;
+
   typedef IJKDUAL::VERTEX_POSITION_METHOD VERTEX_POSITION_METHOD;
 
 }

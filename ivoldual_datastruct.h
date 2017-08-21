@@ -176,6 +176,12 @@ namespace IVOLDUAL {
     bool flag_split_ambig_pairs;
     bool flag_split_ambig_pairsB;
 
+    /// Hexahedral triangulation method.
+    HEX_TRI_METHOD hex_tri_method;
+
+    /// If true, add extra vertices dual to iso hex for triangulation.
+    bool flag_add_isov_dual_to_hexahedra;
+
     /// Hexahedra orientation.
     /// - If true, orient hexahedra so that facet normals point in.
     bool flag_orient_in;

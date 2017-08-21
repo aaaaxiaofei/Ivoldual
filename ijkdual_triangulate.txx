@@ -126,39 +126,6 @@ namespace IJKDUAL {
   }
 
 
-  /// Compute centroid of quad.
-  template <typename ISOV_INDEX_TYPE, 
-            typename COORD_TYPE0, typename COORD_TYPE1>
-  void compute_quad_centroid
-  (const ISOV_INDEX_TYPE quad_vert[], 
-   const std::vector<COORD_TYPE0> & coord_array,
-   COORD_TYPE1 centroid_coord[])
-  {
-    const int DIM3(3);
-    const int NUM_VERT_PER_QUAD(4);
-
-    IJK::compute_coord_centroid
-      (DIM3, quad_vert, NUM_VERT_PER_QUAD, coord_array, centroid_coord);
-  }
-
-
-  /// Compute centroid of pentagons.
-  template <typename ISOV_INDEX_TYPE, 
-            typename COORD_TYPE0, typename COORD_TYPE1>
-  void compute_pentagon_centroid
-  (const ISOV_INDEX_TYPE pentagon_vert[], 
-   const std::vector<COORD_TYPE0> & coord_array,
-   COORD_TYPE1 centroid_coord[])
-  {
-    const int DIM3(3);
-    const int NUM_VERT_PER_PENTAGON(5);
-
-    IJK::compute_coord_centroid
-      (DIM3, pentagon_vert, NUM_VERT_PER_PENTAGON, coord_array, 
-       centroid_coord);
-  }
-
-
   // **************************************************
   // ADD ISOSURFACE VERTICES ON GRID EDGES
   // **************************************************
@@ -205,7 +172,7 @@ namespace IJKDUAL {
       { throw error; }
     if (!dual_isosurface.CheckIsopolyInfo(error)) { throw error; }
 
-    dual_isosurface.first_isov_on_grid_edge = first_isov_on_edge;
+    dual_isosurface.first_isov_dual_to_iso_poly = first_isov_on_edge;
 
     dual_isosurface.vertex_coord.resize
       (dimension*(first_isov_on_edge+num_poly));
@@ -244,7 +211,7 @@ namespace IJKDUAL {
       { throw error; }
     if (!dual_isosurface.CheckIsopolyInfo(error)) { throw error; }
 
-    dual_isosurface.first_isov_on_grid_edge = first_isov_on_edge;
+    dual_isosurface.first_isov_dual_to_iso_poly = first_isov_on_edge;
 
     dual_isosurface.vertex_coord.resize
       (dimension*(first_isov_on_edge+num_poly));
@@ -290,7 +257,7 @@ namespace IJKDUAL {
     const SIZE_TYPE first_new_isov = dual_isosurface.NumIsoVert();
     const SIZE_TYPE num_new_isov = num_poly;
 
-    dual_isosurface.first_isov_on_grid_edge = first_new_isov;
+    dual_isosurface.first_isov_dual_to_iso_poly = first_new_isov;
 
     dual_isosurface.vertex_coord.resize
       (dimension*(first_new_isov+num_new_isov));
@@ -306,8 +273,9 @@ namespace IJKDUAL {
         const ISO_VERTEX_INDEX * first_isopoly_vert = 
           &(dual_isosurface.isopoly_vert[ipoly*numv_per_iso_poly]);
         
-        compute_quad_centroid
-          (first_isopoly_vert, dual_isosurface.vertex_coord, isov_coord);
+        IJK::compute_quad_centroid
+          (dimension, first_isopoly_vert, dual_isosurface.vertex_coord, 
+           isov_coord);
       }
     }
 
@@ -337,8 +305,8 @@ namespace IJKDUAL {
       const ISO_VERTEX_INDEX * first_pentagon_vert = 
         &(pentagon_vert[ipoly*NUM_VERT_PER_PENTAGON]);
         
-      compute_pentagon_centroid
-        (first_pentagon_vert, vertex_coord, new_coord);
+      IJK::compute_pentagon_centroid
+        (DIM3, first_pentagon_vert, vertex_coord, new_coord);
     }
 
   }
@@ -355,6 +323,61 @@ namespace IJKDUAL {
 
     add_vertex_coord_at_pentagon_centroids
       (IJK::vector2pointer(pentagon_vert), num_pentagon, vertex_coord);
+  }
+
+
+  /// Add new vertex coordinates at centroid of hexahedra vertices.
+  template <typename DTYPE, typename VTYPE, 
+            typename NTYPE, typename CTYPE>
+  void add_vertex_coord_at_hexahedra_centroids
+  (const DTYPE dimension,
+   const VTYPE hexahedra_vert[],
+   const NTYPE num_hexahedra,
+   std::vector<CTYPE> & vertex_coord)
+  {
+    typedef std::vector<VERTEX_INDEX>::size_type SIZE_TYPE;
+
+    const int NUM_VERT_PER_HEXAHEDRA(8);
+    const SIZE_TYPE vertex_coord_size = vertex_coord.size();
+
+    vertex_coord.resize(vertex_coord_size + dimension*num_hexahedra);
+
+    for (int ipoly = 0; ipoly < num_hexahedra; ipoly++) {
+
+      COORD_TYPE * new_coord =
+        &(vertex_coord[vertex_coord_size + ipoly*dimension]);
+
+      const ISO_VERTEX_INDEX * first_hexahedron_vert = 
+        &(hexahedra_vert[ipoly*NUM_VERT_PER_HEXAHEDRA]);
+        
+      IJK::compute_hexahedron_centroid
+        (dimension, first_hexahedron_vert, vertex_coord, new_coord);
+    }
+
+  }
+
+
+  /// Add new vertex coordinates at centroid of hexahedra vertices.
+  template <typename DATA_TYPE, typename ISOSURFACE_TYPE>
+  void add_vertex_coord_at_hexahedra_centroids
+  (const DATA_TYPE & dualiso_data, ISOSURFACE_TYPE & dual_isosurface)
+  {
+    typedef std::vector<VERTEX_INDEX>::size_type SIZE_TYPE;
+
+    const int dimension = dualiso_data.ScalarGrid().Dimension();
+    const int NUM_VERT_PER_HEXAHEDRA(8);
+    const SIZE_TYPE first_new_isov = dual_isosurface.NumIsoVert();
+    const SIZE_TYPE num_hexahedra = 
+      dual_isosurface.isopoly_vert.size()/NUM_VERT_PER_HEXAHEDRA;
+
+    dual_isosurface.first_isov_dual_to_iso_poly = first_new_isov;
+
+    const ISO_VERTEX_INDEX * first_hex_vert = 
+      &(dual_isosurface.isopoly_vert.front());
+
+    add_vertex_coord_at_hexahedra_centroids
+      (dimension, first_hex_vert, num_hexahedra, 
+       dual_isosurface.vertex_coord);
   }
 
 
@@ -404,7 +427,7 @@ namespace IJKDUAL {
       const VERTEX_INDEX num_iso_vert = dual_isosurface.NumIsoVert();
       const VERTEX_INDEX num_iso_poly = dual_isosurface.NumIsoPoly();
 
-      if (num_iso_vert != num_iso_poly+dual_isosurface.first_isov_on_grid_edge) {
+      if (num_iso_vert != num_iso_poly+dual_isosurface.first_isov_dual_to_iso_poly) {
         error.AddMessage
           ("Programming error.  Incorrect number of isosurface vertices.");
         error.AddMessage
@@ -414,8 +437,8 @@ namespace IJKDUAL {
     
       if (dual_isosurface.vertex_coord.size() > 0) {
 
-        const ISO_VERTEX_INDEX first_isov_on_grid_edge =
-          dual_isosurface.first_isov_on_grid_edge;
+        const ISO_VERTEX_INDEX first_isov_dual_to_iso_poly =
+          dual_isosurface.first_isov_dual_to_iso_poly;
         const COORD_TYPE min_distance_use_tri4 = 
           dualiso_data.MinDistanceUseTri4();
         const COORD_TYPE min_distance_allow_tri4 = 
@@ -423,13 +446,13 @@ namespace IJKDUAL {
 
         if (quad_tri_method == ONLY_TRI4) {
           IJK::triangulate_quad_with_vertices
-            (quad_vert, first_isov_on_grid_edge, dual_isosurface.tri_vert);
+            (quad_vert, first_isov_dual_to_iso_poly, dual_isosurface.tri_vert);
         }
         else if (quad_tri_method == TRI4_BY_DISTANCE) {
           triangulate_quad_tri4_by_distance
             (dualiso_data.ScalarGrid(), dual_isosurface.vertex_coord, 
              quad_vert, dual_isosurface.isopoly_info,
-             first_isov_on_grid_edge, min_distance_use_tri4, 
+             first_isov_dual_to_iso_poly, min_distance_use_tri4, 
              max_small_magnitude, dual_isosurface.tri_vert);
         }
         else {
@@ -438,14 +461,14 @@ namespace IJKDUAL {
           if (dualiso_data.tri4_position_method == TRI4_CENTROID) {
             triangulate_quad_tri4_max_min_angle
               (dualiso_data.ScalarGrid(), dual_isosurface.vertex_coord, 
-               quad_vert, first_isov_on_grid_edge, max_small_magnitude, 
+               quad_vert, first_isov_dual_to_iso_poly, max_small_magnitude, 
                dual_isosurface.tri_vert);
           }
           else {
             triangulate_dual_quad_tri4_max_min_angle
               (dualiso_data.ScalarGrid(), dual_isosurface.vertex_coord, 
                quad_vert, dual_isosurface.isopoly_info,
-               first_isov_on_grid_edge,
+               first_isov_dual_to_iso_poly,
                min_distance_allow_tri4, max_small_magnitude, 
                dual_isosurface.tri_vert);
           }

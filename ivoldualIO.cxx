@@ -58,10 +58,7 @@ namespace {
      ICODE1_OPT, ICODE2_OPT,
      TRIMESH_OPT, TRIMESH_UNIFORM_OPT,
      TRIMESH_SPLIT_MAX_OPT, TRIMESH_MAX_ANGLE_OPT,
-     TRIMESH_ONLY_TRI4_OPT, TRIMESH_TRI4_BY_DISTANCE_OPT,
-     TRIMESH_TRI4_MAX_ANGLE_OPT,
-     TRI4_OPT,
-     TRI4_CENTROID_OPT,
+     TRIMESH_ONLY_TRI12_OPT,
      QEI_INTERPOLATE_SCALAR_OPT, QEI_INTERPOLATE_COORD_OPT, 
      QEI_AVERAGE_OPT,
      COLOR_VERT_OPT,
@@ -248,16 +245,6 @@ namespace {
     options.AddToHelpMessage
       (TRIMESH_UNIFORM_OPT, "Uniformly split quadrilaterals.");
 
-    options.AddOptionNoArg
-      (TRIMESH_TRI4_MAX_ANGLE_OPT, "TRIMESH_TRI4_MAX_ANGLE_OPT", REGULAR_OPTG,
-       "-trimesh_tri4_max_angle", 
-       "Triangulate isosurface quadrilaterals into two");
-    options.AddToHelpMessage
-      (TRIMESH_TRI4_MAX_ANGLE_OPT,
-       "or four triangles.",
-       "Choose triangulation which maximizes the minimum angle.");
-    options.AddSynonym(TRIMESH_TRI4_MAX_ANGLE_OPT, "-tri4");
-
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
 
@@ -413,6 +400,13 @@ namespace {
     options.AddUsageOptionBeginOr(EXTENDED_OPTG);
 
     options.AddOptionNoArg
+      (TRIMESH_ONLY_TRI12_OPT, "TRIMESH_ONLY_TRI12_OPT", EXTENDED_OPTG, 
+       "-trimesh_only_tri12", 
+       "Triangulate all isosurface quadrilaterals");
+    options.AddToHelpMessage
+      (TRIMESH_ONLY_TRI12_OPT, "into twelve tetrahedra.");
+
+    options.AddOptionNoArg
       (TRIMESH_SPLIT_MAX_OPT, "TRIMESH_SPLIT_MAX_OPT", EXTENDED_OPTG,
        "-trimesh_split_max", 
        "Triangulate all isosurface quadrilaterals.");
@@ -428,33 +422,7 @@ namespace {
      "Choose triangulation which maximizes the minimum",
      "triangle angle.");
 
-    options.AddOptionNoArg
-      (TRIMESH_ONLY_TRI4_OPT, "TRIMESH_ONLY_TRI4_OPT", EXTENDED_OPTG, 
-       "-trimesh_only_tri4", 
-       "Triangulate all isosurface quadrilaterals");
-    options.AddToHelpMessage
-      (TRIMESH_ONLY_TRI4_OPT, "into four triangles.");
-
-    options.AddUsageOptionNewline(EXTENDED_OPTG);
-
-    options.AddOptionNoArg
-      (TRIMESH_TRI4_BY_DISTANCE_OPT, "TRIMESH_TRI4_BY_DISTANCE_OPT",
-       EXTENDED_OPTG, "-trimesh_tri4_by_distance", 
-       "Triangulate isosurface quadrilaterals into two");
-    options.AddToHelpMessage
-      (TRIMESH_TRI4_BY_DISTANCE_OPT,
-       "or four triangles.  Triangulate into four triangles",
-       "if all quadrilateral vertices are far from cube facets.");
-
     options.AddUsageOptionEndOr(EXTENDED_OPTG);
-    options.AddUsageOptionNewline(EXTENDED_OPTG);
-
-    options.AddOptionNoArg
-      (TRI4_CENTROID_OPT, "TRI4_CENTROID_OPT", EXTENDED_OPTG, "-tri4_centroid",
-       "Position additional triangulation vertex at centroid");
-    options.AddToHelpMessage
-      (TRI4_CENTROID_OPT, "of quadrilateral vertices.");
-
     options.AddUsageOptionNewline(EXTENDED_OPTG);
     options.AddUsageOptionBeginOr(EXTENDED_OPTG);
 
@@ -612,33 +580,15 @@ bool process_option
     io_info.quad_tri_method = MAX_MIN_ANGLE;
     break;
 
-  case TRIMESH_ONLY_TRI4_OPT:
+  case TRIMESH_ONLY_TRI12_OPT:
     io_info.use_triangle_mesh = true;
-    io_info.quad_tri_method = ONLY_TRI4;
-    io_info.flag_tri4_quad = true;
-    break;
-
-  case TRIMESH_TRI4_BY_DISTANCE_OPT:
-    io_info.use_triangle_mesh = true;
-    io_info.quad_tri_method = TRI4_BY_DISTANCE;
-    io_info.flag_tri4_quad = true;
-    break;
-
-  case TRIMESH_TRI4_MAX_ANGLE_OPT:
-  case TRI4_OPT:
-    io_info.use_triangle_mesh = true;
-    io_info.quad_tri_method = TRI4_MAX_MIN_ANGLE;
-    io_info.flag_tri4_quad = true;
+    io_info.hex_tri_method = ONLY_TRI12;
+    io_info.flag_add_isov_dual_to_hexahedra = true;
     break;
 
   case TRIMESH_UNIFORM_OPT:
     io_info.use_triangle_mesh = true;
     io_info.quad_tri_method = UNIFORM_TRI;
-    break;
-
-  case TRI4_CENTROID_OPT:
-    io_info.tri4_position_method = TRI4_CENTROID;
-    io_info.is_tri4_position_method_set = true;
     break;
 
   case QEI_INTERPOLATE_SCALAR_OPT:

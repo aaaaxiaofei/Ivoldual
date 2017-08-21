@@ -30,8 +30,10 @@
 // Initialize
 void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
 {
+  hex_tri_method = UNDEFINED_HEX_TRI;
   flag_split_ambig_pairs = false;
   flag_split_ambig_pairsB = false;
+  flag_add_isov_dual_to_hexahedra = false;
   flag_orient_in = false;
   default_interior_code = 2;
 }

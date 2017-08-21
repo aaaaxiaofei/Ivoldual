@@ -201,10 +201,10 @@ namespace IJKDUAL {
     /// List of vertex coordinates.
     COORD_ARRAY vertex_coord;
 
-    /// Index of first isosurface vertex on a grid edge.
-    /// i'th isosurface vertex on grid edge is on the grid edge
-    ///   dual to the i'th isosurface polytope.
-    ISO_VERTEX_INDEX first_isov_on_grid_edge;
+    /// Index of first isosurface vertex dual to an isosurface polytope.
+    /// - i'th isosurface vertex after first_isov_dual_to_iso_poly
+    ///   is dual to i'th isosurface polytope.
+    ISO_VERTEX_INDEX first_isov_dual_to_iso_poly;
 
     /// List of vertices of each triangle in triangle mesh.
     /// Only for 2D surface embedded in 3D.
@@ -699,7 +699,7 @@ namespace IJKDUAL {
   {
     this->dimension = dimension;
     this->numv_per_isopoly = numv_per_isopoly;
-    first_isov_on_grid_edge = 0;
+    first_isov_dual_to_iso_poly = 0;
   }
 
 
@@ -708,7 +708,7 @@ namespace IJKDUAL {
   {
     isopoly_vert.clear();
     vertex_coord.clear();
-    first_isov_on_grid_edge = 0;
+    first_isov_dual_to_iso_poly = 0;
   }
 
 
