@@ -50,7 +50,7 @@ using namespace std;
 namespace {
 
   typedef enum
-    {SUBSAMPLE_OPT, SUPERSAMPLE_OPT, POSITION_OPT, CUBE_CENTER_OPT,
+    {SUBSAMPLE_OPT, SUPERSAMPLE_OPT, SUBDIVIDE_OPT, POSITION_OPT, CUBE_CENTER_OPT,
      SPLIT_AMBIG_PAIRS_OPT, SPLIT_AMBIG_PAIRSB_OPT, NO_SPLIT_AMBIG_PAIRS_OPT,
      MANIFOLD_OPT, MULTI_ISOV_OPT, SINGLE_ISOV_OPT, 
      SELECT_SPLIT_OPT, CONNECT_AMBIG_OPT,
@@ -157,6 +157,10 @@ namespace {
        "Supersample grid at every S vertices.");
     options.AddToHelpMessage
       (SUPERSAMPLE_OPT, "S must be an integer greater than 1.");
+
+    options.AddOptionNoArg
+      (SUBDIVIDE_OPT, "SUBDIVIDE_OPT", REGULAR_OPTG, "-subdivide",    
+       "Subdivide grid with plus value in the middle.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -500,6 +504,10 @@ bool process_option
     iarg++;
     break;
 
+  case SUBDIVIDE_OPT:
+    io_info.flag_subdivide = true;
+    break;
+
   case POSITION_OPT:
     iarg++;
     if (iarg >= argc) usage_error();
@@ -810,8 +818,8 @@ void process_io_info(IO_INFO_TYPE & io_info)
     }
   }
 
-  if (io_info.flag_subsample && io_info.flag_supersample) {
-    cerr << "Error.  Can't use both -subsample and -supersample parameters."
+  if (io_info.flag_subsample + io_info.flag_supersample + io_info.flag_subdivide > 1) {
+    cerr << "Error. Only one of -subsample -supersample and -subdivide should be called at one time."
          << endl;
     exit(555);
   }
@@ -1849,6 +1857,11 @@ void IVOLDUAL::report_num_cubes
       cout << num_grid_cubes << " grid cubes.  "
            << num_cubes_in_dualiso_data << " supersampled grid cubes." << endl;
     }
+    else if (io_info.flag_subdivide) {
+      // subdivide grid
+      cout << num_grid_cubes << " grid cubes.  "
+           << num_cubes_in_dualiso_data << " subdivide grid cubes." << endl;
+    }
     else {
       // use full_scalar_grid
       cout << num_grid_cubes << " grid cubes." << endl;
@@ -2123,6 +2136,7 @@ void IVOLDUAL::IO_INFO::Init()
   subsample_resolution = 2;
   flag_supersample = false;
   supersample_resolution = 2;
+  flag_subdivide = false;
   flag_color_alternating = false;  // color simplices in alternating cubes
   flag_color_vert = false;         // color isosurface boundary vertices
   region_length = 1;
@@ -2359,6 +2373,8 @@ void IVOLDUAL::set_output_info
   output_info.shrink_factor = 1;
   if (io_info.flag_supersample) 
     { output_info.shrink_factor = io_info.supersample_resolution; }
+  else if (io_info.flag_subdivide) 
+    { output_info.shrink_factor = 2; }
 
   output_info.grid_spacing.clear();
   output_info.grid_spacing.resize(io_info.grid_spacing.size());

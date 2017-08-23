@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     // subsample and supersample parameters are hard-coded here.
     ivoldual_data.SetScalarGrid
       (full_scalar_grid, io_info.flag_subsample, io_info.subsample_resolution, 
-       io_info.flag_supersample, io_info.supersample_resolution);
+       io_info.flag_supersample, io_info.supersample_resolution, io_info.flag_subdivide);
     ivoldual_data.Set(io_info);
     warn_non_manifold(io_info);
     report_num_cubes(full_scalar_grid, io_info, ivoldual_data);

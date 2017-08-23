@@ -90,6 +90,7 @@ namespace IVOLDUAL {
     int subsample_resolution;
     bool flag_supersample;
     int supersample_resolution;
+    bool flag_subdivide;
     bool flag_color_alternating;  ///< Color simplices in alternating cubes
     int region_length;
 
