@@ -370,11 +370,11 @@ namespace IJKDUAL {
 
 
   /// Input data to Dual Contouring and related algorithms
-  template <typename DATA_FLAGS_TYPE>
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
   class DUALISO_DATA_BASE:public DATA_FLAGS_TYPE {
 
   protected:
-    DUALISO_SCALAR_GRID scalar_grid;
+    SCALAR_GRID_TYPE scalar_grid;
 
     // flags
     bool is_scalar_grid_set;
@@ -387,16 +387,17 @@ namespace IJKDUAL {
     ~DUALISO_DATA_BASE() { FreeAll(); };
 
     // Set functions
+    template <typename SCALAR_GRID_BASE_TYPE>
     void CopyScalarGrid             /// Copy scalar_grid to DUALISO_DATA
-      (const DUALISO_SCALAR_GRID_BASE & scalar_grid2);
+      (const SCALAR_GRID_BASE_TYPE & scalar_grid2);
+    template <typename SCALAR_GRID_BASE_TYPE>
     void SubsampleScalarGrid        /// Subsample scalar_grid.
-      (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, 
+      (const SCALAR_GRID_BASE_TYPE & scalar_grid2, 
        const int subsample_resolution);
+    template <typename SCALAR_GRID_BASE_TYPE>
     void SupersampleScalarGrid      /// Supersample scalar_grid.
-      (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, 
+      (const SCALAR_GRID_BASE_TYPE & scalar_grid2, 
        const int supersample_resolution);
-    void SubdivideScalarGrid      /// Subdivide scalar_grid.
-      (const DUALISO_SCALAR_GRID_BASE & scalar_grid2); 
     void SetInterpolationType       /// Set type of interpolation.
       (const INTERPOLATION_TYPE interpolation_type);
     void SetVertexPositionMethod    /// Set isosurface vertex position method.
@@ -409,11 +410,11 @@ namespace IJKDUAL {
 
     /// Copy, subsample or supersample scalar grid.
     /// Precondition: flag_subsample and flag_supersample are not both true.
+    template <typename SCALAR_GRID_BASE_TYPE>
     void SetScalarGrid
-      (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, 
+      (const SCALAR_GRID_BASE_TYPE & scalar_grid2, 
        const bool flag_subsample, const int subsample_resolution,
-       const bool flag_supersample, const int supersample_resolution, 
-       const bool flag_subdivide);
+       const bool flag_supersample, const int supersample_resolution);
 
     // Get functions
     bool IsScalarGridSet() const     /// Return true if scalar grid is set.
@@ -426,7 +427,8 @@ namespace IJKDUAL {
     bool Check(IJK::ERROR & error) const;
   };
 
-  typedef DUALISO_DATA_BASE<DUALISO_DATA_FLAGS> DUALISO_DATA;
+  typedef DUALISO_DATA_BASE<DUALISO_SCALAR_GRID, DUALISO_DATA_FLAGS> 
+  DUALISO_DATA;
 
 
   // **************************************************
@@ -748,23 +750,24 @@ namespace IJKDUAL {
   // DUALISO_DATA_BASE CLASS MEMBER FUNCTIONS
   // *******************************************************************
 
-  template <typename DATA_FLAGS_TYPE>
-  void DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::Init()
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
+  void DUALISO_DATA_BASE<SCALAR_GRID_TYPE,DATA_FLAGS_TYPE>::Init()
   {
     is_scalar_grid_set = false;
   }
 
-  template <typename DATA_FLAGS_TYPE>
-  void DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::FreeAll()
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
+  void DUALISO_DATA_BASE<SCALAR_GRID_TYPE, DATA_FLAGS_TYPE>::FreeAll()
   {
     is_scalar_grid_set = false;
   }
 
 
   // Copy scalar grid
-  template <typename DATA_FLAGS_TYPE>
-  void DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::
-  CopyScalarGrid(const DUALISO_SCALAR_GRID_BASE & scalar_grid2)
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
+  template <typename SCALAR_GRID_BASE_TYPE>
+  void DUALISO_DATA_BASE<SCALAR_GRID_TYPE, DATA_FLAGS_TYPE>::
+  CopyScalarGrid(const SCALAR_GRID_BASE_TYPE & scalar_grid2)
   {
     scalar_grid.Copy(scalar_grid2);
     scalar_grid.SetSpacing(scalar_grid2.SpacingPtrConst());
@@ -772,10 +775,11 @@ namespace IJKDUAL {
   }
 
   // Subsample scalar grid
-  template <typename DATA_FLAGS_TYPE>
-  void DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::SubsampleScalarGrid
-  (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, 
-   const int subsample_resolution)
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
+  template <typename SCALAR_GRID_BASE_TYPE>
+  void DUALISO_DATA_BASE<SCALAR_GRID_TYPE,DATA_FLAGS_TYPE>::
+  SubsampleScalarGrid(const SCALAR_GRID_BASE_TYPE & scalar_grid2, 
+                      const int subsample_resolution)
   {
     const int dimension = scalar_grid2.Dimension();
     IJK::ARRAY<COORD_TYPE> spacing(dimension);
@@ -792,9 +796,11 @@ namespace IJKDUAL {
   }
 
   // Supersample scalar grid
-  template <typename DATA_FLAGS_TYPE>
-  void DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::SupersampleScalarGrid
-  (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, 
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
+  template <typename SCALAR_GRID_BASE_TYPE>
+  void DUALISO_DATA_BASE<SCALAR_GRID_TYPE,DATA_FLAGS_TYPE>::
+  SupersampleScalarGrid
+  (const SCALAR_GRID_BASE_TYPE & scalar_grid2, 
    const int supersample_resolution)
   {
     const int dimension = scalar_grid2.Dimension();
@@ -810,38 +816,19 @@ namespace IJKDUAL {
     is_scalar_grid_set = true;
   }
 
-  // Subdivide scalar grid
-  template <typename DATA_FLAGS_TYPE>
-  void DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::SubdivideScalarGrid
-  (const DUALISO_SCALAR_GRID_BASE & scalar_grid2) 
-  {
-    const int subdivide_resolution = 2;
-
-    const int dimension = scalar_grid2.Dimension();
-    IJK::ARRAY<COORD_TYPE> spacing(dimension);
-    scalar_grid.Subdivide(scalar_grid2, subdivide_resolution);
-    IJK::copy_coord(dimension, scalar_grid2.SpacingPtrConst(),
-                    spacing.Ptr());
-    IJK::divide_coord
-      (dimension, subdivide_resolution, spacing.PtrConst(), spacing.Ptr());
-    scalar_grid.SetSpacing(spacing.PtrConst()); 
-
-    is_scalar_grid_set = true;
-  }
-
   // Copy, subsample or supersample scalar grid.
-  template <typename DATA_FLAGS_TYPE>
-  void DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::SetScalarGrid
-  (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, 
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
+  template <typename SCALAR_GRID_BASE_TYPE>
+  void DUALISO_DATA_BASE<SCALAR_GRID_TYPE,DATA_FLAGS_TYPE>::SetScalarGrid
+  (const SCALAR_GRID_BASE_TYPE & scalar_grid2, 
    const bool flag_subsample, const int subsample_resolution,
-   const bool flag_supersample, const int supersample_resolution, 
-   const bool flag_subdivide)
+   const bool flag_supersample, const int supersample_resolution)
   {
     IJK::PROCEDURE_ERROR error("DUALISO_DATA_BASE::SetScalarGrid");
 
-    if (flag_subsample + flag_supersample + flag_subdivide > 1) {
+    if (flag_subsample && flag_supersample) {
       error.AddMessage
-        ("Scalar grid can only be one of subsampled or supersampled or subdivide.");
+        ("Scalar grid cannot both be subsampled and supersampled.");
       throw error;
     }
   
@@ -853,57 +840,57 @@ namespace IJKDUAL {
       // supersample grid
       SupersampleScalarGrid(scalar_grid2, supersample_resolution);
     }
-    else if (flag_subdivide) {
-      // subdivide grid
-      SubdivideScalarGrid(scalar_grid2);
-    }
     else {
       CopyScalarGrid(scalar_grid2);
     };
   }
 
   // Set type of interpolation
-  template <typename DATA_FLAGS_TYPE>
-  void DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::SetInterpolationType
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
+  void DUALISO_DATA_BASE<SCALAR_GRID_TYPE,DATA_FLAGS_TYPE>::
+  SetInterpolationType
   (const INTERPOLATION_TYPE interpolation_type)
   {
     this->interpolation_type = interpolation_type;
   }
 
   // Set isosurface vertex position method.
-  template <typename DATA_FLAGS_TYPE>
-  void DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::SetVertexPositionMethod    
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
+  void DUALISO_DATA_BASE<SCALAR_GRID_TYPE,DATA_FLAGS_TYPE>::
+  SetVertexPositionMethod    
   (const VERTEX_POSITION_METHOD vertex_position_method)
   {
     this->vertex_position_method = vertex_position_method;
   }
 
   // Set flag for allowing multiple isosurface vertices in a single cube.
-  template <typename DATA_FLAGS_TYPE>
-  void DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
+  void DUALISO_DATA_BASE<SCALAR_GRID_TYPE,DATA_FLAGS_TYPE>::
   SetAllowMultipleIsoVertices(const bool flag)
   {
     this->allow_multiple_iso_vertices = flag;
   }
 
-  template <typename DATA_FLAGS_TYPE>
-  void DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::SetConvertQuadToTri
-  (const QUAD_TRI_METHOD method)
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
+  void DUALISO_DATA_BASE<SCALAR_GRID_TYPE,DATA_FLAGS_TYPE>::
+  SetConvertQuadToTri(const QUAD_TRI_METHOD method)
   {
     this->use_triangle_mesh = true;
     this->quad_tri_method = method;
   }
 
-  template <typename DATA_FLAGS_TYPE>
-  void DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::UnsetConvertQuadToTri()
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
+  void DUALISO_DATA_BASE<SCALAR_GRID_TYPE,DATA_FLAGS_TYPE>::
+  UnsetConvertQuadToTri()
   {
     this->use_triangle_mesh = false;
   }
 
 
   /// Check data structure
-  template <typename DATA_FLAGS_TYPE>
-  bool DUALISO_DATA_BASE<DATA_FLAGS_TYPE>::Check(IJK::ERROR & error) const
+  template <typename SCALAR_GRID_TYPE, typename DATA_FLAGS_TYPE>
+  bool DUALISO_DATA_BASE<SCALAR_GRID_TYPE,DATA_FLAGS_TYPE>::
+  Check(IJK::ERROR & error) const
   {
     IJK::ERROR error2;
 

@@ -68,6 +68,15 @@ namespace IVOLDUAL {
   typedef IJKDUAL::DUALISO_SCALAR_GRID_BASE DUALISO_SCALAR_GRID_BASE;
   typedef IJKDUAL::DUALISO_SCALAR_GRID DUALISO_SCALAR_GRID;
 
+  class IVOLDUAL_SCALAR_GRID: public DUALISO_SCALAR_GRID {
+
+  public:
+    IVOLDUAL_SCALAR_GRID(){};
+
+    // *** ADD THE SUBDIVIDE ROUTINES HERE.
+    // *** PUT THE IMPLEMENTATION CODE IN ivoldual_datastruct.cxx.
+  };
+
   /// Type of grid encoding grid vertices.
   /// - 0: Below lower isovalue.
   /// - 1: Between lower and upper isovalue.
@@ -223,11 +232,31 @@ namespace IVOLDUAL {
 
 
   // **************************************************
-  // DUAL CONTOURING INPUT DATA AND DATA STRUCTURES
+  // IVOLDUAL INPUT DATA AND DATA STRUCTURES
   // **************************************************
 
-  typedef IJKDUAL::DUALISO_DATA_BASE<IVOLDUAL_DATA_FLAGS> IVOLDUAL_DATA;
+  /// Input data to ivoldual.
+  class IVOLDUAL_DATA:
+    /* OBSOLETE
+    public IJKDUAL::DUALISO_DATA_BASE<DUALISO_SCALAR_GRID,IVOLDUAL_DATA_FLAGS> 
+    */
+    public IJKDUAL::DUALISO_DATA_BASE<IVOLDUAL_SCALAR_GRID,IVOLDUAL_DATA_FLAGS> 
+  {
+  public:
+    IVOLDUAL_DATA() {};
 
+    void SubdivideScalarGrid      /// Subdivide scalar_grid.
+      (const DUALISO_SCALAR_GRID_BASE & scalar_grid2); 
+
+    /// Copy, subsample, supersample or subdivide scalar grid.
+    /// @pre At most one of flag_subsample, flag_supersample or
+    ///   flag_subdivide may be true.
+    void SetScalarGrid
+      (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, 
+       const bool flag_subsample, const int subsample_resolution,
+       const bool flag_supersample, const int supersample_resolution, 
+       const bool flag_subdivide);
+  };
 
   // **************************************************
   // DUALISO TIME
