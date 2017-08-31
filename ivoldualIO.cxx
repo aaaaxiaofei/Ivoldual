@@ -64,7 +64,7 @@ namespace {
      COLOR_VERT_OPT,
      ORIENT_IN_OPT, ORIENT_OUT_OPT,
      HELP_OPT, HELP_ALL_OPT, USAGE_OPT, ALL_OPTIONS_OPT,
-     OFF_OPT, IV_OPT, PLY_OPT, VTK_OPT,
+     OFF_OPT, PLY_OPT, VTK_OPT,
      OUTPUT_FILENAME_OPT, OUTPUT_FILENAME_PREFIX_OPT, STDOUT_OPT, 
      LABEL_WITH_ISOVALUE_OPT,
      NO_WRITE_OPT, SILENT_OPT, NO_WARN_OPT,
@@ -476,8 +476,8 @@ void create_output_file_type_list(OUTPUT_FILE_TYPE_LIST & list)
 {
   list.clear();
   list.push_back(make_pair(OFF, ".off"));
-  list.push_back(make_pair(IV, ".iv"));
   list.push_back(make_pair(PLY, ".ply"));
+  list.push_back(make_pair(VTK, ".vtk"));
 }
 
 
@@ -640,11 +640,6 @@ bool process_option
 
   case VTK_OPT:
     io_info.flag_output_vtk = true;
-    io_info.is_file_format_set = true;
-    break;
-
-  case IV_OPT:
-    io_info.flag_output_iv = true;
     io_info.is_file_format_set = true;
     break;
 
@@ -1018,22 +1013,6 @@ void IVOLDUAL::write_dual_mesh
         ("Illegal output mesh dimension. VTK format is only for dimension 3.");
     break;
 
-  case IV:
-    if (dimension == 3) {
-      if (!flag_use_stdout) {
-        ofilename = output_info.output_iv_filename;
-        output_file.open(ofilename.c_str(), ios::out);
-        ijkoutIV(output_file, dimension, vertex_coord, plist);
-        output_file.close();
-      }
-      else {
-        ijkoutIV(dimension, vertex_coord, plist);
-      }
-    }
-    else throw error
-      ("Illegal dimension. OpenInventor format is only for dimension 3.");
-    break;
-
   default:
     throw error("Illegal output format.");
     break;
@@ -1092,16 +1071,6 @@ void IVOLDUAL::write_dual_mesh
     }
   }
 
-  if (output_info.flag_output_iv) {
-    if (output_info.output_iv_filename != "") {
-      write_dual_mesh(output_info, IV, vertex_coord, plist);
-    }
-    else {
-      error.AddMessage
-        ("Programming error. OpenInventor .iv file name not set.");
-      throw error;
-    }
-  }
 }
 
 
@@ -1148,22 +1117,6 @@ void IVOLDUAL::write_dual_mesh_color
     };
     break;
 
-  case IV:
-    if (dimension == 3) {
-      if (!flag_use_stdout) {
-        ofilename = output_info.output_iv_filename;
-        output_file.open(ofilename.c_str(), ios::out);
-        ijkoutIV(output_file, dimension, vertex_coord, plist);
-        output_file.close();
-      }
-      else {
-        ijkoutOFF(dimension, vertex_coord, plist);
-      }
-    }
-    else throw error
-      ("Illegal dimension. OpenInventor format is only for dimension 3.");
-    break;
-
   default:
     throw error("Illegal output format.");
     break;
@@ -1202,17 +1155,6 @@ void IVOLDUAL::write_dual_mesh_color
     }
   }
 
-  if (output_info.flag_output_iv) {
-    if (output_info.output_iv_filename != "") {
-      write_dual_mesh_color
-        (output_info, IV, vertex_coord, plist, front_color, back_color);
-    }
-    else {
-      error.AddMessage
-        ("Programming error. OpenInventor .iv file name not set.");
-      throw error;
-    }
-  }
 }
 
 void IVOLDUAL::write_dual_mesh_color
@@ -1337,16 +1279,6 @@ void IVOLDUAL::write_dual_tri_mesh
     }
   }
 
-  if (output_info.flag_output_iv) {
-    if (output_info.output_iv_filename != "") {
-      write_dual_tri_mesh(output_info, IV, vertex_coord, tri_vert);
-    }
-    else {
-      error.AddMessage
-        ("Programming error. OpenInventor .iv file name not set.");
-      throw error;
-    }
-  }
 }
 
 
@@ -2179,10 +2111,6 @@ void IVOLDUAL::IO_INFO::SetOutputFormat(const OUTPUT_FORMAT output_format)
     flag_output_ply = true;
     break;
 
-  case IV:
-    flag_output_iv = true;
-    break;
-
   default:
     error.AddMessage
       ("Programming error. Unable to set output format to ",
@@ -2253,10 +2181,6 @@ void IVOLDUAL::IO_INFO::SetOutputFilename
     output_vtk_filename = output_filename;
     break;
 
-  case IV:
-    output_iv_filename = output_filename;
-    break;
-
   default:
     error.AddMessage
       ("Programming error.  Unknown file type ",
@@ -2300,7 +2224,6 @@ void IVOLDUAL::IO_INFO::ConstructOutputFilenames(const int i)
   output_off_filename = ofilename + ".off";
   output_ply_filename = ofilename + ".ply";
   output_vtk_filename = ofilename + ".vtk";
-  output_iv_filename = ofilename + ".iv";
 }
 
 

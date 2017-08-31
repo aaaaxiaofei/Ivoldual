@@ -47,7 +47,7 @@ namespace IVOLDUAL {
   //! Nrrd header.
   typedef IJK::NRRD_DATA<int, AXIS_SIZE_TYPE> NRRD_HEADER; 
 
-  typedef enum { OFF, PLY, VTK, IV } OUTPUT_FORMAT;    //!< Output format.
+  typedef enum { OFF, PLY, VTK } OUTPUT_FORMAT;    //!< Output format.
 
 
   // **************************************************
