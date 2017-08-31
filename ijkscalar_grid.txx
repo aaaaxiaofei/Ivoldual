@@ -175,10 +175,6 @@ namespace IJK {
     template <typename PTYPE>
     void LinearInterpolate(const PTYPE supersample_period[]);
 
-    /// Linear interpolate between subdivide vertices. 
-    template <typename PTYPE>
-    void SubdivideInterpolate(const PTYPE supersample_period);
-
 
   public:
     /// Copy scalar grid
@@ -227,11 +223,6 @@ namespace IJK {
     template <typename GTYPE, typename PTYPE>
     void Supersample
     (const GTYPE & scalar_grid2, const PTYPE supersample_period[]);
-
-    /// Subdivide \a scalar_grid2.  Resizes current grid.
-    template <typename GTYPE, typename PTYPE>
-    void Subdivide
-    (const GTYPE & scalar_grid2, const PTYPE subdivide_period);
 
   };
 
@@ -1423,29 +1414,6 @@ namespace IJK {
 
   template <typename BASE_CLASS>
   template <typename GTYPE, typename PTYPE>
-  void SCALAR_GRID_ALLOC<BASE_CLASS>::Subdivide
-  (const GTYPE & scalar_grid2, const PTYPE subdivide_period)
-  {
-    const DTYPE dimension = scalar_grid2.Dimension();
-    IJK::ARRAY<ATYPE> supersampled_axis_size(dimension);
-    IJK::PROCEDURE_ERROR error("SUPERSAMPLE_GRID::Subdivide");
-
-    for (DTYPE d = 0; d < dimension; d++) {
-      supersampled_axis_size[d] =
-        compute_supersample_size(scalar_grid2.AxisSize(d), subdivide_period);
-    }
-
-    this->SetSize(dimension, supersampled_axis_size.PtrConst());
-
-    if (this->NumVertices() < 1) { return; };
-
-    SupersampleCopy(scalar_grid2, subdivide_period);
-    SubdivideInterpolate(subdivide_period);
-
-  }
-
-  template <typename BASE_CLASS>
-  template <typename GTYPE, typename PTYPE>
   void SCALAR_GRID_ALLOC<BASE_CLASS>::SupersampleCopy
   (const GTYPE & scalar_grid2, const PTYPE supersample_period)
   {
@@ -1477,6 +1445,7 @@ namespace IJK {
         this->scalar[v1] = s;
       }
     }
+
   }
 
   template <typename BASE_CLASS>
@@ -1512,6 +1481,7 @@ namespace IJK {
         this->scalar[v1] = s;
       }
     }
+
   }
 
   template <typename BASE_CLASS>
@@ -1616,54 +1586,6 @@ namespace IJK {
     }
   }
 
-  template <typename BASE_CLASS>
-  template <typename PTYPE>
-  void SCALAR_GRID_ALLOC<BASE_CLASS>::SubdivideInterpolate
-  (const PTYPE supersample_period)
-  {
-    const DTYPE dimension = this->Dimension();
-    IJK::ARRAY<ATYPE> subgrid_axis_size(dimension);
-    IJK::ARRAY<ATYPE> subsample_period(dimension);
-    IJK::ARRAY<VTYPE> axis_increment(dimension);
-    compute_increment(*this, axis_increment.Ptr());
-
-    for (DTYPE d = 0; d < this->Dimension(); d++) {
-      for (DTYPE j = 0; j < d; j++) { subsample_period[j] = 1; };
-      for (DTYPE j = d; j < this->Dimension(); j++)
-        { subsample_period[j] = supersample_period; };
-      for (DTYPE j = 0; j < this->Dimension(); j++)
-        { subgrid_axis_size[j] = this->AxisSize(j); };
-      subgrid_axis_size[d] = 1;
-
-      NTYPE numv;
-      compute_subsample_size
-        (this->Dimension(), subgrid_axis_size.PtrConst(),
-         subsample_period.PtrConst(), numv);
-
-      IJK::ARRAY<VTYPE> vlist(numv);
-      subsample_subgrid_vertices
-        (*this, 0, subgrid_axis_size.PtrConst(),
-         subsample_period.PtrConst(), vlist.Ptr());
-
-      for (VTYPE x = 0; x+1 < this->AxisSize(d); x += supersample_period) {
-
-        VTYPE inc0 = x*axis_increment[d];
-        VTYPE inc1 = inc0 + supersample_period*axis_increment[d];
-        for (VTYPE i = 0; i < numv; i++) {
-          VTYPE v0 = vlist[i] + inc0;
-          VTYPE v1 = vlist[i] + inc1;
-
-          VTYPE v2 = v0;
-          for (VTYPE j = 1; j < supersample_period; j++) {
-            v2 += axis_increment[d];
-            STYPE s0 = this->scalar[v0];
-            STYPE s1 = this->scalar[v1];
-            this->scalar[v2] = std::max(s0, s1);
-          }
-        }
-      }
-    }
-  }
 
   // ******************************************************
   // TEMPLATE CLASS SCALAR_GRID_WRAPPER MEMBER FUNCTIONS

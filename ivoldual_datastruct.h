@@ -71,10 +71,15 @@ namespace IVOLDUAL {
   class IVOLDUAL_SCALAR_GRID: public DUALISO_SCALAR_GRID {
 
   public:
-    IVOLDUAL_SCALAR_GRID(){};
+    IVOLDUAL_SCALAR_GRID() {};
 
-    // *** ADD THE SUBDIVIDE ROUTINES HERE.
-    // *** PUT THE IMPLEMENTATION CODE IN ivoldual_datastruct.cxx.
+    // Subdivide \a scalar grid.
+    void Subdivide
+    (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, const int subdivide_period);
+
+    // Interpolate between subdivide vertices.
+    void SubdivideInterpolate
+    (const int subdivide_period);
   };
 
   /// Type of grid encoding grid vertices.

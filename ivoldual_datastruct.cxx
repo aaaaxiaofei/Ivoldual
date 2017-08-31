@@ -72,7 +72,7 @@ void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
 
   if (flag_subsample + flag_supersample + flag_subdivide > 1) {
     error.AddMessage
-      ("Scalar grid can only be one of subsampled or supersampled or subdivide.");
+      ("At most one of -subsample, -supersample or -subdivide may be used.");
     throw error;
   }
   
@@ -92,3 +92,71 @@ void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
     CopyScalarGrid(scalar_grid2);
   };
 }
+
+  void IVOLDUAL::IVOLDUAL_SCALAR_GRID::Subdivide
+  (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, const int subdivide_period)
+  {  
+    const DTYPE dimension = scalar_grid2.Dimension();
+    IJK::ARRAY<ATYPE> subdivide_axis_size(dimension);
+    IJK::PROCEDURE_ERROR error("IVOLDUAL_SCALAR_GRID::Subdivide");
+
+    for (DTYPE d = 0; d < dimension; d++) {
+      subdivide_axis_size[d] =
+        IJK::compute_supersample_size(scalar_grid2.AxisSize(d), subdivide_period);
+    }
+
+    this->SetSize(dimension, subdivide_axis_size.PtrConst());
+
+    if (this->NumVertices() < 1) { return; };
+
+    SupersampleCopy(scalar_grid2, subdivide_period);
+    SubdivideInterpolate(subdivide_period);
+  
+  }
+
+  void IVOLDUAL::IVOLDUAL_SCALAR_GRID::SubdivideInterpolate
+  (const int subdivide_period)
+  {
+    const DTYPE dimension = this->Dimension();
+    IJK::ARRAY<ATYPE> subgrid_axis_size(dimension);
+    IJK::ARRAY<ATYPE> subsample_period(dimension);
+    IJK::ARRAY<VTYPE> axis_increment(dimension);
+    compute_increment(*this, axis_increment.Ptr());
+
+    for (DTYPE d = 0; d < this->Dimension(); d++) {
+      for (DTYPE j = 0; j < d; j++) { subsample_period[j] = 1; };
+      for (DTYPE j = d; j < this->Dimension(); j++)
+        { subsample_period[j] = subdivide_period; };
+      for (DTYPE j = 0; j < this->Dimension(); j++)
+        { subgrid_axis_size[j] = this->AxisSize(j); };
+      subgrid_axis_size[d] = 1;
+
+      NTYPE numv;
+      IJK::compute_subsample_size
+        (this->Dimension(), subgrid_axis_size.PtrConst(),
+         subsample_period.PtrConst(), numv);
+
+      IJK::ARRAY<VTYPE> vlist(numv);
+      IJK::subsample_subgrid_vertices
+        (*this, 0, subgrid_axis_size.PtrConst(),
+         subsample_period.PtrConst(), vlist.Ptr());
+
+      for (VTYPE x = 0; x+1 < this->AxisSize(d); x += subdivide_period) {
+
+        VTYPE inc0 = x*axis_increment[d];
+        VTYPE inc1 = inc0 + subdivide_period*axis_increment[d];
+        for (VTYPE i = 0; i < numv; i++) {
+          VTYPE v0 = vlist[i] + inc0;
+          VTYPE v1 = vlist[i] + inc1;
+
+          VTYPE v2 = v0;
+          for (VTYPE j = 1; j < subdivide_period; j++) {
+            v2 += axis_increment[d];
+            STYPE s0 = this->scalar[v0];
+            STYPE s1 = this->scalar[v1];
+            this->scalar[v2] = std::max(s0, s1);
+          }
+        }
+      }
+    }
+  }
