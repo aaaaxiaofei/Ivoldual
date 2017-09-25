@@ -395,6 +395,11 @@ namespace IJKDUALTABLE {
   }
 
 
+  /// Modify the ivoldual table entries of the lower and upper lifted cubes
+  ///   if the facet shared by the two cubes is ambiguous, no facet shared
+  ///   with a third cube is ambiguous and each cube contains only
+  ///   one isosurface vertex.
+  /// Replace the table entries by their complements.
   template <typename NTYPE, typename CUBE_TYPE,
             typename TI_TYPE_L, typename TI_TYPE_U, 
             typename ISODUAL_ENTRY_TYPE>
@@ -426,10 +431,17 @@ namespace IJKDUALTABLE {
     ilower_facet = dimension-1;
     iupper_facet = ilower_facet+dimension;
 
-    if (!lower_isodual.IsFacetAmbiguous(iupper_facet)) { return; }
+    if (!lower_isodual.IsFacetAmbiguous(iupper_facet)) {
+      // The facet between the upper and lower lifted cubes is not ambiguous.
+      return; 
+    }
 
     for (NTYPE jf = 0; jf < num_facets; jf++) {
-      if (jf == ilower_facet || jf == iupper_facet) { continue; }
+      if (jf == ilower_facet || jf == iupper_facet) { 
+        // Skip the facet between the upper and lower lifted cubes
+        //   and the facet on the lifted boundary.
+        continue; 
+      }
 
       if (lower_isodual.IsFacetAmbiguous(jf) ||
           upper_isodual.IsFacetAmbiguous(jf)) {
