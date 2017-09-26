@@ -125,12 +125,28 @@ namespace IJKDUALTABLE {
   // AMBIGUITY ROUTINES
   // **************************************************
 
-  template <typename TI_TYPE, typename FIND_TYPE>
+  /// Return true if cube with given configuration is ambiguous.
+  /// @param ientry Index of +/- configuration.
+  /// @param[out] facet_bits Bits indicating ambiguous facets.
+  /// @param[out] num_ambiguous_facets Number of ambiguous facets.
+  template <typename TI_TYPE, typename CUBE_TYPE, typename FBITS_TYPE,
+            typename NTYPE, typename FIND_TYPE>
   bool is_cube_ambiguous
-  (const TI_TYPE ientry, FIND_TYPE & find_component)
+  (const TI_TYPE ientry, const CUBE_TYPE & cube,
+   FBITS_TYPE & ambiguous_facet_bits,  NTYPE & num_ambiguous_facets, 
+   FIND_TYPE & find_component)
   {
-    typedef typename FIND_TYPE::NUMBER_TYPE NTYPE;
+    const NTYPE num_cube_facets = cube.NumFacets();
 
+    compute_ambiguous_cube_facets
+      (ientry, num_cube_facets, ambiguous_facet_bits,
+       num_ambiguous_facets, find_component);
+
+    if (num_ambiguous_facets > 0) { return(true); }
+
+    // Cube may still be ambiguous, even though it has no ambiguous facets.
+
+    // Check if cube is ambiguous.
     NTYPE num_pos_components = 
       find_component.ComputeNumComponents(ientry, true);
     NTYPE num_neg_components = 
@@ -166,24 +182,24 @@ namespace IJKDUALTABLE {
   ///   k'th bit of facet_set is 1 if facet k is ambiguous.
   /// @param[out] num_ambiguous_facets Number of ambiguous facets.
   template <typename TI_TYPE, typename NTYPE, typename NTYPE2,
-            typename FSET_TYPE, typename FIND_TYPE>
+            typename FBITS_TYPE, typename FIND_TYPE>
   void compute_ambiguous_cube_facets
   (const TI_TYPE ientry, 
    const NTYPE num_facets,
-   FSET_TYPE & facet_set,  
+   FBITS_TYPE & facet_bits,  
    NTYPE2 & num_ambiguous_facets,
    FIND_TYPE & find_component)
   {
-    facet_set = 0;
+    facet_bits = 0;
     num_ambiguous_facets = 0;
-    FSET_TYPE mask = FSET_TYPE(1);
+    FBITS_TYPE mask = FBITS_TYPE(1);
 
     for (NTYPE kf = 0; kf < num_facets; kf++) {
       if (is_cube_facet_ambiguous(ientry, kf, find_component)) {
         num_ambiguous_facets++;
-        facet_set = (facet_set | mask);
+        facet_bits = (facet_bits | mask);
       }
-      mask = (mask << FSET_TYPE(1));
+      mask = (mask << FBITS_TYPE(1));
     }
   }
 
@@ -203,16 +219,13 @@ namespace IJKDUALTABLE {
    FIND_TYPE & find_component, 
    ENTRY_TYPE & table_entry)
   {
-    const NTYPE num_cube_facets = cube.NumFacets();
-
     create_isodual_cube_table_entry
       (ientry, num_poly_vertices, flag_separate_neg, flag_separate_opposite,
        cube, find_component, table_entry);
 
-    table_entry.is_ambiguous = is_cube_ambiguous(ientry, find_component);
-    compute_ambiguous_cube_facets
-      (ientry, num_cube_facets, table_entry.ambiguous_facet_bits, 
-       table_entry.num_ambiguous_facets, find_component);
+    table_entry.is_ambiguous = 
+      is_cube_ambiguous(ientry, cube, table_entry.ambiguous_facet_bits,
+                        table_entry.num_ambiguous_facets, find_component);
 
     table_entry.num_active_facets =
       cube.ComputeNumActiveCubeFacets(ientry);
@@ -1865,15 +1878,15 @@ namespace IJKDUALTABLE {
   // **************************************************
 
   // constructor
-  template <typename NTYPE, typename ISOV_TYPE, typename FACET_SET>
-  ISODUAL_AMBIG_TABLE_ENTRY<NTYPE,ISOV_TYPE,FACET_SET>::
+  template <typename NTYPE, typename ISOV_TYPE, typename FACET_BITS_TYPE>
+  ISODUAL_AMBIG_TABLE_ENTRY<NTYPE,ISOV_TYPE,FACET_BITS_TYPE>::
   ISODUAL_AMBIG_TABLE_ENTRY()
   {
     ClearAmbig();
   }
 
-  template <typename NTYPE, typename ISOV_TYPE, typename FACET_SET>
-  void ISODUAL_AMBIG_TABLE_ENTRY<NTYPE,ISOV_TYPE,FACET_SET>::ClearAmbig()
+  template <typename NTYPE, typename ISOV_TYPE, typename FACET_BITS_TYPE>
+  void ISODUAL_AMBIG_TABLE_ENTRY<NTYPE,ISOV_TYPE,FACET_BITS_TYPE>::ClearAmbig()
   {
     is_ambiguous = false;
     num_ambiguous_facets = 0;
@@ -1882,8 +1895,8 @@ namespace IJKDUALTABLE {
   }
 
   // destructor
-  template <typename NTYPE, typename ISOV_TYPE, typename FACET_SET>
-  ISODUAL_AMBIG_TABLE_ENTRY<NTYPE,ISOV_TYPE,FACET_SET>::
+  template <typename NTYPE, typename ISOV_TYPE, typename FACET_BITS_TYPE>
+  ISODUAL_AMBIG_TABLE_ENTRY<NTYPE,ISOV_TYPE,FACET_BITS_TYPE>::
   ~ISODUAL_AMBIG_TABLE_ENTRY()
   {
     ClearAmbig();
@@ -2920,7 +2933,7 @@ namespace IJKDUALTABLE {
         int j2;
         IJK::compute_cube_vertex_neighbor(j, d, j2);
         if (vertex_flag[j2] == flag && component[j2] == 0 &&
-            IJK::cube_facet_contains(dimension, kf, i)) {
+            IJK::cube_facet_contains(dimension, kf, j2)) {
           vlist.push_back(j2);
           component[j2] = icomp;
         }
