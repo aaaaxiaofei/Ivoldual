@@ -47,7 +47,7 @@ namespace IVOLDUAL {
   //! Nrrd header.
   typedef IJK::NRRD_DATA<int, AXIS_SIZE_TYPE> NRRD_HEADER; 
 
-  typedef enum { OFF, PLY, VTK, IV } OUTPUT_FORMAT;    //!< Output format.
+  typedef enum { OFF, PLY, VTK } OUTPUT_FORMAT;    //!< Output format.
 
 
   // **************************************************
@@ -87,6 +87,10 @@ namespace IVOLDUAL {
     bool flag_subsample;
     bool flag_report_all_isov;
     std::string report_isov_filename;
+    bool flag_report_all_ivol_poly;
+    std::string report_ivol_poly_filename;
+    bool flag_write_scalar;
+    std::string write_scalar_filename;
     int subsample_resolution;
     bool flag_supersample;
     int supersample_resolution;
@@ -238,10 +242,26 @@ namespace IVOLDUAL {
      NRRD_HEADER & nrrd_header, IO_TIME & io_time);
 
   /// Read a nearly raw raster data (nrrd) file.
-  /// Pass C++ string instead of char * input filename.
+  /// - Pass C++ string instead of char * input filename.
   void read_nrrd_file
-  (const std::string input_filename, DUALISO_SCALAR_GRID & scalar_grid, 
+  (const std::string & input_filename, DUALISO_SCALAR_GRID & scalar_grid, 
    NRRD_HEADER & nrrd_header, IO_TIME & io_time);
+
+
+  // **************************************************
+  // WRITE NEARLY RAW RASTER DATA (nrrd) FILE
+  // **************************************************
+
+  /// Write scalar grid to nrrd file output_filename.
+  void write_nrrd_file
+  (const char * output_filename, const DUALISO_SCALAR_GRID_BASE & grid, 
+   const bool flag_gzip);
+
+  /// Write scalar grid to nrrd file output_filename.
+  /// - Pass C++ string instead of char * output filename.
+  void write_nrrd_file
+  (const std::string & output_filename, const DUALISO_SCALAR_GRID_BASE & grid, 
+   const bool flag_gzip);
 
 
   // **************************************************
@@ -468,7 +488,7 @@ namespace IVOLDUAL {
 
 
   // **************************************************
-  // REPORT INTERVAL VOLUME VERTICES
+  // REPORT INTERVAL VOLUME VERTICES AND POLYTOPES
   // **************************************************
 
   /// Report all interval volume vertices.
@@ -480,6 +500,17 @@ namespace IVOLDUAL {
   /// Report all interval volume vertices.
   /// - Version which opens output stream from output info.
   void report_all_ivol_vert
+  (const OUTPUT_INFO & output_info,
+   const DUALISO_GRID & grid, const DUAL_INTERVAL_VOLUME & interval_volume);
+
+  /// Report all interval volume polytopes.
+  void report_all_ivol_poly
+  (std::ostream & out, const DUALISO_GRID & grid,  
+   const DUAL_INTERVAL_VOLUME & interval_volume);
+
+  /// Report all interval volume polytopes.
+  /// - Version which opens output stream from output info.
+  void report_all_ivol_poly
   (const OUTPUT_INFO & output_info,
    const DUALISO_GRID & grid, const DUAL_INTERVAL_VOLUME & interval_volume);
 

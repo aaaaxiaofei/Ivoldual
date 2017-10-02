@@ -92,6 +92,11 @@ int main(int argc, char **argv)
     warn_non_manifold(io_info);
     report_num_cubes(full_scalar_grid, io_info, ivoldual_data);
 
+    if (io_info.flag_write_scalar) {
+      write_nrrd_file
+        (io_info.write_scalar_filename, ivoldual_data.ScalarGrid(), false);
+    }
+
     construct_interval_volume
       (io_info, ivoldual_data, dualiso_time, io_time);
 
@@ -169,6 +174,11 @@ void construct_interval_volume
 
     if (output_info.flag_report_all_isov) {
       report_all_ivol_vert
+        (output_info, ivoldual_data.ScalarGrid(), interval_volume);
+    }
+
+    if (output_info.flag_report_all_ivol_poly) {
+      report_all_ivol_poly
         (output_info, ivoldual_data.ScalarGrid(), interval_volume);
     }
   }

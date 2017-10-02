@@ -64,11 +64,12 @@ namespace {
      COLOR_VERT_OPT,
      ORIENT_IN_OPT, ORIENT_OUT_OPT,
      HELP_OPT, HELP_ALL_OPT, USAGE_OPT, ALL_OPTIONS_OPT,
-     OFF_OPT, IV_OPT, PLY_OPT, VTK_OPT,
+     OFF_OPT, PLY_OPT, VTK_OPT,
      OUTPUT_FILENAME_OPT, OUTPUT_FILENAME_PREFIX_OPT, STDOUT_OPT, 
      LABEL_WITH_ISOVALUE_OPT,
      NO_WRITE_OPT, SILENT_OPT, NO_WARN_OPT,
-     INFO_OPT, TIME_OPT, OUT_IVOLV_OPT, UNKNOWN_OPT} OPTION_TYPE;
+     INFO_OPT, TIME_OPT, OUT_IVOLV_OPT, OUT_IVOLP_OPT, WRITE_SCALAR_OPT,
+     UNKNOWN_OPT} OPTION_TYPE;
 
   typedef enum {
     REGULAR_OPTG, EXTENDED_OPTG, QDUAL_OPTG, TESTING_OPTG
@@ -467,6 +468,23 @@ namespace {
        "Write information about interval volume vertices");
     options.AddToHelpMessage
       (OUT_IVOLV_OPT, "to file {output_filename}.");
+
+    options.AddOption1Arg
+      (OUT_IVOLP_OPT, "OUT_IVOPV_OPT", EXTENDED_OPTG, 
+       "-out_ivolp", "{output_filename}", 
+       "Write information about interval volume polytopes");
+    options.AddToHelpMessage
+      (OUT_IVOLP_OPT, "to file {output_filename}.");
+
+    options.AddUsageOptionNewline(EXTENDED_OPTG);
+
+    options.AddOption1Arg
+      (WRITE_SCALAR_OPT, "WRITE_SCALAR_OPT", EXTENDED_OPTG, 
+       "-write_scalar", "{output_filename}", 
+       "Write scalar nrrd file produced by subsampling,");
+    options.AddToHelpMessage
+      (WRITE_SCALAR_OPT, 
+       "supersampling or subdividing to file {output_filename}.");
   }
 
 };
@@ -476,8 +494,8 @@ void create_output_file_type_list(OUTPUT_FILE_TYPE_LIST & list)
 {
   list.clear();
   list.push_back(make_pair(OFF, ".off"));
-  list.push_back(make_pair(IV, ".iv"));
   list.push_back(make_pair(PLY, ".ply"));
+  list.push_back(make_pair(VTK, ".vtk"));
 }
 
 
@@ -643,11 +661,6 @@ bool process_option
     io_info.is_file_format_set = true;
     break;
 
-  case IV_OPT:
-    io_info.flag_output_iv = true;
-    io_info.is_file_format_set = true;
-    break;
-
   case OUTPUT_FILENAME_OPT:
     iarg++;
     if (iarg >= argc) usage_error();
@@ -709,6 +722,20 @@ bool process_option
     if (iarg >= argc) usage_error();
     io_info.report_isov_filename = argv[iarg];
     io_info.flag_report_all_isov = true;
+    break;
+
+  case OUT_IVOLP_OPT:
+    iarg++;
+    if (iarg >= argc) usage_error();
+    io_info.report_ivol_poly_filename = argv[iarg];
+    io_info.flag_report_all_ivol_poly = true;
+    break;
+
+  case WRITE_SCALAR_OPT:
+    iarg++;
+    if (iarg >= argc) usage_error();
+    io_info.write_scalar_filename = argv[iarg];
+    io_info.flag_write_scalar = true;
     break;
 
   default:
@@ -910,12 +937,46 @@ void IVOLDUAL::read_nrrd_file
 }
 
 void IVOLDUAL::read_nrrd_file
-(const std::string input_filename, DUALISO_SCALAR_GRID & scalar_grid, 
+(const std::string & input_filename, DUALISO_SCALAR_GRID & scalar_grid, 
  NRRD_HEADER & nrrd_header, IO_TIME & io_time)
 {
   read_nrrd_file(input_filename.c_str(), scalar_grid, nrrd_header, io_time);
 }
 
+
+// **************************************************
+// WRITE NEARLY RAW RASTER DATA (nrrd) FILE
+// **************************************************
+
+void IVOLDUAL::write_nrrd_file
+(const char * output_filename, const DUALISO_SCALAR_GRID_BASE & grid, 
+ const bool flag_gzip)
+{
+  const int dimension = grid.Dimension();
+  NRRD_HEADER nrrd_header;
+  IJK::ARRAY<double> grid_spacing(dimension, 1);
+
+  // Store grid spacing in array of double.
+  for (int d = 0; d < dimension; d++) 
+    { grid_spacing[d] = grid.Spacing(d); }
+
+  nrrd_header.SetSize(grid.Dimension(), grid.AxisSize());
+  nrrdAxisInfoSet_nva(nrrd_header.DataPtr(), nrrdAxisInfoSpacing, 
+                      grid_spacing.PtrConst());
+  if (flag_gzip) {
+    write_scalar_grid_nrrd_gzip(output_filename, grid, nrrd_header);
+  }
+  else {
+    write_scalar_grid_nrrd(output_filename, grid, nrrd_header);
+  }
+}
+
+void IVOLDUAL::write_nrrd_file
+(const std::string & output_filename, 
+ const DUALISO_SCALAR_GRID_BASE & scalar_grid, const bool flag_gzip)
+{
+  write_nrrd_file(output_filename.c_str(), scalar_grid, flag_gzip);
+}
 
 // **************************************************
 // PATH_DELIMITER
@@ -1018,22 +1079,6 @@ void IVOLDUAL::write_dual_mesh
         ("Illegal output mesh dimension. VTK format is only for dimension 3.");
     break;
 
-  case IV:
-    if (dimension == 3) {
-      if (!flag_use_stdout) {
-        ofilename = output_info.output_iv_filename;
-        output_file.open(ofilename.c_str(), ios::out);
-        ijkoutIV(output_file, dimension, vertex_coord, plist);
-        output_file.close();
-      }
-      else {
-        ijkoutIV(dimension, vertex_coord, plist);
-      }
-    }
-    else throw error
-      ("Illegal dimension. OpenInventor format is only for dimension 3.");
-    break;
-
   default:
     throw error("Illegal output format.");
     break;
@@ -1092,16 +1137,6 @@ void IVOLDUAL::write_dual_mesh
     }
   }
 
-  if (output_info.flag_output_iv) {
-    if (output_info.output_iv_filename != "") {
-      write_dual_mesh(output_info, IV, vertex_coord, plist);
-    }
-    else {
-      error.AddMessage
-        ("Programming error. OpenInventor .iv file name not set.");
-      throw error;
-    }
-  }
 }
 
 
@@ -1148,22 +1183,6 @@ void IVOLDUAL::write_dual_mesh_color
     };
     break;
 
-  case IV:
-    if (dimension == 3) {
-      if (!flag_use_stdout) {
-        ofilename = output_info.output_iv_filename;
-        output_file.open(ofilename.c_str(), ios::out);
-        ijkoutIV(output_file, dimension, vertex_coord, plist);
-        output_file.close();
-      }
-      else {
-        ijkoutOFF(dimension, vertex_coord, plist);
-      }
-    }
-    else throw error
-      ("Illegal dimension. OpenInventor format is only for dimension 3.");
-    break;
-
   default:
     throw error("Illegal output format.");
     break;
@@ -1202,17 +1221,6 @@ void IVOLDUAL::write_dual_mesh_color
     }
   }
 
-  if (output_info.flag_output_iv) {
-    if (output_info.output_iv_filename != "") {
-      write_dual_mesh_color
-        (output_info, IV, vertex_coord, plist, front_color, back_color);
-    }
-    else {
-      error.AddMessage
-        ("Programming error. OpenInventor .iv file name not set.");
-      throw error;
-    }
-  }
 }
 
 void IVOLDUAL::write_dual_mesh_color
@@ -1337,16 +1345,6 @@ void IVOLDUAL::write_dual_tri_mesh
     }
   }
 
-  if (output_info.flag_output_iv) {
-    if (output_info.output_iv_filename != "") {
-      write_dual_tri_mesh(output_info, IV, vertex_coord, tri_vert);
-    }
-    else {
-      error.AddMessage
-        ("Programming error. OpenInventor .iv file name not set.");
-      throw error;
-    }
-  }
 }
 
 
@@ -1891,7 +1889,7 @@ void IVOLDUAL::warn_non_manifold(const IO_INFO & io_info)
 
 
 // **************************************************
-// REPORT INTERVAL VOLUME VERTICES
+// REPORT INTERVAL VOLUME VERTICES AND POLYTOPES
 // **************************************************
 
 namespace {
@@ -1909,8 +1907,35 @@ namespace {
     grid.PrintIndexAndCoord
       (out, "  Cube ", ivolv_list[ivolv].cube_index, ".");
     IJK::print_coord3D(out, "  Coord: ", &(vertex_coord[DIM3*ivolv]), ".\n");
-    out << "  Table index: " << ivolv_list[ivolv].table_index << endl;
+    out << "  Table index: " << int(ivolv_list[ivolv].table_index);
+    out << "  Patch index: " << int(ivolv_list[ivolv].patch_index) << endl;
   }
+
+
+  void report_ivol_poly
+  (std::ostream & out,
+   const DUALISO_GRID & grid,
+   const IVOLDUAL_POLY_INFO_ARRAY & poly_info,
+   const int ipoly)
+  {
+    out << "Ivol poly: " << ipoly << ".";
+    if (poly_info[ipoly].flag_dual_to_edge) {
+      out << "  Edge dual."; 
+      out << "  Endpoint: ";
+      grid.PrintIndexAndCoord(out, poly_info[ipoly].v0);
+      out << "  Direction: " << int(poly_info[ipoly].edge_direction);
+    }
+    else {
+      out << " Dual to vertex ";
+      grid.PrintIndexAndCoord(out, poly_info[ipoly].v0);
+      out << ".";
+    }
+    if (poly_info[ipoly].flag_reverse_orient)
+      { out << "  Reverse orient."; }
+
+    out << endl;
+  }
+
 }
 
 
@@ -1942,6 +1967,39 @@ void IVOLDUAL::report_all_ivol_vert
     cout << "***Warning: Unable to open file " 
          << output_info.report_isov_filename
          << " for interval volume vertex reporting." << endl;
+    cout << "  Skipping report." << endl;
+  }
+
+  output_file.close();
+}
+
+
+void IVOLDUAL::report_all_ivol_poly
+(std::ostream & out,
+ const DUALISO_GRID & grid, 
+ const DUAL_INTERVAL_VOLUME & interval_volume)
+{
+  out << "Interval volume polytopes: " << endl << endl;
+  for (int ipoly = 0; ipoly < interval_volume.isopoly_info.size(); ipoly++) {
+    report_ivol_poly(out, grid, interval_volume.isopoly_info, ipoly);
+  }
+}
+
+
+void IVOLDUAL::report_all_ivol_poly
+(const OUTPUT_INFO & output_info,
+ const DUALISO_GRID & grid, const DUAL_INTERVAL_VOLUME & interval_volume)
+{
+  ofstream output_file;
+
+  output_file.open(output_info.report_ivol_poly_filename.c_str(), ios::out);
+  if (output_file) {
+    report_all_ivol_poly(output_file, grid, interval_volume);
+  }
+  else {
+    cout << "***Warning: Unable to open file " 
+         << output_info.report_isov_filename
+         << " for interval volume polytope reporting." << endl;
     cout << "  Skipping report." << endl;
   }
 
@@ -2133,6 +2191,8 @@ void IVOLDUAL::IO_INFO::Init()
   flag_no_warn = false;
   flag_subsample = false;
   flag_report_all_isov = false;
+  flag_report_all_ivol_poly = false;
+  flag_write_scalar = false;
   subsample_resolution = 2;
   flag_supersample = false;
   supersample_resolution = 2;
@@ -2177,10 +2237,6 @@ void IVOLDUAL::IO_INFO::SetOutputFormat(const OUTPUT_FORMAT output_format)
 
   case PLY:
     flag_output_ply = true;
-    break;
-
-  case IV:
-    flag_output_iv = true;
     break;
 
   default:
@@ -2253,10 +2309,6 @@ void IVOLDUAL::IO_INFO::SetOutputFilename
     output_vtk_filename = output_filename;
     break;
 
-  case IV:
-    output_iv_filename = output_filename;
-    break;
-
   default:
     error.AddMessage
       ("Programming error.  Unknown file type ",
@@ -2300,7 +2352,6 @@ void IVOLDUAL::IO_INFO::ConstructOutputFilenames(const int i)
   output_off_filename = ofilename + ".off";
   output_ply_filename = ofilename + ".ply";
   output_vtk_filename = ofilename + ".vtk";
-  output_iv_filename = ofilename + ".iv";
 }
 
 
