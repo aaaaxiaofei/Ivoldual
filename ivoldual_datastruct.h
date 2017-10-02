@@ -75,11 +75,15 @@ namespace IVOLDUAL {
 
     // Subdivide \a scalar grid.
     void Subdivide
-    (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, const int subdivide_period);
+    (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, const int subdivide_period, 
+     const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
 
     // Interpolate between subdivide vertices.
     void SubdivideInterpolate
-    (const int subdivide_period);
+    (const int subdivide_period, const SCALAR_TYPE isovalue0, 
+     const SCALAR_TYPE isovalue1); 
+
+    void AddOuterLayer(IVOLDUAL_SCALAR_GRID & scalar_grid3);
   };
 
   /// Type of grid encoding grid vertices.
@@ -251,7 +255,8 @@ namespace IVOLDUAL {
     IVOLDUAL_DATA() {};
 
     void SubdivideScalarGrid      /// Subdivide scalar_grid.
-      (const DUALISO_SCALAR_GRID_BASE & scalar_grid2); 
+      (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, IVOLDUAL_SCALAR_GRID & scalar_grid3, 
+       const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1); 
 
     /// Copy, subsample, supersample or subdivide scalar grid.
     /// @pre At most one of flag_subsample, flag_supersample or
@@ -260,7 +265,9 @@ namespace IVOLDUAL {
       (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, 
        const bool flag_subsample, const int subsample_resolution,
        const bool flag_supersample, const int supersample_resolution, 
-       const bool flag_subdivide);
+       const bool flag_subdivide, const SCALAR_TYPE isovalue0, 
+       const SCALAR_TYPE isovalue1);
+
   };
 
   // **************************************************
