@@ -1,6 +1,6 @@
 /// \file ijkdualtable.txx
 /// Class containing dual lookup table of isosurface vertices.
-/// Version 0.1.0
+/// Version 0.2.0
 
 /*
   IJK: Isosurface Jeneration Kode
@@ -494,6 +494,7 @@ namespace IJKDUALTABLE {
     for (NTYPE jf = 0; jf < cube.NumFacets(); jf++) {
 
       NTYPE jf_lifted = jf;
+
       if (jf >= cube.Dimension()) { 
         // Skip facet orthogonal to lifting direction.
         jf_lifted++;  
@@ -518,6 +519,31 @@ namespace IJKDUALTABLE {
     table_entry.ambiguous_facet_bits = facet_bits;
     table_entry.ambiguous_facet_bits_in_lower_lifted = lower_facet_bits;
     table_entry.ambiguous_facet_bits_in_upper_lifted = upper_facet_bits;
+  }
+
+
+  /// Compute ivoldual cube non manifold information
+  /// @tparam TI_TYPE Table index type.
+  template <typename ISODUAL_ENTRY_TYPE, typename ENTRY_TYPE>
+  void compute_ivoldual_cube_non_manifold_information
+  (const ISODUAL_ENTRY_TYPE & lower_isodual,
+   const ISODUAL_ENTRY_TYPE & upper_isodual,
+   ENTRY_TYPE & table_entry)
+  {
+    table_entry.is_non_manifold = false;
+
+    if (table_entry.NumVertices() <= 2) {
+
+      if (lower_isodual.NumAmbiguousFacets() > 0 &&
+          lower_isodual.NumVertices() < 2) 
+        { table_entry.is_non_manifold = true; }
+
+
+      if (upper_isodual.NumAmbiguousFacets() > 0 &&
+          upper_isodual.NumVertices() < 2) 
+        { table_entry.is_non_manifold = true; }
+
+    }
   }
 
 
@@ -638,6 +664,9 @@ namespace IJKDUALTABLE {
 
     compute_ivoldual_cube_ambiguity_information
       (cube, lower_isodual, upper_isodual, table_entry);
+
+    compute_ivoldual_cube_non_manifold_information
+      (lower_isodual, upper_isodual, table_entry);
 
     determine_isosurface_containing_ivol_vertices4
       (ientry, cube, lifted_cube, lower_isodual, upper_isodual, table_entry);
@@ -983,12 +1012,15 @@ namespace IJKDUALTABLE {
     IVOLDUAL_POLY_EDGE_INFO<ISOV_TYPE> * poly_edge_info;
     IVOLDUAL_IVOLV_INFO * ivolv_info;
 
+    /// True if interval volume is non-manifold.
+    bool is_non_manifold;
+
 
     // Ambiguous/active facet information
 
     /// True if configuration is ambiguous.
     bool is_ambiguous;
-    
+
     /// Number of ambiguous facets.
     NTYPE num_ambiguous_facets;
 
@@ -1053,6 +1085,10 @@ namespace IJKDUALTABLE {
     TI_TYPE UpperIsosurfaceTableIndex() const
     { return(upper_isosurface_table_index); }
 
+    /// True, if interval volume is non-manifold.
+    bool IsNonManifold() const
+    { return(is_non_manifold); }
+
     /// True, if configuration is ambiguous.
     bool IsAmbiguous() const
     { return(is_ambiguous); }
@@ -1066,10 +1102,12 @@ namespace IJKDUALTABLE {
     { return(ambiguous_facet_bits); };
 
     /// Return ambiguous facet bits in lower lifted cube.
+    /// - Note: Ignores facets orthogonal to lifting direction.
     FBITS_TYPE AmbiguousFacetBitsInLowerLifted() const
     { return(ambiguous_facet_bits_in_lower_lifted); };
 
     /// Return ambiguous facet bits in upper lifted cube.
+    /// - Note: Ignores facets orthogonal to lifting direction.
     FBITS_TYPE AmbiguousFacetBitsInUpperLifted() const
     { return(ambiguous_facet_bits_in_upper_lifted); };
 
@@ -1079,12 +1117,14 @@ namespace IJKDUALTABLE {
     { return((ambiguous_facet_bits & (FBITS_TYPE(1) << jf)) != 0); };
 
     /// True, if facet jf in lower lifted cube is ambiguous.
+    /// - Note: Ignores facets orthogonal to lifting direction.
     template <typename FTYPE>
     bool IsFacetInLowerLiftedAmbiguous(const FTYPE jf) const
     { return((ambiguous_facet_bits_in_lower_lifted & 
               (FBITS_TYPE(1) << jf)) != 0); };
 
     /// True, if facet jf in upper lifted cube is ambiguous.
+    /// - Note: Ignores facets orthogonal to lifting direction.
     template <typename FTYPE>
     bool IsFacetInUpperLiftedAmbiguous(const FTYPE jf) const
     { return((ambiguous_facet_bits_in_upper_lifted & 
@@ -1455,6 +1495,11 @@ namespace IJKDUALTABLE {
     bool FlagSeparateNeg() const
     { return(flag_separate_neg); }
 
+    /// Return true if interval volume is non-manifold.
+    template <typename TI_TYPE2>
+    bool IsNonManifold(const TI_TYPE2 ientry) const
+    { return(this->entry[ientry].IsNonManifold()); }
+
     /// Return true if edge ie has dual interval volume polytope.
     template <typename TI_TYPE2, typename NTYPE2>
     bool EdgeHasDualIVolPoly(const TI_TYPE2 ientry, const NTYPE2 ie) const
@@ -1561,6 +1606,26 @@ namespace IJKDUALTABLE {
     bool IsFacetInUpperLiftedAmbiguous
     (const TI_TYPE it, const FTYPE jf) const
     { return(this->entry[it].IsFacetInUpperLiftedAmbiguous(jf)); }
+
+    /// Return true if configuration contains a vertex with label vtype.
+    template <const int vtype>
+    bool ContainsVertexType(const TI_TYPE it) const;
+
+    /// Return true if configuration contains a vertex with label -.
+    bool ContainsNegVertex(const TI_TYPE it) const
+    { return(ContainsVertexType<0>(it)); }
+
+    /// Return true if configuration contains a vertex with label +.
+    bool ContainsPosVertex(const TI_TYPE it) const
+    { return(ContainsVertexType<NUM_VERTEX_TYPES-1>(it)); }
+
+    /// Return true if configuration contains a vertex with label I1.
+    bool ContainsI1(const TI_TYPE it) const
+    { return(ContainsVertexType<1>(it)); }
+
+    /// Return true if configuration contains a vertex with label I2.
+    bool ContainsI2(const TI_TYPE it) const
+    { return(ContainsVertexType<2>(it)); }
 
     /// Check number of vertex types.
     /// - Should be 4.
@@ -1961,6 +2026,7 @@ namespace IJKDUALTABLE {
     poly_vertex_info = NULL;
     poly_edge_info = NULL;
     ivolv_info = NULL;
+    is_non_manifold = false;
 
     // Ambiguity or active facet information.
     is_ambiguous = false;
@@ -2524,12 +2590,31 @@ namespace IJKDUALTABLE {
   // Initialize.
   template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
             typename TI_TYPE, typename ENTRY_TYPE>
-  void IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  void IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,
+                                TI_TYPE,ENTRY_TYPE>::
   Init()
   {
     IJK::PROCEDURE_ERROR error("IVOLDUAL_CUBE_TABLE_BASE::Init");
 
     if (!CheckNumVertexTypes(error)) { throw error; }
+  }
+
+
+  // Return true if configuration contains a vertex with label vtype.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <const int vtype>
+  bool IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,
+                                TI_TYPE,ENTRY_TYPE>::
+  ContainsVertexType(const TI_TYPE it) const
+  {
+    for (NTYPE iv = 0; iv < this->NumPolyVertices(); iv++) {
+
+      if (VertexType(it,iv) == vtype) 
+        { return(true); }
+    }
+
+    return(false);
   }
 
   // Check number of vertex types.

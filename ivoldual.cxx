@@ -31,6 +31,8 @@
 #include "ijkdual_extract.txx"
 #include "ijkdual_position.txx"
 
+#include "ivoldual_ivolpoly.txx"
+
 #include "ivoldual.h"
 #include "ivoldual_datastruct.h"
 

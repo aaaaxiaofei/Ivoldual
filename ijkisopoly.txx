@@ -86,7 +86,7 @@ namespace IJK {
     return(false);
   }
 
-  /// Compute isosurface table index of polyhedron with primary vertex iv0
+  /// Compute isosurface table index of polyhedron with primary vertex iv0.
   template <typename STYPE, typename STYPE2, typename VTYPE, typename INC_TYPE, 
             typename NTYPE, typename ITYPE>
   inline void compute_isotable_index
@@ -103,7 +103,7 @@ namespace IJK {
     };
   }
 
-  /// Compute isosurface table index of polyhedron
+  /// Compute isosurface table index of polyhedron.
   template <typename STYPE, typename STYPE2, typename NTYPE, typename ITYPE>
   void compute_isotable_index
   (const STYPE * scalar, const STYPE2 isovalue,
@@ -118,6 +118,20 @@ namespace IJK {
   }
 
 
+  /// Compute isosurface table index of grid cube icube0.
+  template <typename SGRID_TYPE, typename STYPE, typename ICUBE_TYPE, 
+            typename TABLE_INDEX_TYPE>
+  inline void compute_isotable_index_of_grid_cube
+  (const SGRID_TYPE & scalar_grid, const STYPE isovalue,
+   const ICUBE_TYPE icube0, TABLE_INDEX_TYPE & table_index)
+  {
+    compute_isotable_index
+      (scalar_grid.ScalarPtrConst(), isovalue, icube0, 
+       scalar_grid.CubeVertexIncrement(), scalar_grid.NumCubeVertices(), 
+       table_index);
+  }
+
+
   /// For each cube, compute isosurface table index and the number 
   ///   of isosurface vertices in the cube.
   template <typename GRID_TYPE, typename ISODUAL_TABLE,
@@ -129,13 +143,11 @@ namespace IJK {
   {
     typedef typename GRID_TYPE::NUMBER_TYPE NUMBER_TYPE;
  
-    const NUMBER_TYPE num_cube_vertices = scalar_grid.NumCubeVertices();
-
     for (NUMBER_TYPE i = 0; i < cube_list.size(); i++) {
-      compute_isotable_index
-        (scalar_grid.ScalarPtrConst(), isovalue, cube_list[i].cube_index,
-         scalar_grid.CubeVertexIncrement(), num_cube_vertices,
+      compute_isotable_index_of_grid_cube
+        (scalar_grid, isovalue, cube_list[i].cube_index, 
          cube_list[i].table_index);
+
       cube_list[i].num_isov = 
         isodual_table.NumIsoVertices(cube_list[i].table_index);
     }
