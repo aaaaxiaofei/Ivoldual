@@ -102,7 +102,18 @@ namespace IVOLDUAL {
   // DUAL ISOSURFACE VERTICES
   // **************************************************
 
-  typedef IJKDUAL::DUAL_ISOVERT DUAL_IVOLVERT;
+  /// Information about an interval volume vertex.
+  class DUAL_IVOLVERT: public IJKDUAL::DUAL_ISOVERT {
+
+  public:
+
+    /// If true, the mesh is missing some interval volume hexahedra
+    ///   which would normally be incident on the vertex.
+    /// The hexahedra are missing because they are dual to grid edges
+    ///   or vertices which are on the grid boundary.
+    /// - NOT YET IMPLEMENTED.
+    bool flag_missing_ivol_hexahedra;
+  };
   typedef std::vector<DUAL_IVOLVERT> DUAL_IVOLVERT_ARRAY;
   
 
@@ -246,9 +257,6 @@ namespace IVOLDUAL {
 
   /// Input data to ivoldual.
   class IVOLDUAL_DATA:
-    /* OBSOLETE
-    public IJKDUAL::DUALISO_DATA_BASE<DUALISO_SCALAR_GRID,IVOLDUAL_DATA_FLAGS> 
-    */
     public IJKDUAL::DUALISO_DATA_BASE<IVOLDUAL_SCALAR_GRID,IVOLDUAL_DATA_FLAGS> 
   {
   public:
