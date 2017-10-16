@@ -219,6 +219,8 @@ namespace IJKDUAL {
     using namespace std;
 
     if (output_info.allow_multiple_iso_vertices) {
+      cout << indent4 << "# active (non-empty) cubes: "
+           << dualiso_info.scalar.num_non_empty_cubes << endl;
       cout << indent4 << "# cubes with single isosurface vertex: "
            << dualiso_info.multi_isov.num_cubes_single_isov << endl;
       cout << indent4 << "# cubes with multiple isosurface vertices: "

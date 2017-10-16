@@ -163,6 +163,7 @@ namespace IJKDUAL {
          iso_vlist, isopoly_vert, num_split);
     }
 
+    dualiso_info.scalar.num_non_empty_cubes = cube_list.size();
     dualiso_info.multi_isov.num_cubes_multi_isov = num_split;
     dualiso_info.multi_isov.num_cubes_single_isov =
       cube_list.size() - num_split;
