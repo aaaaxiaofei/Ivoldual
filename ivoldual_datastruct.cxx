@@ -33,11 +33,29 @@ void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
   hex_tri_method = UNDEFINED_HEX_TRI;
   flag_split_ambig_pairs = false;
   flag_split_ambig_pairsB = false;
+  flag_rm_non_manifold = false;
   flag_add_isov_dual_to_hexahedra = false;
   flag_orient_in = false;
   default_interior_code = 2;
 }
 
+// **************************************************
+// CLASS DUALISO INFO MEMBER FUNCTIONS
+// **************************************************
+IVOLDUAL::IVOLDUAL_INFO::IVOLDUAL_INFO() 
+{
+  Clear();
+}
+
+IVOLDUAL::IVOLDUAL_INFO::IVOLDUAL_INFO(const int dimension) 
+{
+  Clear();
+}
+
+void IVOLDUAL::IVOLDUAL_INFO::Clear() 
+{
+  non_manifold_changes = 0;
+}
 
 // **************************************************
 // CLASS IVOLDUAL_DATA MEMBER FUNCTIONS
@@ -96,6 +114,18 @@ void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
   else {
     CopyScalarGrid(scalar_grid2);
   };
+}
+
+void IVOLDUAL::IVOLDUAL_DATA::EliminateAmbigFacets
+(const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1, 
+ VERTEX_INDEX & changes_of_ambiguity)
+{
+  int last_changes = 1;
+  while (last_changes) {
+    last_changes = scalar_grid.EliminateAmbiguity(isovalue0, isovalue1);
+    changes_of_ambiguity += last_changes;
+  }
+
 }
 
 void IVOLDUAL::IVOLDUAL_SCALAR_GRID::Subdivide
@@ -164,21 +194,6 @@ void IVOLDUAL::IVOLDUAL_SCALAR_GRID::SubdivideInterpolate
 
           // Linear interpolation.
           this->scalar[v2] = 0.5*(s0+s1);
-
-          // Modify edges which may cause ambiguous facets.
-          STYPE smin = std::min(s0, s1);
-          STYPE smax = std::max(s0, s1);
-
-          if (smin < isovalue0 && smax > isovalue0) {
-            if (smax > isovalue1) 
-              this->scalar[v2] = 0.5*(isovalue0+isovalue1);
-            else if (0.5*(smin+smax) < isovalue0)
-              this->scalar[v2] = 0.75*isovalue0+0.25*smax;
-          }
-          else if (smin < isovalue1 && smax > isovalue1) {
-            if (0.5*(smin+smax) > isovalue1)
-              this->scalar[v2] = 0.25*smin + 0.75*isovalue1;
-          }
         }
       }
     }
@@ -186,6 +201,98 @@ void IVOLDUAL::IVOLDUAL_SCALAR_GRID::SubdivideInterpolate
 }
 
 /// Eliminate ambiguity facets in supersample grid.
+int IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateAmbiguity
+(const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1) 
+{
+  const DTYPE dim = this->dimension;
+  int changes_of_ambiguity = 0;
+
+  ATYPE sizex = this->AxisSize(0);
+  ATYPE sizey = this->AxisSize(1);
+  ATYPE sizez = this->AxisSize(2);
+
+
+  for (VTYPE i = 0; i < this->NumVertices(); i++) {
+    
+
+    for (DTYPE d = 0; d < dim; d++) {
+
+      VTYPE v01_idx = this->NextVertex(i, d);
+      VTYPE v10_idx = this->NextVertex(i, (d+1)%dim);
+      VTYPE v11_idx = this->NextVertex(this->NextVertex(i, d), (d+1)%dim);
+
+      // If current vertex is at the end of a direction, then continue.
+      if ((d == 0 && v01_idx%sizex == 0) ||
+          (d == 2 && v10_idx%sizex == 0) ||
+          (d == 1 && (v01_idx/sizex)%sizey == 0) ||
+          (d == 0 && (v10_idx/sizex)%sizey == 0) ||
+          (d == 2 && (v01_idx/sizex/sizey)%sizez == 0) ||
+          (d == 1 && (v10_idx/sizex/sizey)%sizez == 0) ) 
+        { continue; } 
+
+      // Get scalar values of a square.
+      STYPE *s00 = &this->scalar[i];
+      STYPE *s01 = &this->scalar[v01_idx];
+      STYPE *s10 = &this->scalar[v10_idx];
+      STYPE *s11 = &this->scalar[v11_idx];
+
+
+      // In a unit cube before subdivide:
+      // Original vertex is level 0
+      // Vertex at unit cube edge center is level 1
+      // Vertex at unit cube facet center is level 2
+      // Vertex at unit cube body center is level 3
+      if (*s00 < isovalue0 && *s01 > isovalue0 && *s10 > isovalue0 && *s11 < isovalue0) {
+        
+        VTYPE z_level = v11_idx/sizex/sizey;
+        VTYPE y_level = (v11_idx%(sizex*sizey))/sizex;
+        VTYPE x_level = v11_idx%sizex;
+        VTYPE level = z_level%2 + y_level%2 + x_level%2;
+
+        if (level == 0) *s00 = 0.5 * (isovalue0 + isovalue1); 
+        else *s11 = 0.5 * (isovalue0 + isovalue1); 
+        changes_of_ambiguity++; 
+      }
+      else if (*s00 > isovalue0 && *s01 < isovalue0 && *s10 < isovalue0 && *s11 > isovalue0) {
+        
+        VTYPE z_level = v01_idx/sizex/sizey;
+        VTYPE y_level = (v01_idx%(sizex*sizey))/sizex;
+        VTYPE x_level = v01_idx%sizex;
+        VTYPE level = z_level%2 + y_level%2 + x_level%2;
+
+        if (level == 0) *s10 = 0.5 * (isovalue0 + isovalue1); 
+        else *s01 = 0.5 * (isovalue0 + isovalue1); 
+        changes_of_ambiguity++; 
+      }
+      else if (*s00 > isovalue1 && *s01 < isovalue1 && *s10 < isovalue1 && *s11 > isovalue1) {
+        
+        VTYPE z_level = v11_idx/sizex/sizey;
+        VTYPE y_level = (v11_idx%(sizex*sizey))/sizex;
+        VTYPE x_level = v11_idx%sizex;
+        VTYPE level = z_level%2 + y_level%2 + x_level%2;
+
+        if (level == 0) *s00 = 0.5 * (isovalue0 + isovalue1); 
+        else *s11 = 0.5 * (isovalue0 + isovalue1); 
+        changes_of_ambiguity++; 
+      }
+      else if (*s00 < isovalue1 && *s01 > isovalue1 && *s10 > isovalue1 && *s11 < isovalue1) {
+        
+        VTYPE z_level = v01_idx/sizex/sizey;
+        VTYPE y_level = (v01_idx%(sizex*sizey))/sizex;
+        VTYPE x_level = v01_idx%sizex;
+        VTYPE level = z_level%2 + y_level%2 + x_level%2;
+
+        if (level == 0) *s10 = 0.5 * (isovalue0 + isovalue1); 
+        else *s01 = 0.5 * (isovalue0 + isovalue1); 
+        changes_of_ambiguity++; 
+      }
+    }  
+  }
+
+  return changes_of_ambiguity;
+}
+
+/// Add outer layer to subdivide grid
 void IVOLDUAL::IVOLDUAL_SCALAR_GRID::AddOuterLayer
 (IVOLDUAL_SCALAR_GRID & scalar_grid3) 
 {

@@ -537,6 +537,13 @@ namespace IVOLDUAL {
   void usage_all(std::ostream & out, const int return_code);
   void help(), help_all();
 
+  // **************************************************
+  // REPORT CHANGES FOR ELIMINATING NON-MANIFOLD 
+  // **************************************************
+
+  /// Report number of changes for eliminating non-manifold
+  void report_non_manifold_changes
+  (IVOLDUAL_INFO & dualiso_info);
 }
 
 #endif

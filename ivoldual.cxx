@@ -48,7 +48,7 @@ using namespace IVOLDUAL;
 void IVOLDUAL::dual_contouring_interval_volume
 (const IVOLDUAL_DATA & ivoldual_data, 
  const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
- DUAL_INTERVAL_VOLUME & dual_interval_volume, DUALISO_INFO & dualiso_info)
+ DUAL_INTERVAL_VOLUME & dual_interval_volume, IVOLDUAL_INFO & dualiso_info)
 {
   const int dimension = ivoldual_data.ScalarGrid().Dimension();
   const AXIS_SIZE_TYPE * axis_size = ivoldual_data.ScalarGrid().AxisSize();
@@ -87,7 +87,7 @@ void IVOLDUAL::dual_contouring_interval_volume
  IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
  COORD_ARRAY & vertex_coord,
  MERGE_DATA & merge_data, 
- DUALISO_INFO & dualiso_info)
+ IVOLDUAL_INFO & dualiso_info)
 {
   const int dimension = scalar_grid.Dimension();
   const bool flag_separate_neg = param.SeparateNegFlag();
@@ -115,7 +115,7 @@ void IVOLDUAL::dual_contouring_interval_volume
  DUAL_IVOLVERT_ARRAY & ivolv_list,
  COORD_ARRAY & vertex_coord,
  MERGE_DATA & merge_data, 
- DUALISO_INFO & dualiso_info)
+ IVOLDUAL_INFO & dualiso_info)
 {
   const int dimension = scalar_grid.Dimension();
   const bool flag_separate_neg = param.SeparateNegFlag();
@@ -143,7 +143,7 @@ void IVOLDUAL::dual_contouring_interval_volume
  DUAL_IVOLVERT_ARRAY & ivolv_list,
  COORD_ARRAY & vertex_coord,
  MERGE_DATA & merge_data, 
- DUALISO_INFO & dualiso_info)
+ IVOLDUAL_INFO & dualiso_info)
 {
   std::vector<GRID_CUBE_DATA> cube_ivolv_list;
 
@@ -168,7 +168,7 @@ void IVOLDUAL::dual_contouring_interval_volume
  IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
  COORD_ARRAY & vertex_coord,
  MERGE_DATA & merge_data, 
- DUALISO_INFO & dualiso_info)
+ IVOLDUAL_INFO & dualiso_info)
 {
   const int dimension = scalar_grid.Dimension();
   const bool flag_separate_neg = param.SeparateNegFlag();
@@ -266,7 +266,7 @@ void IVOLDUAL::encode_grid_vertices
  const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
  const GRID_VERTEX_ENCODING default_interior_code,
  IVOLDUAL_ENCODED_GRID & encoded_grid,
- DUALISO_INFO & dualiso_info)
+ IVOLDUAL_INFO & dualiso_info)
 {
   const int dimension = scalar_grid.Dimension();
   const AXIS_SIZE_TYPE * axis_size = scalar_grid.AxisSize();
@@ -342,7 +342,7 @@ void IVOLDUAL::extract_dual_ivolpoly
  std::vector<ISO_VERTEX_INDEX> & ivolpoly,
  std::vector<POLY_VERTEX_INDEX> & poly_vertex,
  IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
- DUALISO_INFO & dualiso_info)
+ IVOLDUAL_INFO & dualiso_info)
 {
   dualiso_info.time.extract = 0;
 
@@ -425,7 +425,7 @@ void IVOLDUAL::extract_ivolpoly_dual_to_grid_edges
  std::vector<ISO_VERTEX_INDEX> & ivolpoly,
  std::vector<POLY_VERTEX_INDEX> & poly_vertex,
  IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
- DUALISO_INFO & dualiso_info)
+ IVOLDUAL_INFO & dualiso_info)
 {
   const int num_facet_vertices = encoded_grid.NumFacetVertices();
   bool flag_reverse_orient;
@@ -460,7 +460,7 @@ void IVOLDUAL::extract_ivolpoly_dual_to_grid_vertices
  std::vector<ISO_VERTEX_INDEX> & ivolpoly,
  std::vector<POLY_VERTEX_INDEX> & poly_vertex,
  IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
- DUALISO_INFO & dualiso_info)
+ IVOLDUAL_INFO & dualiso_info)
 {
   const int num_facet_vertices = encoded_grid.NumFacetVertices();
   const int num_cube_vertices = encoded_grid.NumCubeVertices();
@@ -1204,5 +1204,21 @@ void IVOLDUAL::position_dual_ivolv_in_interval_volume_centroid_multi
   else {
     scalar_grid.ComputeCubeCenterCoord(icube, vcoord);
   }
+
+}
+
+void IVOLDUAL::eliminate_non_manifold_grid
+(IVOLDUAL_DATA & ivoldual_data, 
+ const SCALAR_TYPE isovalue0, 
+ const SCALAR_TYPE isovalue1, 
+ IVOLDUAL_INFO & dualiso_info) 
+{
+
+  VERTEX_INDEX changes_of_non_manifold = 0;
+
+  ivoldual_data.EliminateAmbigFacets
+    (isovalue0, isovalue1, changes_of_non_manifold);
+
+  dualiso_info.non_manifold_changes = changes_of_non_manifold;
 
 }

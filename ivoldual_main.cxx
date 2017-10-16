@@ -39,10 +39,12 @@ using namespace std;
 
 // local subroutines
 void memory_exhaustion();
+void eliminate_non_manifold
+(const IO_INFO & io_info, IVOLDUAL_DATA & ivoldual_data, 
+ IVOLDUAL_INFO & dualiso_info);
 void construct_interval_volume
 (const IO_INFO & io_info, const IVOLDUAL_DATA & ivoldual_data,
- DUALISO_TIME & dualiso_time, IO_TIME & io_time);
-
+ DUALISO_TIME & dualiso_time, IO_TIME & io_time, IVOLDUAL_INFO & dualiso_info);
 
 
 // **************************************************
@@ -88,6 +90,21 @@ int main(int argc, char **argv)
        io_info.flag_supersample, io_info.supersample_resolution, io_info.flag_subdivide, 
        io_info.isovalue[0], io_info.isovalue[1]);
 
+    // set ivoldual info
+    int dimension = ivoldual_data.ScalarGrid().Dimension();
+    IVOLDUAL_INFO dualiso_info(dimension);
+
+    // Eliminate non-manifold facets and cubes
+    if (io_info.flag_rm_non_manifold) {
+      eliminate_non_manifold
+        (io_info, ivoldual_data, dualiso_info);
+    }
+
+    // print out total number of changes for eliminating non-manifold
+    if (io_info.flag_rm_non_manifold) {
+      report_non_manifold_changes(dualiso_info);
+    }
+
     ivoldual_data.Set(io_info);
     warn_non_manifold(io_info);
     report_num_cubes(full_scalar_grid, io_info, ivoldual_data);
@@ -98,7 +115,7 @@ int main(int argc, char **argv)
     }
 
     construct_interval_volume
-      (io_info, ivoldual_data, dualiso_time, io_time);
+      (io_info, ivoldual_data, dualiso_time, io_time, dualiso_info);
 
     if (io_info.flag_report_time) {
 
@@ -126,10 +143,17 @@ int main(int argc, char **argv)
 
 }
 
+void eliminate_non_manifold
+(const IO_INFO & io_info, IVOLDUAL_DATA & ivoldual_data, 
+ IVOLDUAL_INFO & dualiso_info)
+{
+  eliminate_non_manifold_grid
+    (ivoldual_data, io_info.isovalue[0], io_info.isovalue[1], dualiso_info);
+}
 
 void construct_interval_volume
 (const IO_INFO & io_info, const IVOLDUAL_DATA & ivoldual_data,
- DUALISO_TIME & dualiso_time, IO_TIME & io_time)
+ DUALISO_TIME & dualiso_time, IO_TIME & io_time, IVOLDUAL_INFO & dualiso_info)
 {
   int dimension = ivoldual_data.ScalarGrid().Dimension();
   const int num_cube_vertices = IJK::compute_num_cube_vertices(dimension);
@@ -142,7 +166,6 @@ void construct_interval_volume
     const SCALAR_TYPE isovalue0 = io_info.isovalue[i];
     const SCALAR_TYPE isovalue1 = io_info.isovalue[i+1];
 
-    DUALISO_INFO dualiso_info(dimension);
     dualiso_info.grid.num_cubes = num_cubes;
 
     // Dual contouring.  
@@ -168,7 +191,7 @@ void construct_interval_volume
     OUTPUT_INFO output_info;
     output_info.SetDimension(dimension, num_cube_vertices);
     set_output_info(io_info, i, output_info);
-
+    
     output_dual_isosurface
       (output_info, ivoldual_data, interval_volume, dualiso_info, io_time);
 
