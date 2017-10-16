@@ -48,7 +48,7 @@ namespace IVOLDUAL {
   void dual_contouring_interval_volume
   (const IVOLDUAL_DATA & ivoldual_data, 
    const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
-   DUAL_INTERVAL_VOLUME & dual_interval_volume, DUALISO_INFO & dualiso_info);
+   DUAL_INTERVAL_VOLUME & dual_interval_volume, IVOLDUAL_INFO & dualiso_info);
 
   /// Construct interval volume using dual contouring.
   /// - Returns list of interval volume polytope vertices
@@ -62,7 +62,7 @@ namespace IVOLDUAL {
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
    COORD_ARRAY & vertex_coord,
    MERGE_DATA & merge_data, 
-   DUALISO_INFO & dualiso_info);
+   IVOLDUAL_INFO & dualiso_info);
 
   /// Construct interval volume using dual contouring.
   /// - Returns list of interval volume polytope vertices
@@ -76,7 +76,7 @@ namespace IVOLDUAL {
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
    COORD_ARRAY & vertex_coord,
    MERGE_DATA & merge_data, 
-   DUALISO_INFO & dualiso_info);
+   IVOLDUAL_INFO & dualiso_info);
 
   /// Construct interval volume using dual contouring.
   /// - Returns list of interval volume polytope vertices
@@ -91,7 +91,7 @@ namespace IVOLDUAL {
    DUAL_IVOLVERT_ARRAY & ivolv_list,
    COORD_ARRAY & vertex_coord,
    MERGE_DATA & merge_data, 
-   DUALISO_INFO & dualiso_info);
+   IVOLDUAL_INFO & dualiso_info);
 
   /// Construct interval volume using dual contouring.
   /// - Returns list of interval volume polytope vertices
@@ -107,7 +107,7 @@ namespace IVOLDUAL {
    DUAL_IVOLVERT_ARRAY & ivolv_list,
    COORD_ARRAY & vertex_coord,
    MERGE_DATA & merge_data, 
-   DUALISO_INFO & dualiso_info);
+   IVOLDUAL_INFO & dualiso_info);
 
   /// Construct interval volume using dual contouring.
   /// - Returns list of interval volume polytope vertices
@@ -123,7 +123,7 @@ namespace IVOLDUAL {
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
    COORD_ARRAY & vertex_coord,
    MERGE_DATA & merge_data, 
-   DUALISO_INFO & dualiso_info);
+   IVOLDUAL_INFO & dualiso_info);
 
 
   // **************************************************
@@ -142,7 +142,7 @@ namespace IVOLDUAL {
    const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
    const GRID_VERTEX_ENCODING default_interior_code,
    IVOLDUAL_ENCODED_GRID & encoded_grid,
-   DUALISO_INFO & dualiso_info);
+   IVOLDUAL_INFO & dualiso_info);
 
 
   // **************************************************
@@ -170,7 +170,7 @@ namespace IVOLDUAL {
    std::vector<ISO_VERTEX_INDEX> & ivolpoly,
    std::vector<POLY_VERTEX_INDEX> & poly_vertex,
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
-   DUALISO_INFO & dualiso_info);
+   IVOLDUAL_INFO & dualiso_info);
 
   /// Extract interval volume polytopes dual to grid edges.
   void extract_ivolpoly_dual_to_grid_edges
@@ -178,7 +178,7 @@ namespace IVOLDUAL {
    std::vector<ISO_VERTEX_INDEX> & ivolpoly,
    std::vector<POLY_VERTEX_INDEX> & poly_vertex,
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
-   DUALISO_INFO & dualiso_info);
+   IVOLDUAL_INFO & dualiso_info);
 
   /// Extract interval volume polytopes dual to grid vertices.
   void extract_ivolpoly_dual_to_grid_vertices
@@ -186,7 +186,7 @@ namespace IVOLDUAL {
    std::vector<ISO_VERTEX_INDEX> & ivolpoly,
    std::vector<POLY_VERTEX_INDEX> & poly_vertex,
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
-   DUALISO_INFO & dualiso_info);
+   IVOLDUAL_INFO & dualiso_info);
 
 
   // **************************************************
@@ -338,6 +338,12 @@ namespace IVOLDUAL {
    COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, 
    COORD_TYPE * temp_coord2);
 
+  /// Eliminate non-manifold facets and cubes
+  void eliminate_non_manifold_grid
+  (IVOLDUAL_DATA & ivoldual_data, 
+   const SCALAR_TYPE isovalue0, 
+   const SCALAR_TYPE isovalue1, 
+   IVOLDUAL_INFO & dualiso_info);
 }
 
 #endif

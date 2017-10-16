@@ -52,7 +52,7 @@ namespace {
   typedef enum
     {SUBSAMPLE_OPT, SUPERSAMPLE_OPT, SUBDIVIDE_OPT, POSITION_OPT, CUBE_CENTER_OPT,
      SPLIT_AMBIG_PAIRS_OPT, SPLIT_AMBIG_PAIRSB_OPT, NO_SPLIT_AMBIG_PAIRS_OPT,
-     MANIFOLD_OPT, MULTI_ISOV_OPT, SINGLE_ISOV_OPT, 
+     MANIFOLD_OPT, RM_NON_MANIFOLD_OPT, MULTI_ISOV_OPT, SINGLE_ISOV_OPT, 
      SELECT_SPLIT_OPT, CONNECT_AMBIG_OPT,
      SEP_NEG_OPT, SEP_POS_OPT,
      ICODE1_OPT, ICODE2_OPT,
@@ -205,6 +205,10 @@ namespace {
     options.AddOptionNoArg
       (NO_SPLIT_AMBIG_PAIRS_OPT, "NO_SPLIT_AMBIG_PAIRS_OPT", REGULAR_OPTG, 
        "-no_split_ambig_pairs", "Do not split ambiguous pairs.");
+
+    options.AddOptionNoArg
+      (RM_NON_MANIFOLD_OPT, "RM_NON_MANIFOLD_OPT", REGULAR_OPTG, 
+       "-rm_non_manifold", "Remove non-manifold facets and cubes.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -553,6 +557,10 @@ bool process_option
   case MANIFOLD_OPT:
     io_info.allow_multiple_iso_vertices = true;
     io_info.flag_split_non_manifold = true;
+    break;
+
+  case RM_NON_MANIFOLD_OPT:
+    io_info.flag_rm_non_manifold = true;
     break;
 
   case MULTI_ISOV_OPT:
@@ -2478,3 +2486,15 @@ void IVOLDUAL::set_color_alternating
   
 }
 
+// **************************************************
+// REPORT CHANGES FOR ELIMINATING NON-MANIFOLD 
+// **************************************************
+
+/// Report number of changes for eliminating non-manifold
+void IVOLDUAL::report_non_manifold_changes
+ (IVOLDUAL_INFO & dualiso_info) 
+{
+  std::cout << "    " 
+   << "# ambiguous facets changed to avoid non-manifold facets: "
+   << dualiso_info.non_manifold_changes << std::endl; 
+}

@@ -83,6 +83,9 @@ namespace IVOLDUAL {
     (const int subdivide_period, const SCALAR_TYPE isovalue0, 
      const SCALAR_TYPE isovalue1); 
 
+    int EliminateAmbiguity
+      (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
+
     void AddOuterLayer(IVOLDUAL_SCALAR_GRID & scalar_grid3);
   };
 
@@ -204,6 +207,7 @@ namespace IVOLDUAL {
     /// If true, split vertices in ambiguous cubes sharing facets.
     bool flag_split_ambig_pairs;
     bool flag_split_ambig_pairsB;
+    bool flag_rm_non_manifold;
 
     /// Hexahedral triangulation method.
     HEX_TRI_METHOD hex_tri_method;
@@ -276,6 +280,10 @@ namespace IVOLDUAL {
        const bool flag_subdivide, const SCALAR_TYPE isovalue0, 
        const SCALAR_TYPE isovalue1);
 
+    void EliminateAmbigFacets
+      (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1, 
+       VERTEX_INDEX & changes_of_ambiguity);
+
   };
 
   // **************************************************
@@ -289,7 +297,18 @@ namespace IVOLDUAL {
   // DUALISO INFO
   // **************************************************
 
-  typedef IJKDUAL::DUALISO_INFO DUALISO_INFO;
+  // typedef IJKDUAL::DUALISO_INFO DUALISO_INFO;
+
+  class IVOLDUAL_INFO: public IJKDUAL::DUALISO_INFO {
+
+  public:
+    IVOLDUAL_INFO();
+    IVOLDUAL_INFO(const int dimension);
+
+    VERTEX_INDEX non_manifold_changes;
+
+    void Clear(); // clear all data
+  };
 
 
   // **************************************************
