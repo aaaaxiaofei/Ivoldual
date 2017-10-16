@@ -46,10 +46,13 @@ namespace IVOLDUAL {
   // INTERVAL VOLUME LOOKUP TABLE ENTRY
   // **************************************************
 
-  typedef typename IJKDUALTABLE::
-  IVOLDUAL_TABLE_ENTRY<int,ISO_VERTEX_INDEX,FACET_BITS_TYPE,TABLE_INDEX> 
-  IVOLDUAL_TABLE_ENTRY;
-
+  class IVOLDUAL_TABLE_ENTRY:public 
+  IJKDUALTABLE::IVOLDUAL_TABLE_ENTRY
+  <int,ISO_VERTEX_INDEX,FACET_BITS_TYPE,TABLE_INDEX> 
+  {
+  public:
+    // ADDITIONAL DATA ABOUT THE IVOLDUAL CONFIGURATION.
+  };
 
   // **************************************************
   // INTERVAL VOLUME LOOKUP TABLE
