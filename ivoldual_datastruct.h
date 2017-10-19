@@ -25,7 +25,6 @@
 #define _IVOLDUAL_DATASTRUCT_
 
 #include "ijkcube.txx"
-#include "ijkdualtable.txx"
 #include "ijkmesh_datastruct.txx"
 
 #include "ijkdual_datastruct.h"
@@ -41,27 +40,6 @@ namespace IVOLDUAL {
   /// Type for encoding of grid vertices.
   /// - Encoded vertices have scalar values 0,1,2 or 3.
   typedef unsigned char GRID_VERTEX_ENCODING;
-
-
-  // **************************************************
-  // INTERVAL VOLUME LOOKUP TABLE ENTRY
-  // **************************************************
-
-  class IVOLDUAL_TABLE_ENTRY:public 
-  IJKDUALTABLE::IVOLDUAL_TABLE_ENTRY
-  <int,ISO_VERTEX_INDEX,FACET_BITS_TYPE,TABLE_INDEX> 
-  {
-  public:
-    // ADDITIONAL DATA ABOUT THE IVOLDUAL CONFIGURATION.
-  };
-
-  // **************************************************
-  // INTERVAL VOLUME LOOKUP TABLE
-  // **************************************************
-
-  typedef typename IJKDUALTABLE::
-  IVOLDUAL_CUBE_DOUBLE_TABLE<4,int,int,TABLE_INDEX,IVOLDUAL_TABLE_ENTRY>
-  IVOLDUAL_CUBE_TABLE;
 
 
   // **************************************************

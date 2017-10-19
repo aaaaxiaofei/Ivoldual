@@ -36,6 +36,7 @@
 
 #include "ivoldual_types.h"
 #include "ivoldual_datastruct.h"
+#include "ivoldualtable.h"
 
 /// ivoldual classes and routines.
 namespace IVOLDUAL {
