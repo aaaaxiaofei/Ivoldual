@@ -26,6 +26,7 @@
 
 #include "ijkcube.txx"
 #include "ijkdualtable.txx"
+#include "ijkmesh_datastruct.txx"
 
 #include "ijkdual_datastruct.h"
 #include "ivoldual_types.h"
@@ -312,6 +313,22 @@ namespace IVOLDUAL {
 
     void Clear(); // clear all data
   };
+
+  // **************************************************
+  // HEXAHEDRAL MESH
+  // **************************************************
+
+  typedef IJK::POLYMESH<VERTEX_INDEX, int> IVOL_POLYMESH;
+
+  class IVOL_VERTEX_ADJACENCY_LIST_ELEMENT:
+    public IJK::VERTEX_ADJACENCY_LIST_ELEMENT<VERTEX_INDEX>
+  {
+    // No additional records, for now.
+  };
+
+  typedef IJK::VERTEX_ADJACENCY_LIST_BASE
+  <IVOL_VERTEX_ADJACENCY_LIST_ELEMENT, int>
+  IVOL_VERTEX_ADJACENCY_LIST;
 
 
   // **************************************************

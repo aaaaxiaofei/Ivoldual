@@ -25,6 +25,7 @@
 #define _IJKMESH_
 
 #include "ijk.txx"
+#include "ijklist.txx"
 
 #include <algorithm>
 #include <numeric>
@@ -818,6 +819,45 @@ namespace IJK {
       std::accumulate(num_poly_vert, num_poly_vert+num_poly, 0);
     for (ITYPE i = 0; i < vlist_length; i++) 
       { vlist[i] = new_index[vlist[i]]; }
+  }
+
+  ///@}
+
+
+  // ***********************************************************************
+  /// @name DELETE MESH POLY WHICH ARE NOT INCIDENT ON ANY VERTICES IN LIST
+  // ***********************************************************************
+
+  ///@{
+
+  template <typename VTYPE0, typename VTYPE1, typename NUMV_TYPE, 
+            typename ITYPE, typename NTYPE>
+  void delete_poly_not_incident_on_vertices
+  (const std::vector<VTYPE0> & vertex_list, VTYPE1 * poly_vlist, 
+   NUMV_TYPE * num_poly_vert, ITYPE * first_poly_vert, NTYPE & num_poly)
+  {
+    ITYPE vlist_length = 0;
+    NTYPE k = 0;
+    for (NTYPE ipoly = 0; ipoly < num_poly; ipoly++) {
+      const VTYPE1 * polyvert = poly_vlist+first_poly_vert[ipoly];
+
+      bool flag_contains = false;
+      if (do_lists_intersect
+          (polyvert, num_poly_vert[ipoly], vertex_list)) {
+
+        if (k < ipoly) {
+          VTYPE1 * poly_vlist_ptr0 = poly_vlist + first_poly_vert[ipoly];
+          VTYPE1 * poly_vlist_ptr1 = poly_vlist + vlist_length;
+          std::copy(poly_vlist_ptr0, poly_vlist_ptr0+num_poly_vert[ipoly], 
+                    poly_vlist_ptr1);
+          num_poly_vert[k] = num_poly_vert[ipoly];
+          first_poly_vert[k] = vlist_length;
+        }
+        vlist_length += num_poly_vert[k];
+        k++;
+      }
+    }
+    num_poly = k;
   }
 
   ///@}

@@ -25,6 +25,7 @@
 
 #include "ijkisopoly.txx"
 #include "ijkmesh.txx"
+#include "ijkmesh_datastruct.txx"
 #include "ijktime.txx"
 
 #include "ijkdual.txx"
@@ -176,6 +177,9 @@ void IVOLDUAL::dual_contouring_interval_volume
   const GRID_VERTEX_ENCODING default_interior_code =
     param.default_interior_code;
   int num_non_manifold_split(0);
+  IVOL_POLYMESH polymesh;
+  IVOL_VERTEX_ADJACENCY_LIST vertex_adjacency_list;
+  CUBE_FACE_INFO cube_info(dimension);
   IJK::PROCEDURE_ERROR error("dual_contouring_interval_volume");
   clock_t t0, t1, t2;
 
@@ -237,6 +241,14 @@ void IVOLDUAL::dual_contouring_interval_volume
   position_all_dual_ivol_vertices
     (scalar_grid, ivoldual_table, isodual_table, isovalue0, isovalue1, 
      ivolv_list, vertex_coord);
+
+  polymesh.AddPolytopes(ivolpoly_vert, cube_info.NumVertices());
+  vertex_adjacency_list.SetFromMeshOfCubes(polymesh, cube_info);
+
+  // Fei: ADD CALL HERE TO:
+  //   separate_hex_vert(scalar_grid, ivoldual_table, param, 
+  //                     vertex_adjacency_list, 
+  //                     ivolpoly_vert, vertex_coord);
 
   if (param.flag_orient_in) {
     const int num_vert_per_cube_facet =  

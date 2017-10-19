@@ -913,15 +913,15 @@ namespace IJKDUALTABLE {
     ///     is IN_INTERVAL_VOLUME.
     ISOV_TYPE incident_ivol_vertex;
 
-    /// True, if below interval volume.
+    /// True, if grid vertex is below interval volume.
     bool IsBelowIntervalVolume() const
     { return(relative_position == BELOW_INTERVAL_VOLUME); }
 
-    /// True, if in interval volume.
+    /// True, if grid vertex is in interval volume.
     bool IsInIntervalVolume() const
     { return(relative_position == IN_INTERVAL_VOLUME); }
 
-    /// True, if above interval volume.
+    /// True, if grid vertex is above interval volume.
     bool IsAboveIntervalVolume() const
     { return(relative_position == ABOVE_INTERVAL_VOLUME); }
 
@@ -1057,22 +1057,26 @@ namespace IJKDUALTABLE {
     NTYPE NumVertices() const
     { return(NumVerticesInLowerLifted() + NumVerticesInUpperLifted()); }
 
-    /// True, if below interval volume.
+    /// True, if grid vertex is below interval volume.
+    /// @param iv Index of the vertex in the grid polytope.
     template <typename ITYPE>
     bool IsBelowIntervalVolume(const ITYPE iv) const
     { return(poly_vertex_info[iv].IsBelowIntervalVolume()); }
 
-    /// True, if in interval volume.
+    /// True, if grid vertex is in interval volume.
+    /// @param iv Index of the vertex in the grid polytope.
     template <typename ITYPE>
     bool IsInIntervalVolume(const ITYPE iv) const
     { return(poly_vertex_info[iv].IsInIntervalVolume()); }
 
-    /// True, if above interval volume.
+    /// True, if grid vertex is above interval volume.
+    /// @param iv Index of the vertex in the grid polytope.
     template <typename ITYPE>
     bool IsAboveIntervalVolume(const ITYPE iv) const
     { return(poly_vertex_info[iv].IsAboveIntervalVolume()); }
 
-    /// Return vertex type.
+    /// Return vertex type of grid vertex.
+    /// @param iv Index of the vertex in the grid polytope.
     template <typename ITYPE>
     NTYPE VertexType(const ITYPE iv) const
     { return(poly_vertex_info[iv].VertexType()); }
@@ -1547,22 +1551,26 @@ namespace IJKDUALTABLE {
     (const TI_TYPE2 ientry, const VTYPE ivolv) const
     { return(this->entry[ientry].ivolv_info[ivolv].flag_in_lower_lifted_cube); }
 
-    /// True, if below interval volume.
+    /// True, if grid vertex is below interval volume.
+    /// @param iv Index of the vertex in the grid polytope.
     template <typename TI_TYPE2, typename VTYPE>
     bool IsBelowIntervalVolume(const TI_TYPE2 ientry, const VTYPE iv) const
     { return(this->entry[ientry].IsBelowIntervalVolume(iv)); }
 
-    /// True, if in interval volume.
+    /// True, if grid vertex is in interval volume.
+    /// @param iv Index of the vertex in the grid polytope.
     template <typename TI_TYPE2, typename VTYPE>
     bool IsInIntervalVolume(const TI_TYPE2 ientry, const VTYPE iv) const
     { return(this->entry[ientry].IsInIntervalVolume(iv)); }
 
-    /// True, if above interval volume.
+    /// True, if grid vertex is above interval volume.
+    /// @param iv Index of the vertex in the grid polytope.
     template <typename TI_TYPE2, typename VTYPE>
     bool IsAboveIntervalVolume(const TI_TYPE2 ientry, const VTYPE iv) const
     { return(this->entry[ientry].IsAboveIntervalVolume(iv)); }
 
-    /// Return vertex type.
+    /// Return vertex type of grid vertex.
+    /// @param iv Index of the vertex in the grid polytope.
     template <typename TI_TYPE2, typename VTYPE>
     NTYPE VertexType(const TI_TYPE2 ientry, const VTYPE iv) const
     { return(this->entry[ientry].VertexType(iv)); }
@@ -1578,11 +1586,13 @@ namespace IJKDUALTABLE {
     { return(this->entry[ientry].UpperIsosurfaceTableIndex()); }
 
     /// Return true if interval volume vertex ivolv is on lower isosurface.
+    /// @param ivolv Index of the interval volume vertex.
     template <typename TI_TYPE2, typename VTYPE>
     bool OnLowerIsosurface(const TI_TYPE2 ientry, const VTYPE ivolv) const
     { return(this->entry[ientry].ivolv_info[ivolv].flag_lower_isosurface); }
 
     /// Return true if interval volume vertex ivolv is on upper isosurface.
+    /// @param ivolv Index of the interval volume vertex.
     template <typename TI_TYPE2, typename VTYPE>
     bool OnUpperIsosurface(const TI_TYPE2 ientry, const VTYPE ivolv) const
     { return(this->entry[ientry].ivolv_info[ivolv].flag_upper_isosurface); }
