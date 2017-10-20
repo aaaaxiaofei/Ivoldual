@@ -162,6 +162,22 @@ namespace IVOLDUAL {
 
 
   // **************************************************
+  // COMPUTE IVOL VERTEX INFORMATION
+  // **************************************************
+
+  void compute_ivol_vertex_info
+  (const DUALISO_GRID & grid,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   const std::vector<ISO_VERTEX_INDEX> & poly_vert,
+   DUAL_IVOLVERT_ARRAY & ivolv_list);
+
+  void determine_ivol_vertices_missing_incident_hex
+  (const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   const std::vector<ISO_VERTEX_INDEX> & poly_vert,
+   DUAL_IVOLVERT_ARRAY & ivolv_list);
+
+
+  // **************************************************
   // EXTRACT DUAL INTERVAL VOLUME POLYTOPES
   // **************************************************
 

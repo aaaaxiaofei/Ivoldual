@@ -245,6 +245,9 @@ void IVOLDUAL::dual_contouring_interval_volume
   polymesh.AddPolytopes(ivolpoly_vert, cube_info.NumVertices());
   vertex_adjacency_list.SetFromMeshOfCubes(polymesh, cube_info);
 
+  compute_ivol_vertex_info
+    (scalar_grid, ivoldual_table, ivolpoly_vert, ivolv_list);
+
   // Fei: ADD CALL HERE TO:
   //   separate_hex_vert(scalar_grid, ivoldual_table, param, 
   //                     vertex_adjacency_list, 
@@ -344,6 +347,59 @@ void IVOLDUAL::compute_cube_ivoltable_info
     cube_ivolv_list[i].num_isov = ivoldual_table.NumIsoVertices(table_index);
   }
 }
+
+
+// **************************************************
+// COMPUTE IVOL VERTEX INFORMATION
+// **************************************************
+
+void IVOLDUAL::compute_ivol_vertex_info
+(const DUALISO_GRID & grid,
+ const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+ const std::vector<ISO_VERTEX_INDEX> & poly_vert,
+ DUAL_IVOLVERT_ARRAY & ivolv_list)
+{
+  determine_ivol_vertices_missing_incident_hex
+    (ivoldual_table, poly_vert, ivolv_list);
+
+  for (ISO_VERTEX_INDEX ivolv = 0; ivolv < ivolv_list.size(); ivolv++) {
+    const TABLE_INDEX table_index = ivolv_list[ivolv].table_index;
+    const FACET_VERTEX_INDEX patch_index = ivolv_list[ivolv].patch_index;
+    ivolv_list[ivolv].degree = 
+      ivoldual_table.VertexInfo(table_index, patch_index).degree;
+  }
+}
+
+void IVOLDUAL::determine_ivol_vertices_missing_incident_hex
+(const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+ const std::vector<ISO_VERTEX_INDEX> & poly_vert,
+ DUAL_IVOLVERT_ARRAY & ivolv_list)
+{
+  std::vector<ISO_VERTEX_INDEX> 
+    num_hex_incident_on_ivolv(ivolv_list.size(), 0);
+
+  for (int i = 0; i < poly_vert.size(); i++) {
+    ISO_VERTEX_INDEX ivolv = poly_vert[i];
+    num_hex_incident_on_ivolv[ivolv]++;
+  }
+
+  for (ISO_VERTEX_INDEX ivolv = 0; ivolv < ivolv_list.size(); ivolv++) {
+    const TABLE_INDEX table_index = ivolv_list[ivolv].table_index;
+    const FACET_VERTEX_INDEX patch_index = ivolv_list[ivolv].patch_index;
+    const int degree = 
+      ivoldual_table.VertexInfo(table_index, patch_index).degree;
+
+    if (degree == num_hex_incident_on_ivolv[ivolv]) {
+      ivolv_list[ivolv].flag_missing_ivol_hexahedra = false;
+    }
+    else {
+      ivolv_list[ivolv].flag_missing_ivol_hexahedra = true;
+    }
+  }
+
+}
+
+
 
 
 // **************************************************

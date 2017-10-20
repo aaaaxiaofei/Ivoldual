@@ -1920,8 +1920,6 @@ namespace IJK {
   {
     typedef typename std::vector<ISOV_INDEX_TYPE>::size_type SIZE_TYPE;
 
-    const SIZE_TYPE num_poly = poly_vert.size()/num_poly_vertices;
-
     /// num_poly_incident_on_isov[j] = Number of polytopes incident
     ///   on isovert j.
     std::vector<NTYPE> num_poly_incident_on_isov(iso_vlist.size(), 0);

@@ -92,11 +92,16 @@ namespace IVOLDUAL {
 
   public:
 
+    /// Degree of the vertex.
+    /// - Number of incident hex in the lookup table.
+    /// - If there are no missing ivol hexahedra, then the degree
+    ///   equals the number of incident hexahedra in the mesh.
+    DEGREE_TYPE degree;
+
     /// If true, the mesh is missing some interval volume hexahedra
     ///   which would normally be incident on the vertex.
     /// The hexahedra are missing because they are dual to grid edges
     ///   or vertices which are on the grid boundary.
-    /// - NOT YET IMPLEMENTED.
     bool flag_missing_ivol_hexahedra;
   };
   typedef std::vector<DUAL_IVOLVERT> DUAL_IVOLVERT_ARRAY;

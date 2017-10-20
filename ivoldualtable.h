@@ -77,6 +77,10 @@ namespace IVOLDUAL {
     IVOLDUAL_CUBE_TABLE(const int dimension, const bool flag_separate_neg):
       IVOLDUAL_CUBE_DOUBLE_TABLE(dimension, flag_separate_neg)
     { Init(); }; 
+
+    const IVOLDUAL_TABLE_VERTEX_INFO & VertexInfo
+    (const TABLE_INDEX ientry, const int ivolv) const
+    { return(vertex_info.VertexInfo(ientry, ivolv)); }
   };
 
 }
