@@ -24,7 +24,7 @@
 #define _IVOLDUALTABLE_
 
 #include "ijkcube.txx"
-#include "ijkdualtable.txx"
+#include "ijkdualtableX.txx"
 
 #include "ivoldual_types.h"
 
@@ -44,12 +44,41 @@ namespace IVOLDUAL {
   };
 
   // **************************************************
+  // INTERVAL VOLUME VERTEX INFORMATION
+  // **************************************************
+
+  class IVOLDUAL_TABLE_VERTEX_INFO {
+
+  public:
+    int degree;
+
+    int Degree() const
+    { return(degree); }
+  };
+
+
+  // **************************************************
   // INTERVAL VOLUME LOOKUP TABLE
   // **************************************************
 
-  typedef typename IJKDUALTABLE::
-  IVOLDUAL_CUBE_DOUBLE_TABLE<4,int,int,TABLE_INDEX,IVOLDUAL_TABLE_ENTRY>
-  IVOLDUAL_CUBE_TABLE;
+  class IVOLDUAL_CUBE_TABLE:
+    public IJKDUALTABLE::IVOLDUAL_CUBE_DOUBLE_TABLE
+  <4,int,int,TABLE_INDEX,IVOLDUAL_TABLE_ENTRY>
+  {
+  
+  protected:
+    void Init();
+
+  public:
+    IJKDUALTABLE::DUAL_TABLE_VERTEX_INFO<int,IVOLDUAL_TABLE_VERTEX_INFO>
+    vertex_info;
+
+  public:
+    IVOLDUAL_CUBE_TABLE(const int dimension, const bool flag_separate_neg):
+      IVOLDUAL_CUBE_DOUBLE_TABLE(dimension, flag_separate_neg)
+    { Init(); }; 
+  };
+
 }
 
 #endif

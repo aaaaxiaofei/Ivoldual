@@ -26,6 +26,7 @@
 
 #include <climits>
 #include <limits>
+#include <vector>
 
 #include "ijk.txx"
 #include "ijkbits.txx"
@@ -1239,6 +1240,11 @@ namespace IJKDUALTABLE {
     /// Return true if table memory is allocated.
     bool IsTableAllocated() const
     { return(is_table_allocated); };
+
+    /// Return reference to entry it.
+    template <typename TI_TYPE2>
+    const ENTRY_TYPE & Entry(const TI_TYPE2 it) const
+    { return(this->entry[it]); }
 
     // Set functions.
     template <typename DTYPE2>
