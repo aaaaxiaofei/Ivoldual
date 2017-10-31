@@ -534,7 +534,6 @@ namespace IJKDUALTABLE {
     table_entry.is_non_manifold = false;
 
     if (table_entry.NumVertices() <= 2) {
-
       if (lower_isodual.NumAmbiguousFacets() > 0 &&
           lower_isodual.NumVertices() < 2) 
         { table_entry.is_non_manifold = true; }
@@ -545,6 +544,16 @@ namespace IJKDUALTABLE {
         { table_entry.is_non_manifold = true; }
 
     }
+    else if (table_entry.NumAmbiguousFacets() == 0) {
+      if (lower_isodual.NumAmbiguousFacets() == 2 &&
+          upper_isodual.NumAmbiguousFacets() == 2) {
+        if (lower_isodual.NumVertices() < 2 ||
+            upper_isodual.NumVertices() < 2)
+          { table_entry.is_non_manifold = true; }
+      }
+    }
+
+
   }
 
 
@@ -609,7 +618,6 @@ namespace IJKDUALTABLE {
 
     table_entry.CreateIntervalVolumeVertices
       (lower_isodual.NumVertices(), upper_isodual.NumVertices());
-
 
     for (NTYPE ie = 0; ie < lifted_cube.NumEdges(); ie++) {
       const DTYPE edge_dir = lifted_cube.EdgeDir(ie);
