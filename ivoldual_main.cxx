@@ -100,11 +100,6 @@ int main(int argc, char **argv)
         (io_info, ivoldual_data, dualiso_info);
     }
 
-    // print out total number of changes for eliminating non-manifold
-    if (io_info.flag_rm_non_manifold) {
-      report_non_manifold_changes(dualiso_info);
-    }
-
     ivoldual_data.Set(io_info);
     warn_non_manifold(io_info);
     report_num_cubes(full_scalar_grid, io_info, ivoldual_data);
@@ -117,6 +112,11 @@ int main(int argc, char **argv)
     construct_interval_volume
       (io_info, ivoldual_data, dualiso_time, io_time, dualiso_info);
 
+    // print out total number of changes for eliminating non-manifold
+    if (io_info.flag_rm_non_manifold) {
+      report_non_manifold_changes(dualiso_info);
+    }
+    
     if (io_info.flag_report_time) {
 
       time_t end_time;
@@ -191,7 +191,7 @@ void construct_interval_volume
     OUTPUT_INFO output_info;
     output_info.SetDimension(dimension, num_cube_vertices);
     set_output_info(io_info, i, output_info);
-    
+
     output_dual_isosurface
       (output_info, ivoldual_data, interval_volume, dualiso_info, io_time);
 

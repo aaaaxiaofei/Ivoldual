@@ -20,8 +20,10 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <vector>
 #include "ivoldual_datastruct.h"
+#include "ijkgrid_macros.h"
+#include "ivoldual_ivolpoly.txx"
+#include "ivoldualtable.h"
 
 // **************************************************
 // CLASS IVOLDUAL_DATA_FLAGS
@@ -109,7 +111,6 @@ void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
     // subdivide grid
     IVOLDUAL_SCALAR_GRID scalar_grid3;
     SubdivideScalarGrid(scalar_grid2, scalar_grid3, isovalue0, isovalue1);
-    scalar_grid.AddOuterLayer(scalar_grid3);
   }
   else {
     CopyScalarGrid(scalar_grid2);
@@ -121,11 +122,44 @@ void IVOLDUAL::IVOLDUAL_DATA::EliminateAmbigFacets
  VERTEX_INDEX & changes_of_ambiguity)
 {
   int last_changes = 1;
+
   while (last_changes) {
-    last_changes = scalar_grid.EliminateAmbiguity(isovalue0, isovalue1);
+    // Eliminate non-manifold cases caused by opposite diagonal plus vertices.
+    last_changes = EliminateNonmanifold(isovalue0, isovalue1);
+
+    // Eliminate non-manifold cases caused by ambiguous facets.
+    last_changes += scalar_grid.EliminateAmbiguity(isovalue0, isovalue1);
+
     changes_of_ambiguity += last_changes;
   }
 
+  scalar_grid.AddOuterLayer();
+}
+
+int IVOLDUAL::IVOLDUAL_DATA::EliminateNonmanifold
+(const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1)
+{
+  int changes_of_cube = 0;
+  const int DIM3(3);
+  IVOLDUAL_CUBE_TABLE ivoldual_table(DIM3, true);
+  const int interior_code(2);
+  const int above_code(3);
+  TABLE_INDEX table_index;
+
+  IJK_FOR_EACH_GRID_CUBE(icube, scalar_grid, VERTEX_INDEX) {
+
+    IVOLDUAL::compute_ivoltable_index_of_grid_cube<4>
+      (scalar_grid, isovalue0, isovalue1, icube,
+       interior_code, above_code, table_index);
+    
+    if (ivoldual_table.NumAmbiguousFacets(table_index) == 0 && 
+        ivoldual_table.IsNonManifold(table_index)) {
+      // Eliminate non-manifold caused by diagonal plus vertices
+      scalar_grid.EliminateDiagonalNonmanifold(isovalue0, isovalue1, icube);
+      changes_of_cube++;
+    }
+  }
+  return changes_of_cube;
 }
 
 void IVOLDUAL::IVOLDUAL_SCALAR_GRID::Subdivide
@@ -293,25 +327,30 @@ int IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateAmbiguity
 }
 
 /// Add outer layer to subdivide grid
-void IVOLDUAL::IVOLDUAL_SCALAR_GRID::AddOuterLayer
-(IVOLDUAL_SCALAR_GRID & scalar_grid3) 
+void IVOLDUAL::IVOLDUAL_SCALAR_GRID::AddOuterLayer() 
 {
 
-  const DTYPE dim = scalar_grid3.Dimension();
+  const DTYPE dim = this->Dimension();
+  
+  int dim_x = this->AxisSize(0);
+  int dim_y = this->AxisSize(1);
+  int dim_z = this->AxisSize(2);
 
-  ATYPE dim_x = scalar_grid3.AxisSize(0);
-  ATYPE dim_y = scalar_grid3.AxisSize(1);
-  ATYPE dim_z = scalar_grid3.AxisSize(2);
+  AXIS_SIZE_TYPE axis_size[3] = {dim_x, dim_y, dim_z};
+
+  IVOLDUAL_SCALAR_GRID scalar_grid3;
+  scalar_grid3.SetSize(3, axis_size);
+  scalar_grid3.CopyScalar(*this);
 
   ATYPE dim_x2 = dim_x + 2;
   ATYPE dim_y2 = dim_y + 2;
   ATYPE dim_z2 = dim_z + 2;
 
+  AXIS_SIZE_TYPE axis_size2[3] = {dim_x2, dim_y2, dim_z2};
+  this->SetSize(dim, axis_size2);
+
   VERTEX_INDEX iv = 0;
   VERTEX_INDEX iw = 0;
-
-  AXIS_SIZE_TYPE axis_size[3] = {dim_x2, dim_y2, dim_z2};
-  this->SetSize(dim, axis_size);
 
   for(int k = 0; k < dim_z; k++) {
 
@@ -341,5 +380,19 @@ void IVOLDUAL::IVOLDUAL_SCALAR_GRID::AddOuterLayer
       }
     }
   }
+}
 
+void IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateDiagonalNonmanifold
+(const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1,
+ VTYPE icube) 
+{
+
+  for (int k = 0; k < this->NumCubeVertices(); k++) {
+    int idx = this->CubeVertex(icube, k);
+    
+    if (this->Scalar(idx) > isovalue1) {
+      this->Set(idx, 0.5*(isovalue0 + isovalue1));
+      break;
+    }
+  }
 }

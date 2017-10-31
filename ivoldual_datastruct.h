@@ -41,7 +41,6 @@ namespace IVOLDUAL {
   /// - Encoded vertices have scalar values 0,1,2 or 3.
   typedef unsigned char GRID_VERTEX_ENCODING;
 
-
   // **************************************************
   // GRID DATA STRUCTURES
   // **************************************************
@@ -68,7 +67,11 @@ namespace IVOLDUAL {
     int EliminateAmbiguity
       (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
 
-    void AddOuterLayer(IVOLDUAL_SCALAR_GRID & scalar_grid3);
+    void EliminateDiagonalNonmanifold
+      (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1, 
+       VTYPE icube);
+
+    void AddOuterLayer();
   };
 
   /// Type of grid encoding grid vertices.
@@ -270,6 +273,9 @@ namespace IVOLDUAL {
     void EliminateAmbigFacets
       (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1, 
        VERTEX_INDEX & changes_of_ambiguity);
+
+    int EliminateNonmanifold
+      (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
 
   };
 
