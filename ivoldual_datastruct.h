@@ -95,11 +95,10 @@ namespace IVOLDUAL {
 
   public:
 
-    /// Degree of the vertex.
-    /// - Number of incident hex in the lookup table.
-    /// - If there are no missing ivol hexahedra, then the degree
+    /// Number of hexahedra incident on the vertex in the lookup table.
+    /// - If there are no missing ivol hexahedra, then num_incident_hex
     ///   equals the number of incident hexahedra in the mesh.
-    DEGREE_TYPE degree;
+    DEGREE_TYPE num_incident_hex;
 
     /// If true, the mesh is missing some interval volume hexahedra
     ///   which would normally be incident on the vertex.

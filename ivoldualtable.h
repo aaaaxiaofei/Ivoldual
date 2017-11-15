@@ -50,10 +50,11 @@ namespace IVOLDUAL {
   class IVOLDUAL_TABLE_VERTEX_INFO {
 
   public:
-    int degree;
+    int num_incident_poly;
 
-    int Degree() const
-    { return(degree); }
+    /// Number of interval volume polytopes incident on vertex.
+    int NumIncidentPoly() const
+    { return(num_incident_poly); }
   };
 
 

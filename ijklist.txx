@@ -218,6 +218,21 @@ namespace IJK {
   }
 
 
+  /// Return true if elements of listA equal elements of listB
+  ///   and are in the same order in each list.
+  /// @pre Lists listA and listB have the same length.
+  template <typename TA, typename TB, typename NTYPE>
+  bool are_lists_equal
+  (const TA * listA, const TB * listB, const NTYPE list_length)
+  {
+    for (NTYPE i = 0; i < list_length; i++) {
+      if (listA[i] != listB[i]) { return(false); }
+    }
+
+    return(true);
+  }
+
+
   /// Return true if listA and listB contain a common element.
   /// @param[out] ilocA Location (index) of common element in listA.
   /// ilocA is undefined if listA does not contain any element of listB.

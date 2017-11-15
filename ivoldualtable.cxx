@@ -30,5 +30,5 @@
 void IVOLDUAL::IVOLDUAL_CUBE_TABLE::Init()
 {
   vertex_info.Set(*this);
-  compute_dual_ivoltable_vertex_degrees(*this, vertex_info);
+  compute_ivoldual_table_num_incident_poly(*this, vertex_info);
 }

@@ -365,8 +365,8 @@ void IVOLDUAL::compute_ivol_vertex_info
   for (ISO_VERTEX_INDEX ivolv = 0; ivolv < ivolv_list.size(); ivolv++) {
     const TABLE_INDEX table_index = ivolv_list[ivolv].table_index;
     const FACET_VERTEX_INDEX patch_index = ivolv_list[ivolv].patch_index;
-    ivolv_list[ivolv].degree = 
-      ivoldual_table.VertexInfo(table_index, patch_index).degree;
+    ivolv_list[ivolv].num_incident_hex = 
+      ivoldual_table.VertexInfo(table_index, patch_index).NumIncidentPoly();
   }
 }
 
@@ -386,10 +386,10 @@ void IVOLDUAL::determine_ivol_vertices_missing_incident_hex
   for (ISO_VERTEX_INDEX ivolv = 0; ivolv < ivolv_list.size(); ivolv++) {
     const TABLE_INDEX table_index = ivolv_list[ivolv].table_index;
     const FACET_VERTEX_INDEX patch_index = ivolv_list[ivolv].patch_index;
-    const int degree = 
-      ivoldual_table.VertexInfo(table_index, patch_index).degree;
+    const int num_incident_hex = 
+      ivoldual_table.VertexInfo(table_index, patch_index).NumIncidentPoly();
 
-    if (degree == num_hex_incident_on_ivolv[ivolv]) {
+    if (num_incident_hex == num_hex_incident_on_ivolv[ivolv]) {
       ivolv_list[ivolv].flag_missing_ivol_hexahedra = false;
     }
     else {

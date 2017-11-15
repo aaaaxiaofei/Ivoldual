@@ -1160,6 +1160,33 @@ namespace IJKDUALTABLE {
 
 
   // **************************************************
+  // CLASS ISODUAL_CUBE_FACE_INFO
+  // *************************************************
+
+  /// Class with routines to query number of positive or negative vertices
+  ///   in a cube facet and number of active facets.
+  template <typename DTYPE, typename NTYPE, typename VTYPE>
+  class ISODUAL_CUBE_FACE_INFO:public IJK::CUBE_FACE_INFO<DTYPE,NTYPE,VTYPE> {
+
+  public:
+    ISODUAL_CUBE_FACE_INFO() {};
+    ISODUAL_CUBE_FACE_INFO(const DTYPE dimension):
+      IJK::CUBE_FACE_INFO<DTYPE,NTYPE,VTYPE>(dimension) {};
+
+    template <typename TI_TYPE>
+    void ComputeNumCubeFacetBits
+    (const TI_TYPE ientry, const NTYPE ifacet,
+     NTYPE & num_zeros, NTYPE & num_ones) const;
+
+    template <typename TI_TYPE>
+    bool IsCubeFacetActive(const TI_TYPE ientry, const NTYPE ifacet) const;
+
+    template <typename TI_TYPE>
+    NTYPE ComputeNumActiveCubeFacets(const TI_TYPE ientry) const;
+  };
+
+
+  // **************************************************
   // ISODUAL TABLE BASE
   // **************************************************
 
@@ -1172,10 +1199,11 @@ namespace IJKDUALTABLE {
 
   public:
 
-  /// Index of entry in isosurface lookup table.
-  /// Define within ISODUAL_TABLE_BASE for use in templates.
-  typedef TI_TYPE TABLE_INDEX;    
+    /// Index of entry in isosurface lookup table.
+    /// Define within ISODUAL_TABLE_BASE for use in templates.
+    typedef TI_TYPE TABLE_INDEX;    
 
+    typedef DTYPE DIMENSION_TYPE;
 
   protected:
 
@@ -1481,6 +1509,9 @@ namespace IJKDUALTABLE {
     public ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE> {
 
   protected:
+    ISODUAL_CUBE_FACE_INFO<DTYPE,NTYPE,NTYPE> cube;
+
+  protected:
     void Init();
 
     //! If true, separate negative vertices.
@@ -1583,6 +1614,31 @@ namespace IJKDUALTABLE {
     bool IsAboveIntervalVolume(const TI_TYPE2 ientry, const VTYPE iv) const
     { return(this->entry[ientry].IsAboveIntervalVolume(iv)); }
 
+    /// True, if some neighbor of grid vertex is below interval volume.
+    /// @param iv Index of the vertex in the grid polytope.
+    template <typename TI_TYPE2, typename VTYPE>
+    bool IsNeighborBelowIntervalVolume
+    (const TI_TYPE2 ientry, const VTYPE iv) const;
+
+    /// True, if some neighbor of grid vertex is above interval volume.
+    /// @param iv Index of the vertex in the grid polytope.
+    template <typename TI_TYPE2, typename VTYPE>
+    bool IsNeighborAboveIntervalVolume
+    (const TI_TYPE2 ientry, const VTYPE iv) const;
+
+
+    /// True, if some neighbor of grid vertex is below interval volume.
+    /// @param iv Index of the vertex in the grid polytope.
+    template <typename TI_TYPE2, typename VTYPE>
+    NTYPE NumNeighborsBelowIntervalVolume
+    (const TI_TYPE2 ientry, const VTYPE iv) const;
+
+    /// True, if some neighbor of grid vertex is above interval volume.
+    /// @param iv Index of the vertex in the grid polytope.
+    template <typename TI_TYPE2, typename VTYPE>
+    NTYPE NumNeighborsAboveIntervalVolume
+    (const TI_TYPE2 ientry, const VTYPE iv) const;
+
     /// Return vertex type of grid vertex.
     /// @param iv Index of the vertex in the grid polytope.
     template <typename TI_TYPE2, typename VTYPE>
@@ -1631,6 +1687,10 @@ namespace IJKDUALTABLE {
     (const TI_TYPE it, const FTYPE jf) const
     { return(this->entry[it].IsFacetInUpperLiftedAmbiguous(jf)); }
 
+    /// Return reference to cube.
+    const ISODUAL_CUBE_FACE_INFO<DTYPE,NTYPE,NTYPE> & Cube() const
+    { return(cube); }
+
     /// Return true if configuration contains a vertex with label vtype.
     template <const int vtype>
     bool ContainsVertexType(const TI_TYPE it) const;
@@ -1651,9 +1711,16 @@ namespace IJKDUALTABLE {
     bool ContainsI2(const TI_TYPE it) const
     { return(ContainsVertexType<2>(it)); }
 
+    /// Redefine SetDimension to set cube dimension.
+    template <typename DTYPE2>
+    void SetDimension(const DTYPE2 d);
+
     /// Check number of vertex types.
     /// - Should be 4.
     bool CheckNumVertexTypes(IJK::ERROR & error);
+
+    /// Check that cube dimension matches table dimension.
+    bool CheckCubeDimension(IJK::ERROR & error);
 
     /// Undefine IncidentIsoVertex
     template <typename TI_TYPE2>
@@ -1673,7 +1740,8 @@ namespace IJKDUALTABLE {
             typename DTYPE, typename NTYPE, typename TI_TYPE,
             typename ENTRY_TYPE>
   class IVOLDUAL_CUBE_TABLE:
-    public IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES,DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE> {
+    public IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES,DTYPE,NTYPE,
+                                    TI_TYPE,ENTRY_TYPE> {
 
   protected:
 
@@ -1858,33 +1926,6 @@ namespace IJKDUALTABLE {
     template <typename TI_TYPE2, typename ITYPE>
     NTYPE ComputeNumComponentsInFacet
     (const TI_TYPE2 ientry, const ITYPE kf, const bool flag_positive);
-  };
-
-
-  // **************************************************
-  // CLASS ISODUAL_CUBE_FACE_INFO
-  // *************************************************
-
-  /// Class with routines to query number of positive or negative vertices
-  ///   in a cube facet and number of active facets.
-  template <typename DTYPE, typename NTYPE, typename VTYPE>
-  class ISODUAL_CUBE_FACE_INFO:public IJK::CUBE_FACE_INFO<DTYPE,NTYPE,VTYPE> {
-
-  public:
-    ISODUAL_CUBE_FACE_INFO() {};
-    ISODUAL_CUBE_FACE_INFO(const DTYPE dimension):
-      IJK::CUBE_FACE_INFO<DTYPE,NTYPE,VTYPE>(dimension) {};
-
-    template <typename TI_TYPE>
-    void ComputeNumCubeFacetBits
-    (const TI_TYPE ientry, const NTYPE ifacet,
-     NTYPE & num_zeros, NTYPE & num_ones) const;
-
-    template <typename TI_TYPE>
-    bool IsCubeFacetActive(const TI_TYPE ientry, const NTYPE ifacet) const;
-
-    template <typename TI_TYPE>
-    NTYPE ComputeNumActiveCubeFacets(const TI_TYPE ientry) const;
   };
 
 
@@ -2593,7 +2634,8 @@ namespace IJKDUALTABLE {
   template <typename DTYPE2>
   IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
   IVOLDUAL_CUBE_TABLE_BASE(const DTYPE2 dimension) :
-    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension) 
+    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension),
+    cube(dimension)
   {
     Init();
   }
@@ -2604,9 +2646,10 @@ namespace IJKDUALTABLE {
             typename TI_TYPE, typename ENTRY_TYPE>
   template <typename DTYPE2>
   IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
-  IVOLDUAL_CUBE_TABLE_BASE(const DTYPE2 dimension, const bool flag_separate_neg) :
-    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>
-    (dimension) 
+  IVOLDUAL_CUBE_TABLE_BASE
+  (const DTYPE2 dimension, const bool flag_separate_neg) :
+    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>(dimension),
+    cube(dimension)
   {
     Init();
   }
@@ -2621,6 +2664,78 @@ namespace IJKDUALTABLE {
     IJK::PROCEDURE_ERROR error("IVOLDUAL_CUBE_TABLE_BASE::Init");
 
     if (!CheckNumVertexTypes(error)) { throw error; }
+  }
+
+
+  // True, if some neighbor of grid vertex is below interval volume.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename TI_TYPE2, typename VTYPE>
+  bool IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,
+                                TI_TYPE,ENTRY_TYPE>::
+  IsNeighborBelowIntervalVolume(const TI_TYPE2 ientry, const VTYPE iv) const
+  {
+    for (DTYPE d = 0; d < this->Dimension(); d++) {
+      const VTYPE iv2 = cube.VertexNeighbor(iv, d);
+      if (IsBelowIntervalVolume(ientry, iv2)) 
+        { return(true); }
+    }
+    return(false);
+  }
+
+
+  // True, if some neighbor of grid vertex is above interval volume.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename TI_TYPE2, typename VTYPE>
+  bool IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,
+                                TI_TYPE,ENTRY_TYPE>::
+  IsNeighborAboveIntervalVolume(const TI_TYPE2 ientry, const VTYPE iv) const
+  {
+    for (DTYPE d = 0; d < this->Dimension(); d++) {
+      const VTYPE iv2 = cube.VertexNeighbor(iv, d);
+      if (IsAboveIntervalVolume(ientry, iv2)) 
+        { return(true); }
+    }
+    return(false);
+  }
+
+
+  // Return number of neighbors of grid vertex which are below interval volume.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename TI_TYPE2, typename VTYPE>
+  NTYPE IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,
+                                TI_TYPE,ENTRY_TYPE>::
+  NumNeighborsBelowIntervalVolume
+  (const TI_TYPE2 ientry, const VTYPE iv) const
+  {
+    NTYPE kount = 0;
+    for (DTYPE d = 0; d < this->Dimension(); d++) {
+      const VTYPE iv2 = cube.VertexNeighbor(iv, d);
+      if (IsBelowIntervalVolume(ientry, iv2)) 
+        { kount++; }
+    }
+    return(kount);
+  }
+
+
+  // Return number of neighbors of grid vertex which are above interval volume.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename TI_TYPE2, typename VTYPE>
+  NTYPE IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,
+                                TI_TYPE,ENTRY_TYPE>::
+  NumNeighborsAboveIntervalVolume
+  (const TI_TYPE2 ientry, const VTYPE iv) const
+  {
+    NTYPE kount = 0;
+    for (DTYPE d = 0; d < this->Dimension(); d++) {
+      const VTYPE iv2 = cube.VertexNeighbor(iv, d);
+      if (IsAboveIntervalVolume(ientry, iv2)) 
+        { kount++; }
+    }
+    return(kount);
   }
 
 
@@ -2641,10 +2756,23 @@ namespace IJKDUALTABLE {
     return(false);
   }
 
+  // Redefine SetDimension to set cube dimension.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  template <typename DTYPE2>
+  void IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,
+                                TI_TYPE,ENTRY_TYPE>::
+  SetDimension(const DTYPE2 d)
+  {
+    cube.SetDimension(d);
+    ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::SetDimension(d);
+  }
+
   // Check number of vertex types.
   template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
             typename TI_TYPE, typename ENTRY_TYPE>
-  bool IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE>::
+  bool IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,
+                                TI_TYPE,ENTRY_TYPE>::
   CheckNumVertexTypes(IJK::ERROR & error)
   {
     if (NUM_VERTEX_TYPES != 4) {
@@ -2654,6 +2782,24 @@ namespace IJKDUALTABLE {
         ("  Number of vertex types: ", NUM_VERTEX_TYPES, "");
       error.AddMessage
         ("  Number of vertex types should be 4.");
+      return(false);
+    }
+
+    return(true);
+  }
+
+  // Check that cube dimension matches table dimension.
+  template <const int NUM_VERTEX_TYPES, typename DTYPE, typename NTYPE, 
+            typename TI_TYPE, typename ENTRY_TYPE>
+  bool IVOLDUAL_CUBE_TABLE_BASE<NUM_VERTEX_TYPES, DTYPE,NTYPE,
+                                TI_TYPE,ENTRY_TYPE>::
+  CheckCubeDimension(IJK::ERROR & error)
+  {
+    if (cube.Dimension() != this->Dimension()) {
+      error.AddMessage
+        ("Programming error.  Cube dimension does not match table dimension.");
+      error.AddMessage("  Cube dimension: ", cube.Dimension(), ".");
+      error.AddMessage("  Table dimension: ", this->Dimension(), ".");
       return(false);
     }
 
@@ -2747,12 +2893,13 @@ namespace IJKDUALTABLE {
     // Make sure that number of vertex types is correct (4).
     if (!this->CheckNumVertexTypes(error)) { throw error; }
 
+    if (!this->CheckCubeDimension(error)) { throw error; }
+
     this->flag_separate_neg = flag_separate_neg;
 
     const DTYPE dimension = this->Dimension();
 
     FIND_COMPONENT<DTYPE,NTYPE> find_component(dimension+1);
-    ISODUAL_CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> cube(dimension);
     ISODUAL_CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> lifted_cube(dimension+1);
 
     ISODUAL_AMBIG_TABLE_ENTRY<NTYPE,ISOV_TYPE,FACET_BITS_TYPE> 
@@ -2768,7 +2915,7 @@ namespace IJKDUALTABLE {
       // Create ivoldual cube table entry
       create_ivoldual_cube_table_entry
         (ientry, this->NumTableEntries(), 
-         flag_separate_neg, cube, lifted_cube,
+         flag_separate_neg, this->cube, lifted_cube,
          find_component, lower_isodual, upper_isodual, this->entry[ientry]);
     }
 
