@@ -248,10 +248,12 @@ void IVOLDUAL::dual_contouring_interval_volume
   compute_ivol_vertex_info
     (scalar_grid, ivoldual_table, ivolpoly_vert, ivolv_list);
 
-  // Fei: ADD CALL HERE TO:
-  //   separate_hex_vert(scalar_grid, ivoldual_table, param, 
-  //                     vertex_adjacency_list, 
-  //                     ivolpoly_vert, vertex_coord);
+  // Laplacian smoothing.
+  if (param.flag_laplacian_smooth) {
+     laplacian_smooth(scalar_grid, ivoldual_table, param, 
+                      vertex_adjacency_list, ivolv_list,
+                      vertex_coord, param.laplacian_smooth_limit);
+  }
 
   if (param.flag_orient_in) {
     const int num_vert_per_cube_facet =  
@@ -1290,4 +1292,73 @@ void IVOLDUAL::eliminate_non_manifold_grid
 
   dualiso_info.non_manifold_changes = changes_of_non_manifold;
 
+}
+
+void IVOLDUAL::laplacian_smooth
+(const DUALISO_SCALAR_GRID_BASE & scalar_grid,
+ const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+ const IVOLDUAL_DATA_FLAGS & param,
+ IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+ const DUAL_IVOLVERT_ARRAY & ivolv_list,
+ COORD_ARRAY & vertex_coord, 
+ float laplacian_smooth_limit)
+{
+  const int d = 3;
+  float dist;
+  COORD_TYPE * vcoord = &(vertex_coord.front());
+
+  // Loop over all vertices
+  for (int cur = 0; cur < vertex_adjacency_list.NumVertices(); cur++) {
+    
+    // Current node coordinates.
+    COORD_TYPE *cur_coord = vcoord + cur*d;
+
+    // Check if current node is on isosurface.
+    const int ivolv_cur = ivolv_list[cur].patch_index;
+    const TABLE_INDEX it_cur = ivolv_list[cur].table_index;
+    bool curOnLower = ivoldual_table.OnLowerIsosurface(it_cur, ivolv_cur);
+    bool curOnUpper = ivoldual_table.OnUpperIsosurface(it_cur, ivolv_cur);
+
+    // Store sum of neighbor coordinates.
+    COORD_TYPE neigh_sum[d]; 
+    IJK::set_coord(d, 0.0, neigh_sum);
+    bool needMoving = false;
+    int adj_count = 0;
+    float min_dist = 10000.0;
+
+    // Loop over adjacent vertices of the current vertex
+    for (int  k = 0; k < vertex_adjacency_list.NumAdjacent(cur); k++) {
+
+      // Neighbor node coordinates
+      int adj = vertex_adjacency_list.AdjacentVertex(cur, k);
+      COORD_TYPE *neigh_coord = vcoord + adj*d;
+
+      // Check if neighbor node is on isosurface.
+      const int ivolv_adj = ivolv_list[adj].patch_index;
+      const TABLE_INDEX it_adj = ivolv_list[adj].table_index;
+      bool adjOnLower = ivoldual_table.OnLowerIsosurface(it_adj, ivolv_adj);
+      bool adjOnUpper = ivoldual_table.OnUpperIsosurface(it_adj, ivolv_adj);
+
+      // Skip if a vertex and its adjacent vertex are not on the same surface.
+      if ((curOnLower && !adjOnLower) || (curOnUpper && !adjOnUpper))
+          continue;
+
+      IJK::add_coord(d, neigh_sum, neigh_coord, neigh_sum);
+      IJK::compute_distance(d, cur_coord, neigh_coord, dist);
+
+      // Check if minimum distance is valid.
+      min_dist = std::min(min_dist, dist);
+      if (dist < laplacian_smooth_limit) {
+        needMoving = true;
+      }
+
+      adj_count++;
+    }
+
+    // Update current node coordinate.
+    if (needMoving) {
+      IJK::divide_coord(d, adj_count, neigh_sum, neigh_sum);
+      IJK::copy_coord(d, neigh_sum, cur_coord);
+    }
+  }
 }

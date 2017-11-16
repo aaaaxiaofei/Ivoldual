@@ -196,7 +196,6 @@ namespace IVOLDUAL {
     /// If true, split vertices in ambiguous cubes sharing facets.
     bool flag_split_ambig_pairs;
     bool flag_split_ambig_pairsB;
-    bool flag_rm_non_manifold;
 
     /// Hexahedral triangulation method.
     HEX_TRI_METHOD hex_tri_method;
@@ -207,6 +206,13 @@ namespace IVOLDUAL {
     /// Hexahedra orientation.
     /// - If true, orient hexahedra so that facet normals point in.
     bool flag_orient_in;
+
+    /// If true, change vertices values to remove ambiguous facets.
+    bool flag_rm_non_manifold;
+
+    /// If true, perforam laplacian smoothing.
+    bool flag_laplacian_smooth;
+    double laplacian_smooth_limit;
 
     /// Default encoded value (1 or 2) for vertices in the interior
     ///   of the interval volume.
