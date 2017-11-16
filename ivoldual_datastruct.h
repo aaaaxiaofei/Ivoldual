@@ -26,6 +26,7 @@
 
 #include "ijkcube.txx"
 #include "ijkmesh_datastruct.txx"
+#include "ijkdual_mesh.txx"
 
 #include "ijkdual_datastruct.h"
 #include "ivoldual_types.h"
@@ -113,7 +114,11 @@ namespace IVOLDUAL {
   // GRID CUBE DATA
   // **************************************************
 
-  typedef IJKDUAL::GRID_CUBE_DATA GRID_CUBE_DATA;
+  /// Grid cube data.
+  /// - Note: This is equivalent to IJKDUAL::GRID_CUBE_DATA_PLUS.
+  typedef IJK::GRID_CUBE_ISOVERT_AND_CUBE_COORD
+  <3, ISO_VERTEX_INDEX, TABLE_INDEX, FACET_VERTEX_INDEX, ISO_VERTEX_INDEX,
+   GRID_COORD_TYPE> GRID_CUBE_DATA;
 
 
   // **************************************************
@@ -314,14 +319,8 @@ namespace IVOLDUAL {
 
   typedef IJK::POLYMESH<VERTEX_INDEX, int> IVOL_POLYMESH;
 
-  class IVOL_VERTEX_ADJACENCY_LIST_ELEMENT:
-    public IJK::VERTEX_ADJACENCY_LIST_ELEMENT<VERTEX_INDEX>
-  {
-    // No additional records, for now.
-  };
-
-  typedef IJK::VERTEX_ADJACENCY_LIST_BASE
-  <IVOL_VERTEX_ADJACENCY_LIST_ELEMENT, int>
+  typedef IJKDUAL::VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST
+  <ISO_VERTEX_INDEX,FACET_INDEX,int>
   IVOL_VERTEX_ADJACENCY_LIST;
 
 

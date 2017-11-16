@@ -40,6 +40,9 @@
 using namespace IJK;
 using namespace IVOLDUAL;
 
+// *** DEBUG ***
+#include "ijkprint.txx"
+
 
 // **************************************************
 // DUAL CONTOURING INTERVAL VOLUME
@@ -217,6 +220,7 @@ void IVOLDUAL::dual_contouring_interval_volume
   t2 = clock();
 
   set_grid_cube_indices(cube_list, cube_ivolv_list);
+  set_grid_coord(scalar_grid, cube_ivolv_list);
 
   compute_cube_ivoltable_info
     (encoded_grid, ivoldual_table, cube_ivolv_list);
@@ -244,6 +248,8 @@ void IVOLDUAL::dual_contouring_interval_volume
 
   polymesh.AddPolytopes(ivolpoly_vert, cube_info.NumVertices());
   vertex_adjacency_list.SetFromMeshOfCubes(polymesh, cube_info);
+  vertex_adjacency_list.SetAllDualFacetsFromVertexAndCubeLists
+    (ivolv_list, cube_ivolv_list);
 
   compute_ivol_vertex_info
     (scalar_grid, ivoldual_table, ivolpoly_vert, ivolv_list);

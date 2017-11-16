@@ -353,38 +353,6 @@ namespace IJKDUAL {
        vertex_coord, merge_data, dualiso_info);
   }
 
-
-  // **************************************************
-  // SET ROUTINE
-  // **************************************************
-
-  /// Set grid cube indices in cube_isov_list.
-  template <typename CTYPE, typename GRID_CUBE_TYPE>
-  void set_grid_cube_indices
-  (const std::vector<CTYPE> & cube_list,
-   std::vector<GRID_CUBE_TYPE> & cube_isov_list)
-  {
-    typedef typename std::vector<CTYPE>::size_type SIZE_TYPE;
-
-    cube_isov_list.resize(cube_list.size());
-
-    for (SIZE_TYPE i = 0; i < cube_list.size(); i++) {
-      cube_isov_list[i].SetCubeIndex(cube_list[i]);
-    }
-  }
-
-  /// Set grid cube coord in cube_isov_list.
-  template <typename GRID_TYPE, typename GRID_CUBE_TYPE>
-  void set_grid_cube_coord
-  (const GRID_TYPE & grid,
-   std::vector<GRID_CUBE_TYPE> & cube_list)
-  {
-    typedef typename std::vector<GRID_CUBE_TYPE>::size_type SIZE_TYPE;
-
-    for (SIZE_TYPE i = 0; i < cube_list.size(); i++) 
-      { cube_list[i].SetCubeCoord(grid); }
-  }
-
 }
 
 #endif

@@ -1607,7 +1607,99 @@ namespace IJK {
     /// Grid cube isosurface vertices are index first_isov 
     ///   to (first_isov+num_isov-1).
     FTYPE first_isov;
+
+    template <typename CI_TYPE2>
+    void SetCubeIndex(const CI_TYPE2 cube_index)
+    { this->cube_index = cube_index; }
   };
+
+
+  /// Set cube indices in cube_listB.
+  /// - Resize cube_listB[] to size of cube_listA[].
+  /// @param cube_listA[] Array of cube indices.
+  /// @param cube_listB[] Array of cubes with member function SetCubeIndex().
+  template <typename CTYPE, typename GRID_CUBE_TYPE>
+  void set_grid_cube_indices
+  (const std::vector<CTYPE> & cube_listA,
+   std::vector<GRID_CUBE_TYPE> & cube_listB)
+  {
+    typedef typename std::vector<CTYPE>::size_type SIZE_TYPE;
+
+    cube_listB.resize(cube_listA.size());
+
+    for (SIZE_TYPE i = 0; i < cube_listA.size(); i++) {
+      cube_listB[i].SetCubeIndex(cube_listA[i]);
+    }
+  };
+
+
+  /// GRID_CUBE_ISOVERT and cube_coord.
+  template <const int GRID_DIMENSION, typename CI_TYPE, typename TI_TYPE, 
+            typename NTYPE, typename FTYPE, typename COORD_TYPE>
+  class GRID_CUBE_ISOVERT_AND_CUBE_COORD:public
+  GRID_CUBE_ISOVERT<CI_TYPE,TI_TYPE,NTYPE,FTYPE> {
+
+  protected:
+    COORD_TYPE cube_coord[GRID_DIMENSION];
+
+  public:
+
+    /// Set cube coord.
+    /// @pre cube_index is already set.
+    template <typename GRID_TYPE>
+    void SetCoord(const GRID_TYPE & grid)
+    { grid.ComputeCoord(this->cube_index, cube_coord); };
+
+    /// Return cube coordinates.
+    const COORD_TYPE * CubeCoord() const
+    { return(cube_coord); }
+
+    /// Return d'th cube coordinate.
+    COORD_TYPE CubeCoord(const int d) const
+    { return(cube_coord[d]); }
+
+    /// Return index of facet shared by this->cube and adjacent_cube.
+    template <typename GRID_CUBE_TYPE>
+    CI_TYPE GetSharedFacetIndex
+    (const GRID_CUBE_TYPE & adjacent_cube) const;
+  };
+
+
+  template <const int GRID_DIMENSION, typename CI_TYPE, typename TI_TYPE, 
+            typename NTYPE, typename FTYPE, typename COORD_TYPE>
+  template <typename GRID_CUBE_TYPE>
+  CI_TYPE GRID_CUBE_ISOVERT_AND_CUBE_COORD
+  <GRID_DIMENSION, CI_TYPE, TI_TYPE, NTYPE, FTYPE, COORD_TYPE>::
+  GetSharedFacetIndex(const GRID_CUBE_TYPE & adjacent_cube) const
+  {
+    for (NTYPE d = 0; d < GRID_DIMENSION; d++) {
+      if (this->CubeCoord(d)+1 == adjacent_cube.CubeCoord(d)) {
+        return(d+GRID_DIMENSION);
+      }
+      else if (this->CubeCoord(d) == adjacent_cube.CubeCoord(d)+1) {
+        return(d);
+      }
+    }
+
+    // Error.  Cubes are not adjacent or are identical.
+    // Throw error message.
+
+    IJK::PROCEDURE_ERROR error
+      ("GRID_CUBE_ISOVERT_AND_CUBE_COORD::GetSharedFacetIndex");
+    for (NTYPE d = 0; d < GRID_DIMENSION; d++) {
+      if (this->CubeCoord(d) < adjacent_cube.CubeCoord(d)) {
+        error.AddMessage("Programming error.  Cubes are not adjacent.");
+        error.AddMessage("  cube coord[", d, "] = ", this->CubeCoord(d), ".");
+        error.AddMessage
+          ("  adjacent cube coord[", d, "] = ", 
+           adjacent_cube.CubeCoord(d), ".");
+        throw error;
+      }
+    }
+
+    error.AddMessage("Programming error.  Cubes have identical coordinates.");
+    throw error;
+  }
 
 
   // ************************************************************

@@ -33,16 +33,16 @@
 
 namespace IJK {
 
-  // **************************************************
+  // *****************************************************************
   // TYPE DEFINITIONS
-  // **************************************************
+  // *****************************************************************
 
   /// Default type for grid size
   typedef long GRID_SIZE_TYPE;
 
-  // **************************************************
+  // *****************************************************************
   // TEMPLATE CLASS GRID
-  // **************************************************
+  // *****************************************************************
 
   /// Base grid class
   template <typename DTYPE, typename ATYPE, typename VTYPE, typename NTYPE> 
@@ -964,9 +964,12 @@ namespace IJK {
                      const bool flag_dim1_facet_vertex=false);
   };
 
-  // **************************************************
-  // inline UTILITY FUNCTIONS
-  // **************************************************
+
+  // *****************************************************************
+  //! @name inline UTILITY FUNCTIONS
+  // *****************************************************************
+
+  ///@{
 
   /// Integer divide.
   template <typename ATYPE, typename BTYPE>
@@ -991,9 +994,14 @@ namespace IJK {
   integer_divide(const unsigned int a, const unsigned int b)
   { return(a/b); }
 
-  // **************************************************
-  // THROW ERROR ROUTINES
-  // **************************************************
+  ///@}
+
+
+  // *****************************************************************
+  //! @name THROW ERROR ROUTINES
+  // *****************************************************************
+
+  ///@{
 
   /// Throw subsample period error.
   template <typename STRING_TYPE, typename PTYPE>
@@ -1006,9 +1014,14 @@ namespace IJK {
     throw error;
   }
 
-  // **************************************************
-  // TEMPLATE FUNCTIONS: COUNTING AND INDEXING
-  // **************************************************
+  ///@}
+
+
+  // *****************************************************************
+  //! @name TEMPLATE FUNCTIONS: COUNTING AND INDEXING
+  // *****************************************************************
+
+  ///@{
 
   // Forward declaration.
   template <typename DTYPE, typename DTYPE2, typename ATYPE, typename NTYPE>
@@ -1016,10 +1029,6 @@ namespace IJK {
   (const DTYPE dimension, const ATYPE * axis_size, const DTYPE2 orth_dir,
    NTYPE & num_vertices);
 
-  ///
-  /// \defgroup counting Counting and indexing
-  /* \ingroup counting */
-  /* \{ */
 
   /// Return coordinate of vertex \a iv.
   /// @param iv = Vertex index.
@@ -1715,11 +1724,14 @@ namespace IJK {
     return(supersample_size);
   }
 
-  /* \} */
+  ///@}
 
-  // **************************************************
-  // COMPUTE BOUNDARY BITS
-  // **************************************************
+
+  // *****************************************************************
+  //! @name COMPUTE BOUNDARY BITS
+  // *****************************************************************
+
+  ///@{
 
   /// Compute boundary bits for vertex \a iv.
   /// @param iv Vertex index.
@@ -1806,10 +1818,15 @@ namespace IJK {
 
     return(false);
   }
-              
-  // **************************************************
-  // COMPUTE REGION
-  // **************************************************
+
+  ///@}
+
+
+  // *****************************************************************
+  //! @name COMPUTE REGION
+  // *****************************************************************
+
+  ///@{
 
   /// Compute region within boundary around given cube.
   template <typename VTYPE0, typename DTYPE, typename ATYPE0,
@@ -1865,8 +1882,11 @@ namespace IJK {
 
   }
 
+  ///@}
+
+
   // **************************************************
-  // TEMPLATES TO CHECK VALUES AND ARRAYS.
+  //! @name TEMPLATES TO CHECK VALUES AND ARRAYS.
   // **************************************************
 
   /// Check dimension
@@ -1929,21 +1949,6 @@ namespace IJK {
 
     return(true);
   }
-
-  /* INCORRECT
-  /// Check that axis size is positive.
-  template <typename DTYPE, typename ATYPE>
-  bool check_positive_axis_size
-  (const DTYPE dimension, ATYPE * axis_size, IJK::ERROR & error)
-  {
-    for (DTYPE d = 0; d < dimension; d++) {
-      error.AddMessage("Illegal axis size.  Axis size must be positive.");
-      error.AddMessage("  Axis ", d, " has size ", axis_size[d], ".");
-      return(false);
-    }
-    return(true);
-  }
-  */
 
   /// Check that array vertex_list[] is not NULL.
   template <typename VTYPE>
@@ -2017,10 +2022,14 @@ namespace IJK {
     return(true);
   }
 
+  ///@}
 
-  // **************************************************
-  // TEMPLATE FUNCTIONS: COMPUTING INCREMENTS
-  // **************************************************
+
+  // *****************************************************************
+  //! @name TEMPLATE FUNCTIONS: COMPUTING INCREMENTS
+  // *****************************************************************
+
+  ///@{
 
   // Forward declaration.
   template <typename DTYPE, typename ATYPE, typename ITYPE, typename VTYPE,
@@ -2427,9 +2436,14 @@ namespace IJK {
     }
   }
 
-  // **************************************************
-  // TEMPLATE FUNCTIONS: GET VERTICES
-  // **************************************************
+  ///@}
+
+
+  // *****************************************************************
+  //! @name TEMPLATE FUNCTIONS: GET VERTICES
+  // *****************************************************************
+
+  ///@{
 
   /// Subsample vertices in subgrid.
   /// @param dimension  Grid dimension.
@@ -2835,10 +2849,14 @@ namespace IJK {
        vlist);
   }
 
+  ///@}
 
-  // ********************************************************
-  // TEMPLATE FUNCTIONS: FACET VERTICES, CUBES AND REGIONS
-  // ********************************************************
+
+  // *****************************************************************
+  //! @name TEMPLATE FUNCTIONS: FACET VERTICES, CUBES AND REGIONS
+  // *****************************************************************
+
+  ///@{
 
   /// Return number of vertices in specified grid facet
   /// Specify grid facet by the direction orthogonal to the facet.
@@ -3664,9 +3682,14 @@ namespace IJK {
     get_cubes_in_grid_facet(dimension, axis_size, d_last, true, cube_list3);
   }
 
-  // ********************************************************
-  // TEMPLATE FUNCTIONS: GRID BOUNDARIES
-  // ********************************************************
+  ///@}
+
+
+  // *****************************************************************
+  //! @name TEMPLATE FUNCTIONS: GRID BOUNDARIES
+  // *****************************************************************
+
+  ///@{
 
   /// Return true if cube_facet is on grid boundary.
   template <typename DTYPE, typename ATYPE, 
@@ -3690,9 +3713,14 @@ namespace IJK {
       { return(true); }
   }
 
-  // ********************************************************
-  // TEMPLATE FUNCTIONS: COMPUTING NEIGHBORS
-  // ********************************************************
+  //@}
+
+
+  // *****************************************************************
+  //! @name TEMPLATE FUNCTIONS: COMPUTING NEIGHBORS
+  // *****************************************************************
+
+  ///@{
 
   /// \brief Compute number of neighbors of a vertex in all cubes containing the vertex.
   /// Does not count the vertex itself.
@@ -4012,9 +4040,14 @@ namespace IJK {
 
   }
 
-  // ********************************************************
-  // TEMPLATE FUNCTIONS: COMPUTING DISTANCE
-  // ********************************************************
+  ///@}
+
+
+  // *****************************************************************
+  //! @name TEMPLATE FUNCTIONS: COMPUTING DISTANCE
+  // *****************************************************************
+
+  ///@{
 
   /// Compute L-infinity distance between two grid vertices.
   template <typename GTYPE, typename VTYPE0, typename VTYPE1,
@@ -4078,10 +4111,14 @@ namespace IJK {
     }
   }
 
+  ///@}
 
-  // ********************************************************
-  // TEMPLATE FUNCTIONS: QUERY
-  // ********************************************************
+
+  // *****************************************************************
+  //! @name TEMPLATE FUNCTIONS: QUERY
+  // *****************************************************************
+
+  ///@{
 
   /// Return true if edge (endpointA, endpointB) contains vertex iv,
   ///   i.e., if (endpointA == iv) or (endpointB == iv).
@@ -4093,10 +4130,32 @@ namespace IJK {
     else { return(false); }
   }
 
+  ///@}
 
-  // **************************************************
+
+  // *****************************************************************
+  //! @name TEMPLATE FUNCTIONS: SET GRID COORDINATES
+  // *****************************************************************
+
+  /// Set grid coord in array.
+  /// @tparam ELEMENT_TYPE Type of elements.
+  ///   ELEMENT_TYPE must have member function SetCoord().
+  /// @param grid Grid.
+  /// @param[out] list[] C++ vector.
+  template <typename GRID_TYPE, typename ELEMENT_TYPE>
+  void set_grid_coord
+  (const GRID_TYPE & grid, std::vector<ELEMENT_TYPE> & list)
+  {
+    typedef typename std::vector<ELEMENT_TYPE>::size_type SIZE_TYPE;
+
+    for (SIZE_TYPE i = 0; i < list.size(); i++) 
+      { list[i].SetCoord(grid); }
+  }
+
+
+  // *****************************************************************
   // TEMPLATE CLASS GRID MEMBER FUNCTIONS
-  // **************************************************
+  // *****************************************************************
 
   /// Constructor.
   template <typename DTYPE, typename ATYPE, typename VTYPE, typename NTYPE> 
@@ -4893,9 +4952,10 @@ namespace IJK {
     return(true);
   }
 
-  // **************************************************
+
+  // *****************************************************************
   // TEMPLATE CLASS GRID_PLUS MEMBER FUNCTIONS
-  // **************************************************
+  // *****************************************************************
 
   /// Constructor.
   template <typename DTYPE, typename ATYPE, typename VTYPE, typename NTYPE> 
@@ -5101,9 +5161,10 @@ namespace IJK {
        iv0, distance, vlist);
   }
 
-  // **************************************************
+
+  // *****************************************************************
   // TEMPLATE CLASS GRID_NEIGHBORS MEMBER FUNCTIONS
-  // **************************************************
+  // *****************************************************************
 
   /// Constructor.
   template <typename DTYPE, typename ATYPE, typename VTYPE, 
@@ -5257,9 +5318,10 @@ namespace IJK {
     SetSize(grid2.Dimension(), grid2.AxisSize());
   }
 
-  // **************************************************
+
+  // *****************************************************************
   // TEMPLATE CLASS GRID_SPACING MEMBER FUNCTIONS
-  // **************************************************
+  // *****************************************************************
 
   /// Constructor.
   template <typename STYPE, typename GRID_TYPE>
@@ -5445,9 +5507,10 @@ namespace IJK {
     FreeLocal();
   }
 
-  // **************************************************
+
+  // *****************************************************************
   // TEMPLATE CLASS GRID_VERTEX_LIST MEMBER FUNCTIONS
-  // **************************************************
+  // *****************************************************************
   
   template <typename VTYPE>
   void GRID_VERTEX_LIST<VTYPE>::Init()
@@ -5651,9 +5714,12 @@ namespace IJK {
     this->num_vertices = numv;
   }
 
-  // **************************************************
-  // TEMPLATE OUTPUT FUNCTIONS (deprecated)
-  // **************************************************
+
+  // *****************************************************************
+  //! @name TEMPLATE OUTPUT FUNCTIONS (deprecated)
+  // *****************************************************************
+
+  ///@{
 
   /// DEPRECATED. Use GRID::PrintCoord().
   /// Output coord (for debugging purposes)
@@ -5686,6 +5752,8 @@ namespace IJK {
     grid.ComputeCoord(iv, coord.Ptr());
     ijkgrid_output_coord(out, dimension, coord.PtrConst());
   }
+
+  ///@}
 
 }
 

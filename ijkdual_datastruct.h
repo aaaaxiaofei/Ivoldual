@@ -124,55 +124,14 @@ namespace IJKDUAL {
   // GRID CUBE DATA
   // **************************************************
 
-  class GRID_CUBE_DATA:
-    public IJK::GRID_CUBE_ISOVERT<ISO_VERTEX_INDEX, TABLE_INDEX, 
-                                  FACET_VERTEX_INDEX, ISO_VERTEX_INDEX> {
+  typedef IJK::GRID_CUBE_ISOVERT<ISO_VERTEX_INDEX, TABLE_INDEX, 
+                                 FACET_VERTEX_INDEX, ISO_VERTEX_INDEX>
+  GRID_CUBE_DATA;
 
-  public:
-    GRID_CUBE_DATA() {};
-
-    void SetCubeIndex(const VERTEX_INDEX cube_index)
-    { this->cube_index = cube_index; }
-
-    /// Version which includes a grid argument.
-    /// Grid argument is ignored in this version but used 
-    ///   in GRID_CUBE_DATA_PLUS
-    void SetCubeIndex(const DUALISO_GRID & grid, const VERTEX_INDEX cube_index)
-    { SetCubeIndex(cube_index); }
-  };
-
-
-  // **************************************************
-  // GRID CUBE DATA PLUS
-  // **************************************************
-
-  /// GRID_CUBE_DATA plus extra cube information
-  class GRID_CUBE_DATA_PLUS:public GRID_CUBE_DATA {
-
-  public:
-    static const int DIM3 = 3;
-
-  protected:
-    GRID_COORD_TYPE cube_coord[DIM3];
-
-  public:
-    GRID_CUBE_DATA_PLUS() {};
-
-    void SetCubeIndex
-    (const DUALISO_GRID & grid, const VERTEX_INDEX cube_index);
-
-    const GRID_COORD_TYPE * CubeCoord() const
-    { return(cube_coord); }
-
-    GRID_COORD_TYPE CubeCoord(const int d) const
-    { return(cube_coord[d]); }
-
-    /// Return index of facet shared by this cube and adjacent cube.
-    /// @pre adjacent_cube shares a facet with this cube.
-    /// Returns integer in range [0..(2*dimension-1)].
-    FACET_INDEX GetSharedFacetIndex
-    (const GRID_CUBE_DATA_PLUS & adjacent_cube) const;
-  };
+  typedef IJK::GRID_CUBE_ISOVERT_AND_CUBE_COORD
+  <3, ISO_VERTEX_INDEX, TABLE_INDEX, FACET_VERTEX_INDEX, ISO_VERTEX_INDEX,
+   GRID_COORD_TYPE>
+  GRID_CUBE_DATA_PLUS;
 
 
   // **************************************************

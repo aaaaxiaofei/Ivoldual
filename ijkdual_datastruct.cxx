@@ -38,47 +38,6 @@ using namespace IJK;
 using namespace IJKDUAL;
 
 
-
-// **************************************************
-// GRID CUBE DATA PLUS
-// **************************************************
-
-void GRID_CUBE_DATA_PLUS::SetCubeIndex
-(const DUALISO_GRID & grid, const VERTEX_INDEX cube_index)
-{
-  GRID_CUBE_DATA::SetCubeIndex(cube_index);
-
-  grid.ComputeCoord(cube_index, cube_coord);
-}
-
-
-// Return index of facet shared by this cube and adjacent cube.
-// @pre adjacent_cube shares a facet with this cube.
-// Returns integer in range [0..(2*dimension-1)].
-FACET_INDEX GRID_CUBE_DATA_PLUS::GetSharedFacetIndex
-(const GRID_CUBE_DATA_PLUS & adjacent_cube) const
-{
-  const int DIM3(3);
-
-  for (int d = 0; d < DIM3; d++) {
-    if (this->CubeCoord(d) < adjacent_cube.CubeCoord(d)) {
-      return(d+DIM3);
-    }
-    else if (this->CubeCoord(d) > adjacent_cube.CubeCoord(d)) {
-      return(d);
-    }
-  }
-
-  IJK::PROCEDURE_ERROR error("GRID_CUBE_DATA_PLUS::GetSharedFacetInfex");
-  error.AddMessage
-    ("Programming error.  This cube and adjacent cube have identical coordinates.");
-  error.AddMessage
-    ("  Coordinates: (", this->CubeCoord(0), ",", this->CubeCoord(1),
-     ",", this->CubeCoord(2), ").");
-  throw error;
-}
-
-
 // **************************************************
 // CLASS DUALISO_DATA_FLAGS
 // **************************************************
