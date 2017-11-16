@@ -216,7 +216,7 @@ void IVOLDUAL::dual_contouring_interval_volume
   merge_identical(ivolpoly, cube_list, ivolpoly_cube, merge_data);
   t2 = clock();
 
-  set_grid_cube_indices(scalar_grid, cube_list, cube_ivolv_list);
+  set_grid_cube_indices(cube_list, cube_ivolv_list);
 
   compute_cube_ivoltable_info
     (encoded_grid, ivoldual_table, cube_ivolv_list);

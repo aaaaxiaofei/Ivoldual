@@ -98,7 +98,7 @@ namespace IJKDUAL {
     merge_identical(isopoly, cube_list, isopoly_cube, merge_data);
     t2 = clock();
 
-    set_grid_cube_indices(scalar_grid, cube_list, cube_isov_list);
+    set_grid_cube_indices(cube_list, cube_isov_list);
 
     VERTEX_INDEX num_split;
     if (flag_split_non_manifold || flag_select_split ||
@@ -361,8 +361,7 @@ namespace IJKDUAL {
   /// Set grid cube indices in cube_isov_list.
   template <typename CTYPE, typename GRID_CUBE_TYPE>
   void set_grid_cube_indices
-  (const DUALISO_GRID & grid,
-   const std::vector<CTYPE> & cube_list,
+  (const std::vector<CTYPE> & cube_list,
    std::vector<GRID_CUBE_TYPE> & cube_isov_list)
   {
     typedef typename std::vector<CTYPE>::size_type SIZE_TYPE;
@@ -370,10 +369,21 @@ namespace IJKDUAL {
     cube_isov_list.resize(cube_list.size());
 
     for (SIZE_TYPE i = 0; i < cube_list.size(); i++) {
-      cube_isov_list[i].SetCubeIndex(grid, cube_list[i]);
+      cube_isov_list[i].SetCubeIndex(cube_list[i]);
     }
   }
 
+  /// Set grid cube coord in cube_isov_list.
+  template <typename GRID_TYPE, typename GRID_CUBE_TYPE>
+  void set_grid_cube_coord
+  (const GRID_TYPE & grid,
+   std::vector<GRID_CUBE_TYPE> & cube_list)
+  {
+    typedef typename std::vector<GRID_CUBE_TYPE>::size_type SIZE_TYPE;
+
+    for (SIZE_TYPE i = 0; i < cube_list.size(); i++) 
+      { cube_list[i].SetCubeCoord(grid); }
+  }
 
 }
 
