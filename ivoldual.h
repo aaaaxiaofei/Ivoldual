@@ -355,12 +355,27 @@ namespace IVOLDUAL {
    COORD_TYPE * temp_coord0, COORD_TYPE * temp_coord1, 
    COORD_TYPE * temp_coord2);
 
+
+  // **************************************************
+  // MESH OPTIMIZATION
+  // **************************************************
+  
   /// Eliminate non-manifold facets and cubes
   void eliminate_non_manifold_grid
   (IVOLDUAL_DATA & ivoldual_data, 
    const SCALAR_TYPE isovalue0, 
    const SCALAR_TYPE isovalue1, 
    IVOLDUAL_INFO & dualiso_info);
+
+  /// Laplacian Smoothing
+  void laplacian_smooth
+  (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   const IVOLDUAL_DATA_FLAGS & param,
+   IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
+   COORD_ARRAY & vertex_coord, 
+   float laplacian_smooth_limit);
 }
 
 #endif

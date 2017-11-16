@@ -69,6 +69,7 @@ namespace {
      LABEL_WITH_ISOVALUE_OPT,
      NO_WRITE_OPT, SILENT_OPT, NO_WARN_OPT,
      INFO_OPT, TIME_OPT, OUT_IVOLV_OPT, OUT_IVOLP_OPT, WRITE_SCALAR_OPT,
+     LAPLACIAN_SMOOTH_OPT,
      UNKNOWN_OPT} OPTION_TYPE;
 
   typedef enum {
@@ -286,6 +287,14 @@ namespace {
 
     options.AddOptionNoArg
       (VTK_OPT, "VTK_OPT", REGULAR_OPTG, "-vtk", "Output in VTK format.");
+
+    options.AddUsageOptionEndOr(REGULAR_OPTG);
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+    options.AddUsageOptionBeginOr(REGULAR_OPTG);
+
+    options.AddOptionNoArg
+      (LAPLACIAN_SMOOTH_OPT, "LAPLACIAN_SMOOTH_OPT", REGULAR_OPTG, 
+       "-laplacian_smooth", "Perform Laplacian Smoothing on ivoldual grid.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -652,6 +661,12 @@ bool process_option
   case ORIENT_OUT_OPT:
     io_info.flag_orient_in = false;
     io_info.is_flag_orient_in_set = true;
+    break;
+
+  case LAPLACIAN_SMOOTH_OPT:
+    io_info.laplacian_smooth_limit = get_arg_float(iarg, argc, argv, error);
+    io_info.flag_laplacian_smooth = true;
+    iarg++;
     break;
 
   case OFF_OPT:
