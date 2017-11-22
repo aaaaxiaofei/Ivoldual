@@ -35,6 +35,7 @@
 #include "ijkprint.txx"
 
 #include "ivoldualIO.h"
+#include "ivoldual_compute.h"
 
 using namespace IJK;
 using namespace IJKDUAL;
@@ -1972,6 +1973,30 @@ namespace {
     out << endl;
   }
 
+
+  void report_ivol_hex
+  (std::ostream & out,
+   const DUALISO_GRID & grid,
+   const VERTEX_INDEX_ARRAY & hex_vert,
+   const IVOLDUAL_POLY_INFO_ARRAY & hex_info,
+   const COORD_ARRAY & vertex_coord,
+   const int ihex)
+  {
+    COORD_TYPE min_Jacobian_determinant, max_Jacobian_determinant;
+
+    report_ivol_poly(out, grid, hex_info, ihex);
+
+    compute_min_max_hexahedron_Jacobian_determinant
+      (hex_vert, ihex, vertex_coord,
+       min_Jacobian_determinant, max_Jacobian_determinant);
+
+    out << "  Min Jacobian determinant: " 
+        << min_Jacobian_determinant;
+    out << ".  Max Jacobian determinant: " 
+        << max_Jacobian_determinant;
+    out << endl;
+  }
+
 }
 
 
@@ -2022,6 +2047,20 @@ void IVOLDUAL::report_all_ivol_poly
 }
 
 
+void IVOLDUAL::report_all_ivol_hex
+(std::ostream & out,
+ const DUALISO_GRID & grid, 
+ const DUAL_INTERVAL_VOLUME & interval_volume)
+{
+  out << "Interval volume polytopes: " << endl << endl;
+  for (int ipoly = 0; ipoly < interval_volume.isopoly_info.size(); ipoly++) {
+    report_ivol_hex(out, grid, interval_volume.isopoly_vert,
+                    interval_volume.isopoly_info, 
+                    interval_volume.vertex_coord, ipoly);
+  }
+}
+
+
 void IVOLDUAL::report_all_ivol_poly
 (const OUTPUT_INFO & output_info,
  const DUALISO_GRID & grid, const DUAL_INTERVAL_VOLUME & interval_volume)
@@ -2030,7 +2069,10 @@ void IVOLDUAL::report_all_ivol_poly
 
   output_file.open(output_info.report_ivol_poly_filename.c_str(), ios::out);
   if (output_file) {
+    /* DEBUG
     report_all_ivol_poly(output_file, grid, interval_volume);
+    */
+    report_all_ivol_hex(output_file, grid, interval_volume);
   }
   else {
     cout << "***Warning: Unable to open file " 

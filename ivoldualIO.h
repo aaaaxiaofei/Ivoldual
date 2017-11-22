@@ -514,6 +514,11 @@ namespace IVOLDUAL {
   (const OUTPUT_INFO & output_info,
    const DUALISO_GRID & grid, const DUAL_INTERVAL_VOLUME & interval_volume);
 
+  /// Report all interval volume hexahedra.
+  void report_all_ivol_hex
+  (std::ostream & out, const DUALISO_GRID & grid,  
+   const DUAL_INTERVAL_VOLUME & interval_volume);
+
 
   // **************************************************
   // REPORT TIMING INFORMATION

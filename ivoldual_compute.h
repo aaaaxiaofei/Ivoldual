@@ -29,13 +29,6 @@
 namespace IVOLDUAL {
 
   /// Compute min/max of the nine Jacobian matrix determinants of a hexahedron.
-  void compute_min_max_hexahedron_Jacobian_determinant
-  (const VERTEX_INDEX hex_vert[],
-   const std::vector<COORD_TYPE> & vertex_coord,
-   COORD_TYPE & min_Jacobian_determinant,
-   COORD_TYPE & max_Jacobian_determinant);
-
-  /// Compute min/max of the nine Jacobian matrix determinants of a hexahedron.
   /// - Version with C++ STL vector hex_vert[] containing 
   ///     an array of vertices of multiple hexahedra.
   /// @param ihex Hexahedron index.

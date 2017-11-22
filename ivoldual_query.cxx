@@ -1,4 +1,4 @@
-/// \file ivoldual_quey.cxx
+/// \file ivoldual_query.cxx
 /// Query routines for ivoldual.
 
 

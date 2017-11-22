@@ -36,6 +36,7 @@
 
 #include "ivoldual.h"
 #include "ivoldual_datastruct.h"
+#include "ivoldual_compute.h"
 #include "ivoldual_query.h"
 
 using namespace IJK;
