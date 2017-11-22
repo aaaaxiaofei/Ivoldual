@@ -39,6 +39,14 @@ namespace IVOLDUAL {
    const IVOL_VERTEX_INDEX ivolv,
    IVOL_VERTEX_INDEX box_corner[8]);
 
+  /// Return true if vertex is lower left vertex of an isosurface pseudobox.
+  bool is_ivolv_lower_left_vertex_of_isosurface_pseudobox
+  (const DUALISO_GRID & grid,
+   const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
+   const IVOL_VERTEX_INDEX ivolv0,
+   IVOL_VERTEX_INDEX box_corner[8]);
+
 }
 
 #endif

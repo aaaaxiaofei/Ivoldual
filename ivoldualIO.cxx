@@ -1932,12 +1932,19 @@ namespace {
     IJK::print_coord3D(out, "  Coord: ", &(vertex_coord[DIM3*ivolv]), ".\n");
     out << "  Table index: " << int(ivolv_list[ivolv].table_index);
     out << "  Patch index: " << int(ivolv_list[ivolv].patch_index) << endl;
-    out << "  Num incident hex: " << int(ivolv_list[ivolv].num_incident_hex) 
-        << endl;
+    out << "  Num incident hex: " << int(ivolv_list[ivolv].NumIncidentHex()) 
+        << ".";
+    out << "  Num incident iso quad: "
+        << int(ivolv_list[ivolv].NumIncidentIsoQuad()) << ".";
+    out << endl;
+
+    if (ivolv_list[ivolv].in_box) 
+      { out << "  In isosurface box." << endl; }
 
     if (ivolv_list[ivolv].flag_missing_ivol_hexahedra) {
       out << "  Missing incident ivol hexahedra." << endl;
     }
+
   }
 
 

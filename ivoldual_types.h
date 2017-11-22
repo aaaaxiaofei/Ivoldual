@@ -47,6 +47,10 @@ namespace IVOLDUAL {
 
   typedef unsigned char POLY_VERTEX_INDEX;
 
+  /// Boundary bits type.
+  /// Number of bits must be at least 2*dimension.
+  typedef IJKDUAL::BOUNDARY_BITS_TYPE BOUNDARY_BITS_TYPE;
+
 
   // **************************************************
   // ARRAY TYPES

@@ -40,7 +40,7 @@ namespace IJKDUAL {
   ///   between vertex and adjacent vertex.
   template <typename VTYPE, typename FTYPE>
   class ADJACENT_VERTEX_AND_DUAL_FACET:
-  public IJK::VERTEX_ADJACENCY_LIST_ELEMENT<VTYPE> {
+    public IJK::VERTEX_ADJACENCY_LIST_ELEMENT<VTYPE> {
 
   public:
 
@@ -108,19 +108,53 @@ namespace IJKDUAL {
   /// @tparam ETYPE List element type.
   ///   Usually derived from ADJACENT_VERTEX_AND_DUAL_FACET.
   /// @tparam NTYPE Number type.
-  template <typename ETYPE, typename NTYPE>
+  template <typename DTYPE, typename ETYPE, typename NTYPE>
   class VERTEX_ADJACENCY_AND_DUAL_FACET_LIST_BASE:
     public IJK::VERTEX_ADJACENCY_LIST_BASE<ETYPE,NTYPE> {
 
-  public:
+  protected:
 
+    /// Grid dimension.
+    /// - Used in calculating facet.
+    DTYPE dimension;
+
+    void Init()
+    { dimension = 3; }
+
+  public:
     typedef typename ETYPE::FACET_INDEX_TYPE FACET_INDEX_TYPE;
+
+  public:
+    /// Constructors.
+    VERTEX_ADJACENCY_AND_DUAL_FACET_LIST_BASE() { Init(); };
+
+    template <typename DTYPE2>
+    VERTEX_ADJACENCY_AND_DUAL_FACET_LIST_BASE(const DTYPE2 dimension)
+    { SetDimension(dimension); }
+
+    /// Return dimension.
+    DTYPE Dimension() const
+    { return(dimension); }
 
     /// Return index of facet dual to edge connecting iv and Adjacent(iv,j).
     /// Index is in range [0..(2*dimension-1)].
     template <typename VTYPE2, typename NTYPE2>
     FACET_INDEX_TYPE DualFacet(const VTYPE2 iv, const NTYPE2 j) const
     { return(this->element[this->ElementIndex(iv,j)].dual_facet); }
+
+    /// Return facet.
+    /// @param orientation +1 or -1.
+    template <typename NTYPE2>
+    FACET_INDEX_TYPE FacetIndex
+    (const DTYPE direction, const NTYPE2 orientation) const
+    {
+      return(direction+((orientation+1)/2)*Dimension());
+    }
+
+    /// Set dimension.
+    template <typename DTYPE2>
+    void SetDimension(const DTYPE2 dimension)
+    { this->dimension = dimension; }
 
     /// Set index of facet dual to edge connecting iv and Adjacent(iv,j).
     template <typename VTYPE2, typename FTYPE2, typename NTYPE2>
@@ -130,8 +164,11 @@ namespace IJKDUAL {
 
     /// Set dual facets from a list of vertices and a list of cubes.
     /// @pre Endpoints of every edge are in different, adjacent cubes.
-    /// @tparam VTYPE Must have a field .cube_index storing the index
-    ///   of the cube containing the vertex.
+    /// @tparam VTYPE Must have a field .cube_list_index storing the location
+    ///   in cube_list of the cube containing the vertex.
+    /// @tparam GRID_CUBE_TYPE Must have a member function
+    ///   GetSharedFacetIndex(cubeB) which returns the facet shared
+    ///   with the cube.
     template <typename VTYPE, typename GRID_CUBE_TYPE>
     void SetAllDualFacetsFromVertexAndCubeLists
     (const std::vector<VTYPE> & vertex_list,
@@ -142,15 +179,22 @@ namespace IJKDUAL {
   /// List of vertices adjacent to each vertex and the facets dual
   ///   to the edge connecting each vertex to an adjacent vertex.
   /// @tparam VTYPE Vertex index type.
-  /// @tparam NTYPE Facet index type.
+  /// @tparam FTYPE Facet index type.
   /// @tparam NTYPE Number type.
-  template <typename VTYPE, typename FTYPE, typename NTYPE>
+  template <typename DTYPE, typename VTYPE, typename FTYPE, typename NTYPE>
   class VERTEX_ADJACENCY_AND_DUAL_FACET_LIST:
     public VERTEX_ADJACENCY_AND_DUAL_FACET_LIST_BASE
-  <ADJACENT_VERTEX_AND_DUAL_FACET<VTYPE,FTYPE>,NTYPE> {
+  <DTYPE,ADJACENT_VERTEX_AND_DUAL_FACET<VTYPE,FTYPE>,NTYPE> {
 
   public:
     VERTEX_ADJACENCY_AND_DUAL_FACET_LIST() {};
+
+    template <typename DTYPE2>
+    VERTEX_ADJACENCY_AND_DUAL_FACET_LIST(const DTYPE2 dimension):
+      VERTEX_ADJACENCY_AND_DUAL_FACET_LIST_BASE
+      <DTYPE,ADJACENT_VERTEX_AND_DUAL_FACET<VTYPE,FTYPE>,NTYPE>(dimension)
+    {};
+
   };
 
 
@@ -166,12 +210,23 @@ namespace IJKDUAL {
   /// @tparam ETYPE List element type.
   ///   Usually derived from ADJACENT_VERTEX_AND_DUAL_FACET_WITH_FLAG.
   /// @tparam NTYPE Number type.
-  template <typename ETYPE, typename NTYPE>
+  template <typename DTYPE, typename ETYPE, typename NTYPE>
   class VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST_BASE:
-    public VERTEX_ADJACENCY_AND_DUAL_FACET_LIST_BASE<ETYPE,NTYPE> {
+    public VERTEX_ADJACENCY_AND_DUAL_FACET_LIST_BASE<DTYPE,ETYPE,NTYPE> {
 
   public:
     typedef typename ETYPE::FACET_INDEX_TYPE FACET_INDEX_TYPE;
+    typedef typename ETYPE::VERTEX_INDEX_TYPE VERTEX_INDEX_TYPE;
+
+  public:
+    /// Constructors.
+    VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST_BASE(){};
+
+    template <typename DTYPE2>
+    VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST_BASE
+    (const DTYPE2 dimension):
+      VERTEX_ADJACENCY_AND_DUAL_FACET_LIST_BASE<DTYPE,ETYPE,NTYPE>(dimension)
+    {};
 
     /// Return true if edge from iv to Adjacent(iv,j) 
     ///   is dual to some grid facet.
@@ -179,14 +234,24 @@ namespace IJKDUAL {
     bool IsDualToFacet(const VTYPE2 iv, const NTYPE2 j) const
     { return(this->element[this->ElementIndex(iv,j)].IsDualToFacet()); }
 
+    /// Get adjacent vertex in oriented direction.
+    template <typename VTYPE2, typename VTYPE3,
+              typename DIR_TYPE, typename NTYPE2>
+    bool GetAdjacentVertexInOrientedDirection
+    (const VTYPE2 iv, const DIR_TYPE dir, const NTYPE2 orientation, 
+     VTYPE3 & adj_vertex) const;
+
     /// Redefine SetAllDualFacets() to allow adjacent vertices
     ///   to be in the same cube.
     /// - If adjacent vertices are in the same cube, then they
     ///     have no dual facet.
     /// @pre Endpoints of every edge are either in the same cube or
     ///   are in adjacent cubes.
-    /// @tparam VTYPE Must have a field .cube_index storing the index
-    ///   of the cube containing the vertex.
+    /// @tparam VTYPE Must have a field .cube_list_index storing the location
+    ///   in cube_list of the cube containing the vertex.
+    /// @tparam GRID_CUBE_TYPE Must have a member function
+    ///   GetSharedFacetIndex(cubeB) which returns the facet shared
+    ///   with the cube.
     template <typename VTYPE, typename GRID_CUBE_TYPE>
     void SetAllDualFacetsFromVertexAndCubeLists
     (const std::vector<VTYPE> & vertex_list,
@@ -197,13 +262,20 @@ namespace IJKDUAL {
   /// List of vertices adjacent to each vertex and the facets dual
   ///   to the edge connecting each vertex to an adjacent vertex.
   /// - Edges may not have dual facets.
-  template <typename VTYPE, typename FTYPE, typename NTYPE>
+  template <typename DTYPE,typename VTYPE, typename FTYPE, typename NTYPE>
   class VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST:
     public VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST_BASE
-  <ADJACENT_VERTEX_AND_DUAL_FACET_WITH_FLAG<VTYPE,FTYPE>,NTYPE> {
+  <DTYPE,ADJACENT_VERTEX_AND_DUAL_FACET_WITH_FLAG<VTYPE,FTYPE>,NTYPE> {
 
   public:
     VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST(){};
+
+    template <typename DTYPE2>
+    VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST(const DTYPE2 dimension):
+      VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST_BASE
+      <DTYPE,ADJACENT_VERTEX_AND_DUAL_FACET_WITH_FLAG<VTYPE,FTYPE>,NTYPE>
+      (dimension)
+    {};
   };
 
 
@@ -212,9 +284,9 @@ namespace IJKDUAL {
   //   member functions.
   // *****************************************************************
 
-  template <typename ETYPE, typename NTYPE>
+  template <typename DTYPE, typename ETYPE, typename NTYPE>
   template <typename VTYPE, typename GRID_CUBE_TYPE>
-  void VERTEX_ADJACENCY_AND_DUAL_FACET_LIST_BASE<ETYPE,NTYPE>::
+  void VERTEX_ADJACENCY_AND_DUAL_FACET_LIST_BASE<DTYPE,ETYPE,NTYPE>::
   SetAllDualFacetsFromVertexAndCubeLists
   (const std::vector<VTYPE> & vertex_list,
    const std::vector<GRID_CUBE_TYPE> & cube_list)
@@ -249,9 +321,35 @@ namespace IJKDUAL {
   //   member functions.
   // *****************************************************************
 
-  template <typename ETYPE, typename NTYPE>
+  template <typename DTYPE, typename ETYPE, typename NTYPE>
+  template <typename VTYPE2, typename VTYPE3,
+            typename DIR_TYPE, typename NTYPE2>
+  bool VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST_BASE<DTYPE,ETYPE,NTYPE>::
+  GetAdjacentVertexInOrientedDirection
+  (const VTYPE2 iv, const DIR_TYPE dir, const NTYPE2 orientation, 
+   VTYPE3 & adj_vertex) const
+  {
+    const NTYPE jfacet = this->FacetIndex(dir, orientation);
+
+    // Initialize.
+    adj_vertex = 0;
+
+    for (NTYPE k = 0; k < this->NumAdjacent(iv); k++) {
+      if (this->IsDualToFacet(iv,k)) {
+        if (this->DualFacet(iv,k) == jfacet) {
+          adj_vertex = this->AdjacentVertex(iv,k);
+          return(true);
+        }
+      }
+    }
+
+    return(false);
+  }
+
+
+  template <typename DTYPE, typename ETYPE, typename NTYPE>
   template <typename VTYPE, typename GRID_CUBE_TYPE>
-  void VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST_BASE<ETYPE,NTYPE>::
+  void VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST_BASE<DTYPE,ETYPE,NTYPE>::
   SetAllDualFacetsFromVertexAndCubeLists
   (const std::vector<VTYPE> & vertex_list,
    const std::vector<GRID_CUBE_TYPE> & cube_list)

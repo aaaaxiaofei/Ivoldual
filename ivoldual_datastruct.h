@@ -88,7 +88,7 @@ namespace IVOLDUAL {
 
 
   // **************************************************
-  // DUAL ISOSURFACE VERTICES
+  // DUAL INTERVAL VOLUME VERTICES
   // **************************************************
 
   /// Information about an interval volume vertex.
@@ -101,11 +101,47 @@ namespace IVOLDUAL {
     ///   equals the number of incident hexahedra in the mesh.
     DEGREE_TYPE num_incident_hex;
 
+    /// Number of isosurface quadrilaterals incident on the vertex 
+    ///   in the lookup table.
+    /// - If there are no missing ivol hexahedra, then num_incident_iso_quad
+    ///   equals the number of incident isosurface quadrilaterals in the mesh.
+    DEGREE_TYPE num_incident_iso_quad;
+
     /// If true, the mesh is missing some interval volume hexahedra
     ///   which would normally be incident on the vertex.
     /// The hexahedra are missing because they are dual to grid edges
     ///   or vertices which are on the grid boundary.
     bool flag_missing_ivol_hexahedra;
+
+    /// Separation vertex.
+    VERTEX_INDEX separation_vertex;
+
+    /// Separation edge direction.
+    /// Separation edge has lower/left endpoint separation_vertex.
+    VERTEX_INDEX separation_edge_direction;
+
+    bool is_doubly_connected;        ///< True, if vertex is doubly connected.
+    bool in_loop;                    ///< True, if vertex is in loop.
+    bool in_box;                     ///< True, if vertex is in box.
+    bool in_pseudobox;               ///< True, if vertex is in pseudobox.
+
+  protected:
+    void Init();                    ///< Initialization function.
+
+  public:
+    DUAL_IVOLVERT() { Init(); }
+
+    /// Return number of incident hexahedra in the lookup table.
+    DEGREE_TYPE NumIncidentHex() const
+    { return(num_incident_hex); }
+
+    /// Return number of incident isosurface quadrilaterals in the lookup table.
+    DEGREE_TYPE NumIncidentIsoQuad() const
+    { return(num_incident_iso_quad); }
+
+    /// Return separation vertex.
+    VERTEX_INDEX SeparationVertex() const
+    { return(separation_vertex); }
   };
   typedef std::vector<DUAL_IVOLVERT> DUAL_IVOLVERT_ARRAY;
   
@@ -320,7 +356,7 @@ namespace IVOLDUAL {
   typedef IJK::POLYMESH<VERTEX_INDEX, int> IVOL_POLYMESH;
 
   typedef IJKDUAL::VERTEX_ADJACENCY_AND_DUAL_FACET_WITH_FLAG_LIST
-  <ISO_VERTEX_INDEX,FACET_INDEX,int>
+  <int,ISO_VERTEX_INDEX,FACET_INDEX,int>
   IVOL_VERTEX_ADJACENCY_LIST;
 
 

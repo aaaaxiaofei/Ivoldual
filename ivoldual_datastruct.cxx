@@ -396,3 +396,21 @@ void IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateDiagonalNonmanifold
     }
   }
 }
+
+
+// **************************************************
+// DUAL_IVOLVERT MEMBER FUNCTIONS
+// **************************************************
+
+void IVOLDUAL::DUAL_IVOLVERT::Init()
+{
+  num_incident_hex = 0;
+  num_incident_iso_quad = 0;
+  separation_vertex = 0;
+  separation_edge_direction = 0;
+  flag_missing_ivol_hexahedra = false;
+  is_doubly_connected = false;
+  in_loop = false;
+  in_box = false;
+  in_pseudobox = false;
+}

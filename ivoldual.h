@@ -147,33 +147,38 @@ namespace IVOLDUAL {
 
 
   // **************************************************
-  // COMPUTE IVOLTABLE INFO FOR EACH ACTIVE GRID CUBE
+  // SET IVOLTABLE INFO FOR EACH ACTIVE GRID CUBE
   // **************************************************
 
-  /// Compute ivoltable information for each cube in cube_ivolv_list.
+  /// Set ivoltable information for each cube in cube_ivolv_list.
   /// @param encoded_grid Encoded grid.  
   ///    Each grid vertex has value 0,1,2 or 3, indicating vertex type.
   /// @param ivoldual_table Interval volume lookup table.
   /// @param[out] cube_ivolv_list Array of active grid cubes.
-  void compute_cube_ivoltable_info
+  void set_cube_ivoltable_info
   (const IVOLDUAL_ENCODED_GRID & encoded_grid,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    std::vector<GRID_CUBE_DATA> & cube_ivolv_list);
 
 
   // **************************************************
-  // COMPUTE IVOL VERTEX INFORMATION
+  // SET IVOL VERTEX INFORMATION
   // **************************************************
 
-  void compute_ivol_vertex_info
+  void set_ivol_vertex_info
   (const DUALISO_GRID & grid,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    const std::vector<ISO_VERTEX_INDEX> & poly_vert,
+   const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
    DUAL_IVOLVERT_ARRAY & ivolv_list);
 
   void determine_ivol_vertices_missing_incident_hex
   (const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    const std::vector<ISO_VERTEX_INDEX> & poly_vert,
+   DUAL_IVOLVERT_ARRAY & ivolv_list);
+
+  void determine_ivol_vertices_in_isosurface_boxes
+  (const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
    DUAL_IVOLVERT_ARRAY & ivolv_list);
 
 

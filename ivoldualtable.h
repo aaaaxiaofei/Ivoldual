@@ -50,11 +50,22 @@ namespace IVOLDUAL {
   class IVOLDUAL_TABLE_VERTEX_INFO {
 
   public:
+    typedef unsigned char CUBE_VERTEX_TYPE;
+
+    const static CUBE_VERTEX_TYPE UNDEFINED_CUBE_VERTEX = 255;
+
     int num_incident_poly;
+    int num_incident_isopoly;
+    CUBE_VERTEX_TYPE separation_vertex;
 
     /// Number of interval volume polytopes incident on vertex.
     int NumIncidentPoly() const
     { return(num_incident_poly); }
+
+    /// Number of isosurface polytopes incident on vertex.
+    int NumIncidentIsoPoly() const
+    { return(num_incident_isopoly); }
+
   };
 
 

@@ -36,6 +36,7 @@
 
 #include "ivoldual.h"
 #include "ivoldual_datastruct.h"
+#include "ivoldual_query.h"
 
 using namespace IJK;
 using namespace IVOLDUAL;
@@ -181,7 +182,7 @@ void IVOLDUAL::dual_contouring_interval_volume
     param.default_interior_code;
   int num_non_manifold_split(0);
   IVOL_POLYMESH polymesh;
-  IVOL_VERTEX_ADJACENCY_LIST vertex_adjacency_list;
+  IVOL_VERTEX_ADJACENCY_LIST vertex_adjacency_list(dimension);
   CUBE_FACE_INFO cube_info(dimension);
   IJK::PROCEDURE_ERROR error("dual_contouring_interval_volume");
   clock_t t0, t1, t2;
@@ -222,7 +223,7 @@ void IVOLDUAL::dual_contouring_interval_volume
   set_grid_cube_indices(cube_list, cube_ivolv_list);
   set_grid_coord(scalar_grid, cube_ivolv_list);
 
-  compute_cube_ivoltable_info
+  set_cube_ivoltable_info
     (encoded_grid, ivoldual_table, cube_ivolv_list);
 
   if (param.flag_split_ambig_pairsB) {
@@ -251,8 +252,9 @@ void IVOLDUAL::dual_contouring_interval_volume
   vertex_adjacency_list.SetAllDualFacetsFromVertexAndCubeLists
     (ivolv_list, cube_ivolv_list);
 
-  compute_ivol_vertex_info
-    (scalar_grid, ivoldual_table, ivolpoly_vert, ivolv_list);
+  set_ivol_vertex_info
+    (scalar_grid, ivoldual_table, ivolpoly_vert, vertex_adjacency_list,
+     ivolv_list);
 
   // Laplacian smoothing.
   if (param.flag_laplacian_smooth) {
@@ -312,7 +314,7 @@ void IVOLDUAL::encode_grid_vertices
 
 
 // **************************************************
-// COMPUTE IVOLTABLE INFO FOR EACH ACTIVE GRID CUBE
+// SET IVOLTABLE INFO FOR EACH ACTIVE GRID CUBE
 // **************************************************
 
 namespace {
@@ -337,7 +339,7 @@ namespace {
 
 }
 
-void IVOLDUAL::compute_cube_ivoltable_info
+void IVOLDUAL::set_cube_ivoltable_info
 (const IVOLDUAL_ENCODED_GRID & encoded_grid,
  const IVOLDUAL_CUBE_TABLE & ivoldual_table,
  std::vector<GRID_CUBE_DATA> & cube_ivolv_list)
@@ -358,25 +360,52 @@ void IVOLDUAL::compute_cube_ivoltable_info
 
 
 // **************************************************
-// COMPUTE IVOL VERTEX INFORMATION
+// SET IVOL VERTEX INFORMATION
 // **************************************************
 
-void IVOLDUAL::compute_ivol_vertex_info
+void IVOLDUAL::set_ivol_vertex_info
 (const DUALISO_GRID & grid,
  const IVOLDUAL_CUBE_TABLE & ivoldual_table,
  const std::vector<ISO_VERTEX_INDEX> & poly_vert,
+ const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
  DUAL_IVOLVERT_ARRAY & ivolv_list)
 {
+  typedef IVOLDUAL_TABLE_VERTEX_INFO::CUBE_VERTEX_TYPE CUBE_VERTEX_TYPE;
+
+  const CUBE_VERTEX_TYPE UNDEFINED_CUBE_VERTEX =
+    IVOLDUAL_TABLE_VERTEX_INFO::UNDEFINED_CUBE_VERTEX;
+
+  for (IVOL_VERTEX_INDEX ivolv = 0; ivolv < ivolv_list.size(); ivolv++) {
+    const TABLE_INDEX table_index = ivolv_list[ivolv].table_index;
+    const FACET_VERTEX_INDEX patch_index = ivolv_list[ivolv].patch_index;
+    const VERTEX_INDEX cube_index = ivolv_list[ivolv].cube_index;
+
+    // Initialize.
+    ivolv_list[ivolv].separation_vertex = grid.NumVertices();
+    ivolv_list[ivolv].separation_edge_direction = 0;
+
+    ivolv_list[ivolv].num_incident_hex = 
+      ivoldual_table.VertexInfo(table_index, patch_index).NumIncidentPoly();
+
+    ivolv_list[ivolv].num_incident_iso_quad = 
+      ivoldual_table.VertexInfo(table_index, patch_index).NumIncidentIsoPoly();
+
+    const CUBE_VERTEX_TYPE icorner =
+      ivoldual_table.VertexInfo(table_index, patch_index).separation_vertex;
+
+    if (icorner != UNDEFINED_CUBE_VERTEX) {
+      ivolv_list[ivolv].separation_vertex = 
+        grid.CubeVertex(cube_index, icorner);
+    }
+  }
+
   determine_ivol_vertices_missing_incident_hex
     (ivoldual_table, poly_vert, ivolv_list);
 
-  for (ISO_VERTEX_INDEX ivolv = 0; ivolv < ivolv_list.size(); ivolv++) {
-    const TABLE_INDEX table_index = ivolv_list[ivolv].table_index;
-    const FACET_VERTEX_INDEX patch_index = ivolv_list[ivolv].patch_index;
-    ivolv_list[ivolv].num_incident_hex = 
-      ivoldual_table.VertexInfo(table_index, patch_index).NumIncidentPoly();
-  }
+  determine_ivol_vertices_in_isosurface_boxes
+    (vertex_adjacency_list, ivolv_list);
 }
+
 
 void IVOLDUAL::determine_ivol_vertices_missing_incident_hex
 (const IVOLDUAL_CUBE_TABLE & ivoldual_table,
@@ -407,6 +436,29 @@ void IVOLDUAL::determine_ivol_vertices_missing_incident_hex
 
 }
 
+
+void IVOLDUAL::determine_ivol_vertices_in_isosurface_boxes
+(const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+ DUAL_IVOLVERT_ARRAY & ivolv_list)
+{
+  const int NUM_CUBE_VERTICES(8);
+  VERTEX_INDEX box_corner[NUM_CUBE_VERTICES];
+
+  for (IVOL_VERTEX_INDEX ivolv = 0; ivolv < ivolv_list.size(); ivolv++) 
+    { ivolv_list[ivolv].in_box = false; }
+
+  for (IVOL_VERTEX_INDEX ivolv = 0; 
+       ivolv < vertex_adjacency_list.NumVertices(); ivolv++) {
+
+    if (is_ivolv_lower_left_vertex_of_isosurface_box
+        (vertex_adjacency_list, ivolv_list, ivolv, box_corner)) {
+
+      for (int j = 0; j < NUM_CUBE_VERTICES; j++) 
+        { ivolv_list[box_corner[j]].in_box = true; }
+
+    }
+  }
+}
 
 
 
@@ -1368,3 +1420,5 @@ void IVOLDUAL::laplacian_smooth
     }
   }
 }
+
+
