@@ -594,6 +594,38 @@ namespace IJKDUALTABLE {
     determine_separation_vertices_in_ivol(table, vinfo);
   }
 
+
+  /// Determine interval volume vertices which are doubly connected
+  ///   to some adjacent cube.
+  template <typename DUAL_TABLE_TYPE, 
+            typename DUAL_TABLE_VINFO_TYPE>
+  void determine_doubly_connected_ivol3D_vertices
+  (const DUAL_TABLE_TYPE & table,
+   DUAL_TABLE_VINFO_TYPE & vinfo)
+  {
+    typedef typename DUAL_TABLE_TYPE::DIMENSION_TYPE DTYPE;
+    typedef typename DUAL_TABLE_TYPE::TABLE_INDEX TABLE_INDEX;
+    typedef typename DUAL_TABLE_VINFO_TYPE::NUMBER_TYPE NTYPE;
+    typedef typename DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE::CUBE_VERTEX_TYPE
+      CUBE_VERTEX_TYPE;
+
+    for (TABLE_INDEX it = 0; it < table.NumTableEntries(); it++) {
+      const NTYPE num_ivolv = table.Entry(it).NumVertices();
+
+      for (NTYPE j = 0; j < num_ivolv; j++) {
+        NTYPE dc_facet;
+        if (is_ivol3D_vertex_doubly_connected(table, it, j, dc_facet)) {
+          vinfo.VertexInfoNC(it,j).is_doubly_connected = true; 
+          vinfo.VertexInfoNC(it,j).doubly_connected_facet = dc_facet;
+        }
+        else {
+          vinfo.VertexInfoNC(it,j).is_doubly_connected = false; 
+          vinfo.VertexInfoNC(it,j).doubly_connected_facet = 0;
+        }
+      }
+    }
+  }
+
 }
 
 #endif

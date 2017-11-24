@@ -254,8 +254,8 @@ void IVOLDUAL::dual_contouring_interval_volume
     (ivolv_list, cube_ivolv_list);
 
   set_ivol_vertex_info
-    (scalar_grid, ivoldual_table, ivolpoly_vert, vertex_adjacency_list,
-     ivolv_list);
+    (scalar_grid, ivoldual_table, ivolpoly_vert, cube_ivolv_list,
+     vertex_adjacency_list, ivolv_list);
 
   // Laplacian smoothing.
   if (param.flag_laplacian_smooth) {
@@ -368,6 +368,7 @@ void IVOLDUAL::set_ivol_vertex_info
 (const DUALISO_GRID & grid,
  const IVOLDUAL_CUBE_TABLE & ivoldual_table,
  const std::vector<ISO_VERTEX_INDEX> & poly_vert,
+ const std::vector<GRID_CUBE_DATA> & cube_list,
  const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
  DUAL_IVOLVERT_ARRAY & ivolv_list)
 {
@@ -398,6 +399,12 @@ void IVOLDUAL::set_ivol_vertex_info
       ivolv_list[ivolv].separation_vertex = 
         grid.CubeVertex(cube_index, icorner);
     }
+
+    ivolv_list[ivolv].is_doubly_connected =
+      ivoldual_table.VertexInfo(table_index, patch_index).is_doubly_connected;
+    ivolv_list[ivolv].doubly_connected_facet =
+      ivoldual_table.VertexInfo(table_index, patch_index).
+      doubly_connected_facet;
   }
 
   determine_ivol_vertices_missing_incident_hex
@@ -405,6 +412,9 @@ void IVOLDUAL::set_ivol_vertex_info
 
   determine_ivol_vertices_in_isosurface_boxes
     (vertex_adjacency_list, ivolv_list);
+
+  determine_ivol_vertices_in_isosurface_pseudoboxes
+    (vertex_adjacency_list, cube_list, ivolv_list);
 }
 
 
@@ -461,6 +471,40 @@ void IVOLDUAL::determine_ivol_vertices_in_isosurface_boxes
   }
 }
 
+
+void IVOLDUAL::determine_ivol_vertices_in_isosurface_pseudoboxes
+(const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+ const std::vector<GRID_CUBE_DATA> & cube_list,
+ DUAL_IVOLVERT_ARRAY & ivolv_list)
+{
+  const int NUM_CUBE_VERTICES(8);
+  VERTEX_INDEX cube_list_index[NUM_CUBE_VERTICES];
+
+  for (IVOL_VERTEX_INDEX ivolv = 0; ivolv < ivolv_list.size(); ivolv++) 
+    { ivolv_list[ivolv].in_pseudobox = false; }
+
+  for (int i = 0; i < cube_list.size(); i++) {
+
+    if (is_upper_right_grid_vertex_in_isosurface_pseudobox
+        (vertex_adjacency_list, cube_list, ivolv_list, i, cube_list_index)) {
+
+      for (int j = 0; j < NUM_CUBE_VERTICES; j++) 
+        { set_in_pseudobox(cube_list[cube_list_index[j]], ivolv_list); }
+    }
+  }
+}
+
+
+void IVOLDUAL::set_in_pseudobox
+(const GRID_CUBE_DATA & cube_ivolv,
+ DUAL_IVOLVERT_ARRAY & ivolv_list)
+{
+  for (int i = 0; i < cube_ivolv.num_isov; i++) {
+    const IVOL_VERTEX_INDEX ivolv = cube_ivolv.first_isov + i;
+    if (ivolv_list[ivolv].NumIncidentIsoQuad() > 0) 
+      { ivolv_list[ivolv].in_pseudobox = true; }
+  }
+}
 
 
 // **************************************************

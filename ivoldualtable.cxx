@@ -33,4 +33,5 @@ void IVOLDUAL::IVOLDUAL_CUBE_TABLE::Init()
   compute_ivoldual_table_num_incident_poly(*this, vertex_info);
   compute_ivoldual_table_num_incident_isosurface_poly(*this, vertex_info);
   determine_separation_vertices(*this, vertex_info);
+  determine_doubly_connected_ivol3D_vertices(*this, vertex_info);
 }

@@ -689,6 +689,154 @@ namespace IJKDUALTABLE {
 
 
   // **************************************************
+  // IVOLDUAL QUERY ROUTINES
+  // **************************************************
+
+  /// Return true if ivol vertex is incident on an isosurface polytope
+  ///   dual to edge ie.
+  template <typename DUAL_TABLE_TYPE, typename TI_TYPE, typename VTYPE,
+            typename ETYPE>
+  bool is_ivol_vertex_on_iso_poly_dual_to_edge
+  (const DUAL_TABLE_TYPE & table, const TI_TYPE it,
+   const VTYPE ivolv, const ETYPE ie)
+  {
+    typename DUAL_TABLE_TYPE::CUBE_TYPE::NUMBER_TYPE iend[2];
+
+    iend[0] = table.Cube().EdgeEndpoint(ie, 0);
+    iend[1] = table.Cube().EdgeEndpoint(ie, 1);
+
+    if (table.EdgeHasDualIVolPoly(it, ie)) {
+
+      if (ivolv == table.LowerIncident(it, ie)) {
+        if (table.IsBelowIntervalVolume(it, iend[0]) ||
+            table.IsBelowIntervalVolume(it, iend[1])) {
+
+          if (table.OnLowerIsosurface(it, ivolv)) 
+            { return(true); }
+        }
+      }
+      else if (ivolv == table.UpperIncident(it, ie)) {
+        if (table.IsAboveIntervalVolume(it, iend[0]) ||
+            table.IsAboveIntervalVolume(it, iend[1])) {
+
+          if (table.OnUpperIsosurface(it, ivolv)) 
+            { return(true); }
+        }
+      }
+
+    }
+    else if (table.IsInIntervalVolume(it, iend[0]) ||
+          table.IsInIntervalVolume(it, iend[1])) {
+
+      if (table.IsInIntervalVolume(it, iend[0]))
+        { std::swap(iend[0], iend[1]); }
+
+      if (table.IsInIntervalVolume(it, iend[0])) 
+        { return(false); }
+
+      if (ivolv == table.IncidentIVolVertex(it, iend[1])) {
+
+        if (table.IsBelowIntervalVolume(it, iend[0])) {
+          if (table.OnLowerIsosurface(it, ivolv))
+            { return(true); }
+        }
+        else if (table.IsAboveIntervalVolume(it, iend[0])) {
+          if (table.OnUpperIsosurface(it, ivolv))
+            { return(true); }
+        }
+      }
+    }
+
+    return(false);
+  }
+
+
+  /// Return true if ivol vertex is doubly connected across facet jfacet.
+  /// @pre table dimension is 3.
+  template <typename DUAL_TABLE_TYPE, typename TI_TYPE, typename VTYPE,
+            typename FTYPE>
+  bool is_ivol3D_vertex_doubly_connected_across_facet
+  (const DUAL_TABLE_TYPE & table, const TI_TYPE it,
+   const VTYPE ivolv, const FTYPE jfacet)
+  {
+    typedef typename DUAL_TABLE_TYPE::CUBE_TYPE::NUMBER_TYPE NTYPE;
+    
+    const NTYPE DIM3(3);
+    const FTYPE facet_orth_dir = table.Cube().FacetOrthDir(jfacet);
+    const NTYPE NUM_FACET_EDGES(4);
+    NTYPE iv0 = 0;
+    NTYPE iedge[NUM_FACET_EDGES];
+
+    if (jfacet >= DIM3)
+      { iv0 = table.Cube().VertexNeighbor(0, facet_orth_dir); }
+
+    const FTYPE dir1 = (facet_orth_dir+1)%DIM3;
+    const FTYPE dir2 = (facet_orth_dir+2)%DIM3;
+    const NTYPE iv1 = table.Cube().VertexNeighbor(iv0, dir1);
+    const NTYPE iv2 = table.Cube().VertexNeighbor(iv0, dir2);
+    iedge[0] = table.Cube().IncidentEdge(iv0, dir1);
+    iedge[1] = table.Cube().IncidentEdge(iv2, dir1);
+    iedge[2] = table.Cube().IncidentEdge(iv0, dir2);
+    iedge[3] = table.Cube().IncidentEdge(iv1, dir2);
+
+    for (NTYPE i = 0; i < NUM_FACET_EDGES; i++) {
+
+      if (!is_ivol_vertex_on_iso_poly_dual_to_edge
+          (table, it, ivolv, iedge[i])) 
+        { return(false); }
+    }
+
+    return(true);
+  }
+
+
+  /// Return true if ivol vertex is doubly connected across some facet.
+  /// @pre table dimension is 3.
+  /// @param[out] dc_facet Ivol vertex is doubly connected across dc_facet.
+  template <typename DUAL_TABLE_TYPE, typename TI_TYPE, typename VTYPE,
+            typename FTYPE>
+  bool is_ivol3D_vertex_doubly_connected
+  (const DUAL_TABLE_TYPE & table, const TI_TYPE it, const VTYPE ivolv,
+   FTYPE & dc_facet)
+  {
+    typedef typename DUAL_TABLE_TYPE::CUBE_TYPE::NUMBER_TYPE NTYPE;
+
+    const NTYPE NUM_CUBE_FACETS = table.Cube().NumFacets();
+
+    // Initialize
+    dc_facet = 0;
+
+    if (table.NumAmbiguousFacets(it) == 0) { return(false); }
+
+    if (!table.OnLowerIsosurface(it, ivolv) &&
+        !table.OnUpperIsosurface(it, ivolv)) 
+      { return(false); }
+
+    for (dc_facet = 0; dc_facet < NUM_CUBE_FACETS; dc_facet++) {
+      if (is_ivol3D_vertex_doubly_connected_across_facet
+          (table, it, ivolv, dc_facet))
+        { return(true); }
+    }
+
+    dc_facet = 0;
+    return(false);
+  }
+
+  /// Return true if ivol vertex is doubly connected across some facet.
+  /// - Version which does not return dc_facet.
+  /// @pre table dimension is 3.
+  template <typename DUAL_TABLE_TYPE, typename TI_TYPE, typename VTYPE>
+  bool is_ivol3D_vertex_doubly_connected
+  (const DUAL_TABLE_TYPE & table, const TI_TYPE it, const VTYPE ivolv)
+  {
+    typedef typename DUAL_TABLE_TYPE::CUBE_TYPE::NUMBER_TYPE NTYPE;
+    NTYPE dc_facet;
+
+    return(is_ivol3D_vertex_doubly_connected(table, it, ivolv, dc_facet));
+  }
+
+
+  // **************************************************
   // UTILITY FUNCTIONS
   // **************************************************
 
@@ -1508,8 +1656,11 @@ namespace IJKDUALTABLE {
   class IVOLDUAL_CUBE_TABLE_BASE:
     public ISODUAL_TABLE_AMBIG_BASE<DTYPE,NTYPE,TI_TYPE,ENTRY_TYPE> {
 
+  public:
+    typedef ISODUAL_CUBE_FACE_INFO<DTYPE,NTYPE,NTYPE> CUBE_TYPE;
+
   protected:
-    ISODUAL_CUBE_FACE_INFO<DTYPE,NTYPE,NTYPE> cube;
+    CUBE_TYPE cube;
 
   protected:
     void Init();

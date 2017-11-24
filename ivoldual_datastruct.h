@@ -120,6 +120,10 @@ namespace IVOLDUAL {
     /// Separation edge has lower/left endpoint separation_vertex.
     VERTEX_INDEX separation_edge_direction;
 
+    /// If ivol vertex is doubly connected, then ivol vertex is
+    ///   doubly connected across facet doubly_connected_facet.
+    FACET_INDEX doubly_connected_facet;
+
     bool is_doubly_connected;        ///< True, if vertex is doubly connected.
     bool in_loop;                    ///< True, if vertex is in loop.
     bool in_box;                     ///< True, if vertex is in box.

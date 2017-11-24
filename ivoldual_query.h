@@ -30,6 +30,10 @@
 /// ivoldual classes and routines.
 namespace IVOLDUAL {
 
+  // *****************************************************************
+  // QUERY IN BOX OR PSEUDOBOX
+  // *****************************************************************
+
   /// Return true if vertex is lower left vertex of an isosurface box.
   /// @param[out] box_corners[] Interval volume vertices which form the
   ///    8 corners of the isosurface box.
@@ -39,13 +43,60 @@ namespace IVOLDUAL {
    const IVOL_VERTEX_INDEX ivolv,
    IVOL_VERTEX_INDEX box_corner[8]);
 
-  /// Return true if vertex is lower left vertex of an isosurface pseudobox.
-  bool is_ivolv_lower_left_vertex_of_isosurface_pseudobox
-  (const DUALISO_GRID & grid,
-   const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+  /// Return true if upper, rightmost vertex of cube is surrounded
+  ///   by an isosurface pseudobox.
+  /// @param[out] cube_list_index[] Index in cube_list 
+  ///   of eight cubes containing the grid vertex surrounded by the pseudobox.
+  bool is_upper_right_grid_vertex_in_isosurface_pseudobox
+  (const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   const std::vector<GRID_CUBE_DATA> & cube_list,
    const DUAL_IVOLVERT_ARRAY & ivolv_list,
-   const IVOL_VERTEX_INDEX ivolv0,
-   IVOL_VERTEX_INDEX box_corner[8]);
+   const VERTEX_INDEX cube0_list_index,
+   VERTEX_INDEX cube_list_index[8]);
+
+  /// Return true if vertex iv equals w.sep_vert for some interval volume 
+  ///   vertex w in cube cube_ivolv.
+  bool is_vertex_sep_vertex
+  (const VERTEX_INDEX iv,
+   const GRID_CUBE_DATA & cube_ivolv,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list);
+
+
+  /// Return true if cube contains doubly connected interval volume vertex.
+  bool does_cube_contain_doubly_connected_ivol_vertex
+  (const GRID_CUBE_DATA & cube_ivolv,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list);
+
+
+  // *****************************************************************
+  // GET FUNCTIONS
+  // *****************************************************************
+
+  /// Get the index in cube_list of the seven cubes sharing the
+  ///   rightmost/upper vertex with cube0_list_index.
+  /// - Gets the cubes only if there are interval volume edges
+  ///   between interval volume vertices in each pair of cubes.
+  /// - Return true if all 7 cubes found.
+  /// @param[out] cube_list_index[] Cubes cube0_list_index
+  ///     and the seven other cubes adjacent to cube0_list_index.
+  bool get_seven_adjacent_cubes
+  (const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   const std::vector<GRID_CUBE_DATA> & cube_list,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
+   const int cube0_list_index,
+   int cube_list_index[8]);
+
+
+  /// Get the index in cube_list of the adjacent cube in the oriented direction
+  ///  if it shares an interval volume edge with cube0_list_index.
+  bool get_adjacent_cube_in_oriented_direction
+  (const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   const std::vector<GRID_CUBE_DATA> & cube_list,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
+   const int cubeA_list_index,
+   const int direction,
+   const int orientation,
+   int & cubeB_list_index);
 
 }
 

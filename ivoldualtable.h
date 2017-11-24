@@ -56,7 +56,15 @@ namespace IVOLDUAL {
 
     int num_incident_poly;
     int num_incident_isopoly;
+
+    /// Separation vertex.
     CUBE_VERTEX_TYPE separation_vertex;
+
+    /// If ivol vertex is doubly connected, then ivol vertex is
+    ///   doubly connected across facet doubly_connected_facet.
+    FACET_INDEX doubly_connected_facet;
+
+    bool is_doubly_connected;        ///< True, if vertex is doubly connected.
 
     /// Number of interval volume polytopes incident on vertex.
     int NumIncidentPoly() const

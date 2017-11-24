@@ -1939,8 +1939,16 @@ namespace {
         << int(ivolv_list[ivolv].NumIncidentIsoQuad()) << ".";
     out << endl;
 
+    if (ivolv_list[ivolv].NumIncidentIsoQuad() == 3) {
+      out << "  Separation vertex: "
+          << ivolv_list[ivolv].separation_vertex << endl;
+    }
+
     if (ivolv_list[ivolv].in_box) 
       { out << "  In isosurface box." << endl; }
+    else if (ivolv_list[ivolv].in_pseudobox) 
+      { out << "  In isosurface pseudobox." << endl; }
+
 
     if (ivolv_list[ivolv].flag_missing_ivol_hexahedra) {
       out << "  Missing incident ivol hexahedra." << endl;
