@@ -38,6 +38,7 @@
 #include "ivoldual_datastruct.h"
 #include "ivoldual_compute.h"
 #include "ivoldual_query.h"
+#include "ivoldual_move.h"
 
 using namespace IJK;
 using namespace IVOLDUAL;

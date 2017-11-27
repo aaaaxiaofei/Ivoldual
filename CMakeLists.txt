@@ -23,7 +23,8 @@ ADD_EXECUTABLE(ivoldual ivoldual_main.cxx ivoldualIO.cxx isodual.cxx
                         ivoldual.cxx ijkdual_datastruct.cxx
                         ivoldual_datastruct.cxx ivoldual_triangulate.cxx 
                         ivoldualtable.cxx 
-                        ivoldual_compute.cxx ivoldual_query.cxx )
+                        ivoldual_compute.cxx ivoldual_query.cxx 
+                        ivoldual_move.cxx)
 
 
 ADD_CUSTOM_TARGET(tar WORKING_DIRECTORY . COMMAND tar cvfh ivoldual.tar *.cxx *.h *.txx CMakeLists.txt ivoldual_doxygen.config)
