@@ -38,13 +38,15 @@ namespace IVOLDUAL {
   (const IVOLDUAL_DATA & ivoldual_data, 
    DUAL_INTERVAL_VOLUME & dual_interval_volume);
 
-  /// Uniformly triangulate the interval volume hexahedra 
-  ///   using hexahedra diagonals.
-  void triangulate_ivol_hexahedra_diagonal_uniform
-  (const DUALISO_GRID & grid,
-   const VERTEX_INDEX_ARRAY & ivolpoly_vert,
-   const IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
+  /// Triangulate the interval volume hexahedra using hexahedra diagonals.
+  void triangulate_ivol_hexahedra_diagonal
+  (const VERTEX_INDEX_ARRAY & ivolpoly_vert,
    VERTEX_INDEX_ARRAY & tri_vert);
+
+
+  // **************************************************
+  // DEPRECATED. CREATE NON-CONFORMING MESHES.
+  // **************************************************
 
   /// Uniformly triangulate the interval volume hexahedra 
   ///   using an additional vertex inside each hexahedron.

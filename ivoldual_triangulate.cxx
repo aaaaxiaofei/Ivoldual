@@ -42,39 +42,39 @@ void IVOLDUAL::triangulate_interval_volume
     add_vertex_coord_at_hexahedra_centroids
       (ivoldual_data, dual_interval_volume);
 
+    /* NOT PROPERLY WORKING.
     triangulate_ivol_hexahedra_tri12_diagonal07
       (ivoldual_data.ScalarGrid(), dual_interval_volume.isopoly_vert,
        dual_interval_volume.isopoly_info, 
        dual_interval_volume.first_isov_dual_to_iso_poly,
        dual_interval_volume.tri_vert);
+    */
+
+    // *** FOR NOW, USE TRIANGULATION INTO 6 TETRAHEDRA ***
+    triangulate_ivol_hexahedra_diagonal
+      (dual_interval_volume.isopoly_vert,
+       dual_interval_volume.tri_vert);
   }
   else {
-    triangulate_ivol_hexahedra_diagonal_uniform
-      (ivoldual_data.ScalarGrid(), dual_interval_volume.isopoly_vert,
-       dual_interval_volume.isopoly_info, 
+    triangulate_ivol_hexahedra_diagonal
+      (dual_interval_volume.isopoly_vert,
        dual_interval_volume.tri_vert);
   }
 }
 
-// Uniformly triangulate the interval volume hexahedra 
-//   using hexahedra diagonals.
-void IVOLDUAL::triangulate_ivol_hexahedra_diagonal_uniform
-(const DUALISO_GRID & grid,
- const VERTEX_INDEX_ARRAY & ivolpoly_vert,
- const IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
+
+
+// Triangulate the interval volume hexahedra using hexahedra diagonals.
+void IVOLDUAL::triangulate_ivol_hexahedra_diagonal
+(const VERTEX_INDEX_ARRAY & ivolpoly_vert,
  VERTEX_INDEX_ARRAY & tri_vert)
 {
   const int NUM_VERT_PER_HEXAHEDRON(8);
-  const int num_hex = ivolpoly_vert.size()/NUM_VERT_PER_HEXAHEDRON;
+  IJK::POLYMESH_DATA<VERTEX_INDEX,int,
+    IJK::HEX_TRIANGULATION_INFO<char,char>> hex_data;
 
-  for (int ihex = 0; ihex < num_hex; ihex++) {
-
-    const VERTEX_INDEX * hex_vert = 
-      &(ivolpoly_vert[ihex*NUM_VERT_PER_HEXAHEDRON]);
-
-    IJK::triangulate_hexahedron_diagonal07(hex_vert, tri_vert);
-  }
-
+  hex_data.AddPolytopes(ivolpoly_vert, NUM_VERT_PER_HEXAHEDRON);
+  IJK::triangulate_hex_meshX(hex_data, tri_vert);
 }
 
 
@@ -104,7 +104,7 @@ void IVOLDUAL::triangulate_ivol_hexahedra_tri12_diagonal07
 
 // Triangulate hexahedron using an additional vertex w0
 // into 12 hexahedra.
-// Hex facet triangules should match hex diagonal07 triangulation.
+// Hex facet triangles should match hex diagonal07 triangulation.
 void IVOLDUAL::triangulate_hexahedron_tri12_diagonal07
 (const VERTEX_INDEX hex_vert[], const VERTEX_INDEX w0,
  std::vector<VERTEX_INDEX> & tet_vert_list)
