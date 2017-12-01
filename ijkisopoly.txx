@@ -1569,11 +1569,24 @@ namespace IJK {
   class DUAL_ISOVERT {
 
   public:
+    typedef CI_TYPE CUBE_INDEX_TYPE;
+    typedef PI_TYPE PATCH_INDEX_TYPE;
+    typedef TI_TYPE TABLE_INDEX_TYPE;
+
+  public:
+    /// Index of cube containing isosurface vertex.
     CI_TYPE cube_index;
+
+    /// Index of isosurface vertex (patch) within cube.
     PI_TYPE patch_index;
+
+    /// Index of the configuration of the '+' and '-' cube vertices
+    ///   in the isosurface lookup table.
     TI_TYPE table_index;
 
-    /// Index in cube list.
+    /// Index in cube list of cube containing isosurface vertex.
+    /// - cube_list[] is a list (array) of active cubes containing
+    ///   isosurface vertices.
     CUBE_LIST_INDEX_TYPE cube_list_index;
   };
 
@@ -1590,17 +1603,31 @@ namespace IJK {
 
 
   // ************************************************************
-  // ISOSURFACE VERTICES IN A GRID CUBE (DUAL CONTOURING)
+  // INFORMATION ABOUT ISOSURFACE VERTICES IN A GRID CUBE 
+  //    (DUAL CONTOURING)
   // ************************************************************
 
-  /// Isosurface vertices in a grid cube (for dual contouring).
+  /// Information about isosurface vertices in a grid cube 
+  ///   (for dual contouring).
   template <typename CI_TYPE, typename TI_TYPE, 
             typename NTYPE, typename FTYPE>
   class GRID_CUBE_ISOVERT {
 
   public:
+    typedef CI_TYPE CUBE_INDEX_TYPE;
+    typedef TI_TYPE TABLE_INDEX_TYPE;
+    typedef NTYPE NUMBER_TYPE;
+
+  public:
+    /// Index of the cube.  Usually equal to the index of the lower,
+    ///   leftmost vertex in the cube.
     CI_TYPE cube_index;
+
+    /// Index of the configuration of the '+' and '-' cube vertices
+    ///   in the isosurface lookup table.
     TI_TYPE table_index;
+
+    /// Number of isosurface vertices contained in the cube.
     NTYPE num_isov;
 
     /// Index of first isosurface vertex in cube.
@@ -1608,6 +1635,7 @@ namespace IJK {
     ///   to (first_isov+num_isov-1).
     FTYPE first_isov;
 
+    /// Set the cube index to cube_index.
     template <typename CI_TYPE2>
     void SetCubeIndex(const CI_TYPE2 cube_index)
     { this->cube_index = cube_index; }
@@ -1638,6 +1666,9 @@ namespace IJK {
             typename NTYPE, typename FTYPE, typename COORD_TYPE>
   class GRID_CUBE_ISOVERT_AND_CUBE_COORD:public
   GRID_CUBE_ISOVERT<CI_TYPE,TI_TYPE,NTYPE,FTYPE> {
+
+  public:
+    typedef COORD_TYPE CUBE_COORD_TYPE;
 
   protected:
     COORD_TYPE cube_coord[GRID_DIMENSION];
