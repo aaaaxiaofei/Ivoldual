@@ -24,6 +24,7 @@
 
 #include "ivoldual_move.h"
 
+#include "ijkdual_query.txx"
 
 // *****************************************************************
 // MOVE VERTEX TO CUBE CENTER
@@ -37,9 +38,8 @@ void IVOLDUAL::move_ivol_vertex_to_cube_center
  COORD_ARRAY & vertex_coord)
 {
   const int DIM3(3);
-  const int cube_list_index = ivolv_list[ivolv].cube_list_index;
   const GRID_COORD_TYPE * cube_coord =
-    cube_list[cube_list_index].CubeCoord();
+    IJKDUAL::get_coord_of_cube_containing_isov(cube_list, ivolv_list, ivolv);
 
   for (int d = 0; d < DIM3; d++) 
     { vertex_coord[ivolv*DIM3+d] = cube_coord[d] + 0.5; }
@@ -83,9 +83,8 @@ void IVOLDUAL::move_ivol_vertex_away_from_cube_facets
  COORD_ARRAY & vertex_coord, bool & flag_moved)
 {
   const int DIM3(3);
-  const int cube_list_index = ivolv_list[ivolv].cube_list_index;
   const GRID_COORD_TYPE * cube_coord =
-    cube_list[cube_list_index].CubeCoord();
+    IJKDUAL::get_coord_of_cube_containing_isov(cube_list, ivolv_list, ivolv);
 
   move_point_away_from_cube_facets_3D
     (cube_coord, distance, &(vertex_coord[DIM3*ivolv]), flag_moved);
@@ -132,9 +131,8 @@ void IVOLDUAL::move_ivol_vertex_away_from_grid_interior
  COORD_ARRAY & vertex_coord, bool & flag_moved)
 {
   const int DIM3(3);
-  const int cube_list_index = ivolv_list[ivolv].cube_list_index;
   const GRID_COORD_TYPE * cube_coord =
-    cube_list[cube_list_index].CubeCoord();
+    IJKDUAL::get_coord_of_cube_containing_isov(cube_list, ivolv_list, ivolv);
 
   move_point_away_from_grid_interior_3D
     (grid, cube_coord, distance, &(vertex_coord[ivolv*DIM3]), flag_moved);
