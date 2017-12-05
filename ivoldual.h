@@ -383,15 +383,24 @@ namespace IVOLDUAL {
    const SCALAR_TYPE isovalue1, 
    IVOLDUAL_INFO & dualiso_info);
 
-  /// Laplacian Smoothing
-  void laplacian_smooth
+  /// Laplacian Smoothing for small edge length
+  void laplacian_smooth_elength
   (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    const IVOLDUAL_DATA_FLAGS & param,
    IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
    const DUAL_IVOLVERT_ARRAY & ivolv_list,
    COORD_ARRAY & vertex_coord, 
-   float laplacian_smooth_limit);
+   int iteration);
+
+  /// Laplacian Smoothing for negative Jacobian
+  void laplacian_smooth_jacobian
+  (const std::vector<VERTEX_INDEX> & ivolpoly_cube,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
+   COORD_ARRAY & vertex_coord, 
+   int iteration);
 }
 
 #endif

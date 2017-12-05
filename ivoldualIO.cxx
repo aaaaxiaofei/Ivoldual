@@ -70,7 +70,7 @@ namespace {
      LABEL_WITH_ISOVALUE_OPT,
      NO_WRITE_OPT, SILENT_OPT, NO_WARN_OPT,
      INFO_OPT, TIME_OPT, OUT_IVOLV_OPT, OUT_IVOLP_OPT, WRITE_SCALAR_OPT,
-     LAPLACIAN_SMOOTH_OPT,
+     LSMOOTH_ELENGTH_OPT, LSMOOTH_JACOBIAN_OPT,
      UNKNOWN_OPT} OPTION_TYPE;
 
   typedef enum {
@@ -293,9 +293,22 @@ namespace {
     options.AddUsageOptionNewline(REGULAR_OPTG);
     options.AddUsageOptionBeginOr(REGULAR_OPTG);
 
-    options.AddOptionNoArg
-      (LAPLACIAN_SMOOTH_OPT, "LAPLACIAN_SMOOTH_OPT", REGULAR_OPTG, 
-       "-laplacian_smooth", "Perform Laplacian Smoothing on ivoldual grid.");
+    options.AddOption1Arg
+      (LSMOOTH_ELENGTH_OPT, "LSMOOTH_ELENGTH_OPT", REGULAR_OPTG, 
+       "-lsmooth_elength", "S", 
+       "Perform Laplacian Smoothing for vertex with edge length less than S.");
+
+    options.AddToHelpMessage
+      (LSMOOTH_ELENGTH_OPT, "S is the minimum accepted edge length.");
+
+    options.AddUsageOptionEndOr(REGULAR_OPTG);
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+    options.AddUsageOptionBeginOr(REGULAR_OPTG);
+
+    options.AddOption1Arg
+      (LSMOOTH_JACOBIAN_OPT, "LSMOOTH_JACOBIAN_OPT", REGULAR_OPTG, 
+       "-lsmooth_jacobian", "S", 
+       "Perform Laplacian Smoothing on vertex negative Jacobian.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -664,9 +677,15 @@ bool process_option
     io_info.is_flag_orient_in_set = true;
     break;
 
-  case LAPLACIAN_SMOOTH_OPT:
-    io_info.laplacian_smooth_limit = get_arg_float(iarg, argc, argv, error);
-    io_info.flag_laplacian_smooth = true;
+  case LSMOOTH_ELENGTH_OPT:
+    io_info.lsmooth_elength_iter = get_arg_int(iarg, argc, argv, error);
+    io_info.flag_lsmooth_elength = true;
+    iarg++;
+    break;
+
+  case LSMOOTH_JACOBIAN_OPT:
+    io_info.lsmooth_jacobian_iter = get_arg_int(iarg, argc, argv, error);
+    io_info.flag_lsmooth_jacobian = true;
     iarg++;
     break;
 

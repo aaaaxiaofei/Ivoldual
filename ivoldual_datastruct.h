@@ -256,8 +256,10 @@ namespace IVOLDUAL {
     bool flag_rm_non_manifold;
 
     /// If true, perforam laplacian smoothing.
-    bool flag_laplacian_smooth;
-    double laplacian_smooth_limit;
+    bool flag_lsmooth_elength;
+    bool flag_lsmooth_jacobian;
+    int lsmooth_elength_iter;
+    int lsmooth_jacobian_iter;
 
     /// Default encoded value (1 or 2) for vertices in the interior
     ///   of the interval volume.
