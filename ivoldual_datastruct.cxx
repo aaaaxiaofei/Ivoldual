@@ -38,7 +38,11 @@ void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
   flag_rm_non_manifold = false;
   flag_add_isov_dual_to_hexahedra = false;
   flag_orient_in = false;
+  flag_lsmooth_elength = false;
+  flag_lsmooth_jacobian = false;
   default_interior_code = 2;
+  lsmooth_elength_iter = 1;
+  lsmooth_jacobian_iter = 1;
 }
 
 // **************************************************
