@@ -29,6 +29,7 @@
 #include "ivoldual.h"
 
 #include "ivoldual_triangulate.h"
+#include "ivoldual_reposition.h"
 
 using namespace IJK;
 using namespace IJKDUAL;
