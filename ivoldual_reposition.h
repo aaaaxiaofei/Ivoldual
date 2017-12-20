@@ -64,6 +64,23 @@ namespace IVOLDUAL {
    COORD_ARRAY & vertex_coord, 
    int iteration);
 
+  void laplacian_smooth_jacobian
+  (const std::vector<VERTEX_INDEX> & ivolpoly_cube,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
+   COORD_ARRAY & vertex_coord, 
+   std::vector<int> negative_jabocian_list);
+
+  void laplacian_move_vertex
+	(const std::vector<VERTEX_INDEX> & ivolpoly_cube,
+	 const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+	 IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+	 const DUAL_IVOLVERT_ARRAY & ivolv_list,
+	 COORD_ARRAY & vertex_coord, 
+	 COORD_TYPE *ver_coord, int ver_index,	 
+	 bool flag_onLower,  bool flag_onUpper);
+
 }
 
 #endif

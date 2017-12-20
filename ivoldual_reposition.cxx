@@ -124,25 +124,13 @@ void IVOLDUAL::laplacian_smooth_jacobian
  COORD_ARRAY & vertex_coord, 
  int iteration)
  {
-
-  using namespace std;
-
   const int DIMENSION(3);
-  const float step_base(0.02);
   const int NUM_VERT_PER_HEXAHEDRON(8); 
   COORD_TYPE * vcoord = &(vertex_coord.front());
   float jacobian_limit = 0.0;
 
-  // Polytopes dual to vertex.
-  IJK::POLYMESH_DATA<VERTEX_INDEX,int, 
-    IJK::HEX_TRIANGULATION_INFO<char,char>> hex_data;
-  hex_data.AddPolytopes(ivolpoly_cube, NUM_VERT_PER_HEXAHEDRON);
-  IJK::VERTEX_POLY_INCIDENCE<int,int> vertex_poly_incidence(hex_data);
-
   for (int it = 0; it < iteration; it++) {
-
     std::vector<int> negative_jabocian_list;
-
     // Find all vertices with negative Jacobian.
     for (int ihex = 0; ihex < ivolpoly_cube.size()/8; ihex++) {
       for (int i = 0; i < 8; i++) {
@@ -155,97 +143,171 @@ void IVOLDUAL::laplacian_smooth_jacobian
         }
       }
     }
+    laplacian_smooth_jacobian
+      (ivolpoly_cube, ivoldual_table, vertex_adjacency_list,
+       ivolv_list, vertex_coord,negative_jabocian_list);
+  }
+}
 
-    for (int cur : negative_jabocian_list) {
-      // Current node coordinates.
-      COORD_TYPE *cur_coord = vcoord + cur*DIMENSION;
 
-      // Check if current node is on isosurface.
-      const int ivolv_cur = ivolv_list[cur].patch_index;
-      const TABLE_INDEX table_cur = ivolv_list[cur].table_index;
-      const VERTEX_INDEX cube_cur = ivolv_list[cur].cube_index;
-      bool curOnLower = ivoldual_table.OnLowerIsosurface(table_cur, ivolv_cur);
-      bool curOnUpper = ivoldual_table.OnUpperIsosurface(table_cur, ivolv_cur);
+void IVOLDUAL::laplacian_smooth_jacobian
+(const std::vector<VERTEX_INDEX> & ivolpoly_cube,
+ const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+ IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+ const DUAL_IVOLVERT_ARRAY & ivolv_list,
+ COORD_ARRAY & vertex_coord, 
+ std::vector<int> negative_jabocian_list)
+{
+	const int DIMENSION(3);
+  const int NUM_VERT_PER_HEXAHEDRON(8); 
+  COORD_TYPE * vcoord = &(vertex_coord.front());
 
-      // Loop over adjacent vertices of the current vertex
-      for (int j = 0; j < vertex_adjacency_list.NumAdjacent(cur); j++) {
+	for (int cur : negative_jabocian_list) {
+    // Current node coordinates.
+    COORD_TYPE *cur_coord = vcoord + cur*DIMENSION;
 
-        // Neighbor node coordinates
-        int adj = vertex_adjacency_list.AdjacentVertex(cur, j);
-        COORD_TYPE *neigh_coord = vcoord + adj*DIMENSION;
-        
-        // Check if neighbor node is on isosurface.
-        const int ivolv_adj = ivolv_list[adj].patch_index;
-        const TABLE_INDEX table_adj = ivolv_list[adj].table_index;
-        const VERTEX_INDEX cube_adj = ivolv_list[adj].cube_index;
-        bool adjOnLower = ivoldual_table.OnLowerIsosurface(table_adj, ivolv_adj);
-        bool adjOnUpper = ivoldual_table.OnUpperIsosurface(table_adj, ivolv_adj);
+    // Check if current node is on isosurface.
+    const int ivolv_cur = ivolv_list[cur].patch_index;
+    const TABLE_INDEX table_cur = ivolv_list[cur].table_index;
+    const VERTEX_INDEX cube_cur = ivolv_list[cur].cube_index;
+    bool curOnLower = ivoldual_table.OnLowerIsosurface(table_cur, ivolv_cur);
+    bool curOnUpper = ivoldual_table.OnUpperIsosurface(table_cur, ivolv_cur);
 
-        // Neighbor vertex is in the same cube
-        if (cube_cur == cube_adj) {
-          COORD_TYPE target[DIMENSION];
-          float pre_jacobian = 0.0;
-          for (int d = 0; d < DIMENSION; d++) {
-            target[d] = neigh_coord[d];
-          }
-          for (int k = 0; k < vertex_adjacency_list.NumAdjacent(adj); k++) {
+    // Loop over adjacent vertices of the current vertex
+    for (int j = 0; j < vertex_adjacency_list.NumAdjacent(cur); j++) {
 
-            int adj2 = vertex_adjacency_list.AdjacentVertex(adj, k);
-            COORD_TYPE *neigh_coord2 = vcoord + adj2*DIMENSION;
+      // Neighbor node coordinates
+      int adj = vertex_adjacency_list.AdjacentVertex(cur, j);
+      COORD_TYPE *neigh_coord = vcoord + adj*DIMENSION;
+      
+      // Check if neighbor node is on isosurface.
+      const int ivolv_adj = ivolv_list[adj].patch_index;
+      const TABLE_INDEX table_adj = ivolv_list[adj].table_index;
+      const VERTEX_INDEX cube_adj = ivolv_list[adj].cube_index;
+      bool adjOnLower = ivoldual_table.OnLowerIsosurface(table_adj, ivolv_adj);
+      bool adjOnUpper = ivoldual_table.OnUpperIsosurface(table_adj, ivolv_adj);
 
-            const int ivolv_adj2 = ivolv_list[adj2].patch_index;
-            const TABLE_INDEX table_adj2 = ivolv_list[adj2].table_index;
-            const VERTEX_INDEX cube_adj2 = ivolv_list[adj2].cube_index;
-            bool adjOnLower2 = ivoldual_table.OnLowerIsosurface(table_adj2, ivolv_adj2);
-            bool adjOnUpper2 = ivoldual_table.OnUpperIsosurface(table_adj2, ivolv_adj2);
-
-            // Skip if two vertices are not on same surface.
-            if ((adjOnLower && !adjOnLower2) || (adjOnUpper && !adjOnUpper2))
-              continue;
-
-            // copy adj coord to a temp_adj_coord
-            COORD_TYPE neigh_temp[DIMENSION];
-
-            
-            for (int step = 1; step <= 20; step++) {
-              // Backup Coord
-              for (int d = 0; d < DIMENSION; d++) {
-                neigh_temp[d] = neigh_coord[d];
-              }
-
-              float step_size = step_base * step;
-              for (int d = 0; d < DIMENSION; d++) {
-                neigh_coord[d] = (1.0-step_size)*neigh_coord[d] + step_size*neigh_coord2[d];
-              }
-
-              COORD_TYPE min_jacobian = 1.0;
-
-              for (int ipoly = 0; ipoly < vertex_poly_incidence.NumIncidentPoly(adj); ipoly++) {
-                const int ihex = vertex_poly_incidence.IncidentPoly(adj, ipoly);
-                COORD_TYPE min_jacob, max_jacob;
-                compute_min_max_hexahedron_Jacobian_determinant
-                  (ivolpoly_cube, ihex, vertex_coord, min_jacob, max_jacob);
-                min_jacobian = std::min(min_jacob, min_jacobian);
-              }
-
-              if (min_jacobian > pre_jacobian) {
-                pre_jacobian = min_jacobian;
-                for (int d = 0; d < DIMENSION; d++) {
-                  target[d] = neigh_coord[d];
-                }
-              }
-
-              // Restore neighbor coordinate to backup coord
-              for (int d = 0; d < DIMENSION; d++) {
-                neigh_coord[d] = neigh_temp[d];
-              }
-            }
-          }
-          for (int d = 0; d < DIMENSION; d++) {
-            neigh_coord[d] = target[d];
-          }
-        }
+      if (cube_cur == cube_adj) {
+      	laplacian_move_vertex
+	      	(ivolpoly_cube, ivoldual_table, vertex_adjacency_list, ivolv_list,
+	       	 vertex_coord,neigh_coord, adj, adjOnLower, adjOnUpper);
+	      laplacian_move_vertex
+	      	(ivolpoly_cube, ivoldual_table, vertex_adjacency_list, ivolv_list,
+	       	 vertex_coord,cur_coord, cur, curOnLower, curOnUpper);
       }
     }
   }
+}
+
+void IVOLDUAL::laplacian_move_vertex
+(const std::vector<VERTEX_INDEX> & ivolpoly_cube,
+ const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+ IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+ const DUAL_IVOLVERT_ARRAY & ivolv_list,
+ COORD_ARRAY & vertex_coord,
+ COORD_TYPE *ver_coord, int ver_index,	
+ bool flag_onLower,  bool flag_onUpper)
+{
+
+	const int DIMENSION(3);
+  const float step_base(0.02);
+  const int NUM_VERT_PER_HEXAHEDRON(8); 
+  COORD_TYPE * vcoord = &(vertex_coord.front());
+
+ 	// Polytopes dual to vertex.
+  IJK::POLYMESH_DATA<VERTEX_INDEX,int, 
+    IJK::HEX_TRIANGULATION_INFO<char,char>> hex_data;
+  hex_data.AddPolytopes(ivolpoly_cube, NUM_VERT_PER_HEXAHEDRON);
+  IJK::VERTEX_POLY_INCIDENCE<int,int> vertex_poly_incidence(hex_data);
+
+  COORD_TYPE target[DIMENSION];
+  float pre_jacobian = -1.0;
+
+  // Optimal position to be moved to.
+  for (int d = 0; d < DIMENSION; d++) {
+    target[d] = ver_coord[d];
+  }
+
+  // Find the direction along which Jacobian changes most.
+  for (int k = 0; k < vertex_adjacency_list.NumAdjacent(ver_index); k++) {
+
+    int adj = vertex_adjacency_list.AdjacentVertex(ver_index, k);
+    COORD_TYPE *neigh_coord = vcoord + adj*DIMENSION;
+
+    const int ivolv_adj = ivolv_list[adj].patch_index;
+    const TABLE_INDEX table_adj = ivolv_list[adj].table_index;
+    const VERTEX_INDEX cube_adj = ivolv_list[adj].cube_index;
+    bool adjOnLower = ivoldual_table.OnLowerIsosurface(table_adj, ivolv_adj);
+    bool adjOnUpper = ivoldual_table.OnUpperIsosurface(table_adj, ivolv_adj);
+
+    // Skip if two vertices are not on same surface.
+    if ((flag_onLower && !adjOnLower) || (flag_onUpper && !adjOnUpper))
+      continue;
+
+    // copy adj coord to a temp_adj_coord
+    COORD_TYPE neigh_temp[DIMENSION];
+    
+    // Backup Coord
+    for (int d = 0; d < DIMENSION; d++) {
+      neigh_temp[d] = ver_coord[d];
+    }
+
+    for (int d = 0; d < DIMENSION; d++) {
+      ver_coord[d] = (1.0-step_base)*ver_coord[d] + step_base*neigh_coord[d];
+    }
+
+    COORD_TYPE min_jacobian = 1.0;
+    for (int ipoly = 0; ipoly < vertex_poly_incidence.NumIncidentPoly(ver_index); ipoly++) {
+      const int ihex = vertex_poly_incidence.IncidentPoly(ver_index, ipoly);
+      COORD_TYPE min_jacob, max_jacob;
+      compute_min_max_hexahedron_Jacobian_determinant
+        (ivolpoly_cube, ihex, vertex_coord, min_jacob, max_jacob);
+      min_jacobian = std::min(min_jacob, min_jacobian);
+    }
+
+    if (min_jacobian > pre_jacobian) {
+      pre_jacobian = min_jacobian;
+      for (int d = 0; d < DIMENSION; d++) {
+        target[d] = neigh_coord[d];
+      }
+    }
+
+    // Restore neighbor coordinate to backup coord
+    for (int d = 0; d < DIMENSION; d++) {
+      ver_coord[d] = neigh_temp[d];
+    }
+  }
+
+  // Move the vertex along max gradient direction.
+  COORD_TYPE step[DIMENSION], optimal[DIMENSION];
+  pre_jacobian = -1.0;
+
+  for (int d = 0; d < DIMENSION; d++) {
+  	step[d] = (target[d] - ver_coord[d]) * step_base;
+  }
+  for (int i = 1; step_base * i < 0.5; i++) {
+		for (int d = 0; d < DIMENSION; d++) {
+			ver_coord[d] += step[d];
+		}
+		COORD_TYPE min_jacobian = 1.0;
+    for (int ipoly = 0; ipoly < vertex_poly_incidence.NumIncidentPoly(ver_index); ipoly++) {
+      const int ihex = vertex_poly_incidence.IncidentPoly(ver_index, ipoly);
+      COORD_TYPE min_jacob, max_jacob;
+      compute_min_max_hexahedron_Jacobian_determinant
+        (ivolpoly_cube, ihex, vertex_coord, min_jacob, max_jacob);
+      min_jacobian = std::min(min_jacob, min_jacobian);
+    }
+    if (min_jacobian > pre_jacobian) {
+      pre_jacobian = min_jacobian;
+      for (int d = 0; d < DIMENSION; d++) {
+        optimal[d] = ver_coord[d];
+      }
+    }
+  }
+
+  // Move the coordinate to the optimal position.
+  for (int d = 0; d < DIMENSION; d++) {
+    ver_coord[d] = optimal[d];
+  }
+
 }
