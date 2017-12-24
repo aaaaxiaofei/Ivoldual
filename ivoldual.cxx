@@ -40,6 +40,7 @@
 #include "ivoldual_query.h"
 #include "ivoldual_move.h"
 #include "ivoldual_reposition.h"
+#include "ivoldual_divide_hex.h"
 
 #include "ijktriangulate.txx"
 
@@ -260,6 +261,10 @@ void IVOLDUAL::dual_contouring_interval_volume
   set_ivol_vertex_info
     (scalar_grid, ivoldual_table, ivolpoly_vert, cube_ivolv_list,
      vertex_adjacency_list, ivolv_list);
+
+  subdivide_hex
+    (ivolpoly_vert, ivoldual_table, vertex_adjacency_list,
+      ivolv_list, ivolpoly_info, vertex_coord);
 
   // Laplacian smoothing.
   if (param.flag_lsmooth_elength) {

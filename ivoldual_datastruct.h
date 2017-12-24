@@ -176,6 +176,9 @@ namespace IVOLDUAL {
     /// If true, reverse the orientation of the polytope.
     bool flag_reverse_orient;
 
+    /// If true, the polytope is subdivided into children polytopes.
+    bool flag_subdivide_hex;
+
     /// Grid vertex or lower/leftmost endoint of grid edge.
     ISO_VERTEX_INDEX v0;
 
