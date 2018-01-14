@@ -96,6 +96,7 @@ void IVOLDUAL::subdivide_hex_to_four
   const int DIM3(3);
   const int NUM_VERT_PER_HEXAHEDRON(8);
   IJK::CUBE_FACE_INFO<int, int, int> cube(DIM3);
+  std::unordered_map<VERTEX_INDEX, int> forbiden;
 
   // Polytopes dual to vertex.
   IJK::POLYMESH_DATA<VERTEX_INDEX,int, 
@@ -106,12 +107,19 @@ void IVOLDUAL::subdivide_hex_to_four
   // Loop over all vertices around which the hexhedra needs subdivid.
   for (auto ipair : vertex_subdivide_list) {
   	VERTEX_INDEX ivertex = ipair.first, indent_vertex = ipair.second;
+  	// Skip vertex in polytopes which are already subdivided
+  	if (forbiden[ivertex] == 1) continue;
   	// Loop over all polytopes incident on the vertex.
   	for (int ipoly = 0; ipoly < vertex_poly_incidence.NumIncidentPoly(ivertex); ipoly++) {
 			const int ihex = vertex_poly_incidence.IncidentPoly(ivertex, ipoly);
 			// Flag subdivided hex.
 			ivolpoly_info[ihex].flag_subdivide_hex = true;
 			ivolpoly_info.resize(ivolpoly_info.size() + 4);
+
+			// Forbid subdividing other polytopes around this vertex
+			for (int i = 0; i < 8; i++) {
+				forbiden[ivolpoly_vert[ihex*8+i]] = 1;
+			}
 
 			for (int i = 0; i < 8; i++) {
 				if (ivolpoly_vert[ihex*8+i] == ivertex) {
@@ -128,16 +136,17 @@ void IVOLDUAL::subdivide_hex_to_four
 			for (int i = 0; i < 8; i++) {
 				iv[i] = ivolpoly_vert[ihex*8+corner[i]];
 			}
+
+
 			// Generate new vertices for subdivision.
 			for (int i = 1; i < 8; i++) {
-				COORD_TYPE * vcoord0 = &(vertex_coord.front()) + iv[0] * DIM3;
-				COORD_TYPE * vcoord1 = &(vertex_coord.front()) + iv[i] * DIM3;
 				// Create a new vertex
 				if (new_vertex.count(iv[i]) == 0) {					
 					iw[i] = vertex_coord.size()/DIM3;
 					vertex_coord.resize(vertex_coord.size() + DIM3);
 					for (int d = 0; d < DIM3; d++) {
-						vertex_coord[iw[i]*DIM3+d] = 0.5 * (vcoord0[d] + vcoord1[d]);
+						vertex_coord[iw[i]*DIM3+d] = 0.5 * (vertex_coord[iv[0] * DIM3 + d] + 
+																							  vertex_coord[iv[i] * DIM3 + d]);
 					}
 					new_vertex[iv[i]] = iw[i];
 					ivolv_list.push_back(ivolv_list.back());
@@ -147,6 +156,7 @@ void IVOLDUAL::subdivide_hex_to_four
 					iw[i] = new_vertex[iv[i]];
 				}
 			}
+
 			// Special scale ratio for indentation hexahedra.
 			if (iv[7] == indent_vertex) {
 				float dist0, dist1;
@@ -157,6 +167,7 @@ void IVOLDUAL::subdivide_hex_to_four
 				for (int d = 0; d < DIM3; d++) {
 					vertex_coord[iw[7]*DIM3+d] = 0.25*vcoord0[d] + 0.75*vcoord1[d];
 				}
+
 
 				IJK::compute_distance(DIM3, vcoord0, vcoord_iw7, dist0);
 				for (int i = 1; i < 7; i++) {

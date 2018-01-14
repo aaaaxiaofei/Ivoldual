@@ -40,9 +40,22 @@ void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
   flag_orient_in = false;
   flag_lsmooth_elength = false;
   flag_lsmooth_jacobian = false;
+  flag_split_hex = false;
   default_interior_code = 2;
   lsmooth_elength_iter = 1;
   lsmooth_jacobian_iter = 1;
+  lsmooth_elength_threshhold = 0.1;
+  lsmooth_jacobian_threshhold = 0.0;
+}
+
+// **************************************************
+// CLASS IVOLDUAL_POLY_INFO
+// **************************************************
+
+// Initialize
+void IVOLDUAL::IVOLDUAL_POLY_INFO::Init()
+{
+  flag_subdivide_hex = false;
 }
 
 // **************************************************
