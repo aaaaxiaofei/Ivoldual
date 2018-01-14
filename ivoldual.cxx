@@ -271,12 +271,12 @@ void IVOLDUAL::dual_contouring_interval_volume
   if (param.flag_lsmooth_elength) {
      laplacian_smooth_elength
      (scalar_grid, ivoldual_table, param, vertex_adjacency_list, ivolv_list, 
-      vertex_coord, param.lsmooth_elength_threshhold, param.lsmooth_elength_iter);         
+      vertex_coord, param.lsmooth_elength_threshold, param.lsmooth_elength_iter);         
   }
   if (param.flag_lsmooth_jacobian) {
     laplacian_smooth_jacobian
       (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list, 
-       vertex_coord, param.lsmooth_jacobian_threshhold, param.lsmooth_jacobian_iter);
+       vertex_coord, param.lsmooth_jacobian_threshold, param.lsmooth_jacobian_iter);
   } 
 
   if (param.flag_orient_in) {

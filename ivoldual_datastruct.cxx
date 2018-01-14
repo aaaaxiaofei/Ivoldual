@@ -44,8 +44,8 @@ void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
   default_interior_code = 2;
   lsmooth_elength_iter = 1;
   lsmooth_jacobian_iter = 1;
-  lsmooth_elength_threshhold = 0.1;
-  lsmooth_jacobian_threshhold = 0.0;
+  lsmooth_elength_threshold = 0.1;
+  lsmooth_jacobian_threshold = 0.0;
 }
 
 // **************************************************

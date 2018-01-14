@@ -71,7 +71,7 @@ namespace {
      NO_WRITE_OPT, SILENT_OPT, NO_WARN_OPT,
      INFO_OPT, TIME_OPT, OUT_IVOLV_OPT, OUT_IVOLP_OPT, WRITE_SCALAR_OPT,
      SPLIT_HEX_OPT, LSMOOTH_ELENGTH_OPT, LSMOOTH_JACOBIAN_OPT,
-     ELENGTH_THRESHHOLD_OPT, JACOBIAN_THRESHHOLD_OPT,
+     ELENGTH_THRESHOLD_OPT, JACOBIAN_THRESHOLD_OPT,
      UNKNOWN_OPT} OPTION_TYPE;
 
   typedef enum {
@@ -324,18 +324,18 @@ namespace {
     options.AddUsageOptionBeginOr(REGULAR_OPTG);
 
     options.AddOption1Arg
-      (ELENGTH_THRESHHOLD_OPT, "ELENGTH_THRESHHOLD_OPT", REGULAR_OPTG, 
-       "-elength_threshhold", "S", 
-       "Edge length threshhold of performing Laplacian smoothing.");
+      (ELENGTH_THRESHOLD_OPT, "ELENGTH_THRESHOLD_OPT", REGULAR_OPTG, 
+       "-elength_threshold", "S", 
+       "Edge length threshold of performing Laplacian smoothing.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
     options.AddUsageOptionBeginOr(REGULAR_OPTG);
 
     options.AddOption1Arg
-      (JACOBIAN_THRESHHOLD_OPT, "JACOBIAN_THRESHHOLD_OPT", REGULAR_OPTG, 
-       "-jacobian_threshhold", "S", 
-       "Jacobian threshhold of performing Laplacian smoothing.");
+      (JACOBIAN_THRESHOLD_OPT, "JACOBIAN_THRESHOLD_OPT", REGULAR_OPTG, 
+       "-jacobian_threshold", "S", 
+       "Jacobian threshold of performing Laplacian smoothing.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -720,13 +720,13 @@ bool process_option
     iarg++;
     break;
 
-  case ELENGTH_THRESHHOLD_OPT:
-    io_info.lsmooth_elength_threshhold = get_arg_float(iarg, argc, argv, error);
+  case ELENGTH_THRESHOLD_OPT:
+    io_info.lsmooth_elength_threshold = get_arg_float(iarg, argc, argv, error);
     iarg++;
     break;
 
-  case JACOBIAN_THRESHHOLD_OPT:
-    io_info.lsmooth_jacobian_threshhold = get_arg_float(iarg, argc, argv, error);
+  case JACOBIAN_THRESHOLD_OPT:
+    io_info.lsmooth_jacobian_threshold = get_arg_float(iarg, argc, argv, error);
     iarg++;
     break;
 
