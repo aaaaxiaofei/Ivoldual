@@ -262,21 +262,21 @@ void IVOLDUAL::dual_contouring_interval_volume
     (scalar_grid, ivoldual_table, ivolpoly_vert, cube_ivolv_list,
      vertex_adjacency_list, ivolv_list);
 
-  subdivide_hex
-    (ivolpoly_vert, ivoldual_table, vertex_adjacency_list,
-      ivolv_list, ivolpoly_info, vertex_coord);
-
-  // Laplacian smoothing.
+  // Mesh quality improvement.
+  if (param.flag_split_hex) {
+    subdivide_hex
+      (ivolpoly_vert, ivoldual_table, vertex_adjacency_list,
+        ivolv_list, ivolpoly_info, vertex_coord);
+  }
   if (param.flag_lsmooth_elength) {
      laplacian_smooth_elength
-     (scalar_grid, ivoldual_table, param, vertex_adjacency_list, 
-      ivolv_list, vertex_coord, param.lsmooth_elength_iter);         
+     (scalar_grid, ivoldual_table, param, vertex_adjacency_list, ivolv_list, 
+      vertex_coord, param.lsmooth_elength_threshold, param.lsmooth_elength_iter);         
   }
-
   if (param.flag_lsmooth_jacobian) {
     laplacian_smooth_jacobian
-      (ivolpoly_vert, ivoldual_table, vertex_adjacency_list,
-       ivolv_list, vertex_coord, param.lsmooth_jacobian_iter);
+      (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list, 
+       vertex_coord, param.lsmooth_jacobian_threshold, param.lsmooth_jacobian_iter);
   } 
 
   if (param.flag_orient_in) {

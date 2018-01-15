@@ -70,7 +70,8 @@ namespace {
      LABEL_WITH_ISOVALUE_OPT,
      NO_WRITE_OPT, SILENT_OPT, NO_WARN_OPT,
      INFO_OPT, TIME_OPT, OUT_IVOLV_OPT, OUT_IVOLP_OPT, WRITE_SCALAR_OPT,
-     LSMOOTH_ELENGTH_OPT, LSMOOTH_JACOBIAN_OPT,
+     SPLIT_HEX_OPT, LSMOOTH_ELENGTH_OPT, LSMOOTH_JACOBIAN_OPT,
+     ELENGTH_THRESHOLD_OPT, JACOBIAN_THRESHOLD_OPT,
      UNKNOWN_OPT} OPTION_TYPE;
 
   typedef enum {
@@ -293,6 +294,14 @@ namespace {
     options.AddUsageOptionNewline(REGULAR_OPTG);
     options.AddUsageOptionBeginOr(REGULAR_OPTG);
 
+    options.AddOptionNoArg
+      (SPLIT_HEX_OPT, "SPLIT_HEX_OPT", REGULAR_OPTG, "-split_hex", 
+       "Split hexaheron to eliminate negative Jacobian polytope");
+
+    options.AddUsageOptionEndOr(REGULAR_OPTG);
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+    options.AddUsageOptionBeginOr(REGULAR_OPTG);
+
     options.AddOption1Arg
       (LSMOOTH_ELENGTH_OPT, "LSMOOTH_ELENGTH_OPT", REGULAR_OPTG, 
        "-lsmooth_elength", "S", 
@@ -309,6 +318,24 @@ namespace {
       (LSMOOTH_JACOBIAN_OPT, "LSMOOTH_JACOBIAN_OPT", REGULAR_OPTG, 
        "-lsmooth_jacobian", "S", 
        "Perform Laplacian Smoothing on vertex negative Jacobian.");
+
+    options.AddUsageOptionEndOr(REGULAR_OPTG);
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+    options.AddUsageOptionBeginOr(REGULAR_OPTG);
+
+    options.AddOption1Arg
+      (ELENGTH_THRESHOLD_OPT, "ELENGTH_THRESHOLD_OPT", REGULAR_OPTG, 
+       "-elength_threshold", "S", 
+       "Edge length threshold of performing Laplacian smoothing.");
+
+    options.AddUsageOptionEndOr(REGULAR_OPTG);
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+    options.AddUsageOptionBeginOr(REGULAR_OPTG);
+
+    options.AddOption1Arg
+      (JACOBIAN_THRESHOLD_OPT, "JACOBIAN_THRESHOLD_OPT", REGULAR_OPTG, 
+       "-jacobian_threshold", "S", 
+       "Jacobian threshold of performing Laplacian smoothing.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -677,6 +704,10 @@ bool process_option
     io_info.is_flag_orient_in_set = true;
     break;
 
+  case SPLIT_HEX_OPT:
+    io_info.flag_split_hex = true;
+    break;
+
   case LSMOOTH_ELENGTH_OPT:
     io_info.lsmooth_elength_iter = get_arg_int(iarg, argc, argv, error);
     io_info.flag_lsmooth_elength = true;
@@ -686,6 +717,16 @@ bool process_option
   case LSMOOTH_JACOBIAN_OPT:
     io_info.lsmooth_jacobian_iter = get_arg_int(iarg, argc, argv, error);
     io_info.flag_lsmooth_jacobian = true;
+    iarg++;
+    break;
+
+  case ELENGTH_THRESHOLD_OPT:
+    io_info.lsmooth_elength_threshold = get_arg_float(iarg, argc, argv, error);
+    iarg++;
+    break;
+
+  case JACOBIAN_THRESHOLD_OPT:
+    io_info.lsmooth_jacobian_threshold = get_arg_float(iarg, argc, argv, error);
     iarg++;
     break;
 

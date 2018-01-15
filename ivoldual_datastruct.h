@@ -167,7 +167,13 @@ namespace IVOLDUAL {
 
   class IVOLDUAL_POLY_INFO {
 
+  protected:
+    void Init();
+
   public:
+
+    /// Constructor.
+    IVOLDUAL_POLY_INFO() { Init(); };
 
     /// If true, dual to grid edge.
     /// Else dual to grid vertex.
@@ -261,8 +267,11 @@ namespace IVOLDUAL {
     /// If true, perforam laplacian smoothing.
     bool flag_lsmooth_elength;
     bool flag_lsmooth_jacobian;
+    bool flag_split_hex;
     int lsmooth_elength_iter;
     int lsmooth_jacobian_iter;
+    float lsmooth_elength_threshold;
+    float lsmooth_jacobian_threshold;
 
     /// Default encoded value (1 or 2) for vertices in the interior
     ///   of the interval volume.
@@ -345,8 +354,6 @@ namespace IVOLDUAL {
   // DUALISO INFO
   // **************************************************
 
-  // typedef IJKDUAL::DUALISO_INFO DUALISO_INFO;
-
   class IVOLDUAL_INFO: public IJKDUAL::DUALISO_INFO {
 
   public:
@@ -374,6 +381,59 @@ namespace IVOLDUAL {
   // **************************************************
 
   typedef IJKDUAL::MERGE_DATA MERGE_DATA;
+
+
+  // **************************************************
+  // INTERVAL VOLUME MESH VERT INFO
+  // **************************************************
+
+  class MESH_VERT_INFO {
+
+  protected:
+    void Init();
+
+  public:
+
+    /// Constructor.
+    MESH_VERT_INFO() { Init(); };
+
+    /// If false, the vertex is created during subdivision.
+    /// Else the vertex is dual to cube
+    bool is_dual;
+
+    /// Dual cube index
+    VERTEX_INDEX cube_index;
+
+  };
+
+  /// Array of IVOLDUAL_POLY_INFO.
+  typedef std::vector<MESH_VERT_INFO> MESH_VERT_INFO_ARRAY;
+
+
+  // **************************************************
+  // INTERVAL VOLUME MESH POLY INFO
+  // **************************************************
+
+  class MESH_POLY_INFO {
+
+  protected:
+    void Init();
+
+  public:
+
+    /// Constructor.
+    MESH_POLY_INFO() { Init(); };
+
+    /// If true, the polytope is subdivided.
+    bool is_subdivided;
+
+    /// If true, the polytope is a dual polytope.
+    bool is_dual;
+
+  };
+
+  /// Array of IVOLDUAL_POLY_INFO.
+  typedef std::vector<MESH_POLY_INFO> MESH_POLY_INFO_ARRAY;
 
 }
 

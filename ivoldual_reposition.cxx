@@ -46,11 +46,11 @@ void IVOLDUAL::laplacian_smooth_elength
  const IVOLDUAL_DATA_FLAGS & param,
  IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
  const DUAL_IVOLVERT_ARRAY & ivolv_list,
- COORD_ARRAY & vertex_coord, 
+ COORD_ARRAY & vertex_coord,
+ float laplacian_smooth_limit, 
  int iteration)
 {
   const int d = 3;
-  float laplacian_smooth_limit = 0.1;
   float dist;
   COORD_TYPE * vcoord = &(vertex_coord.front());
 
@@ -122,12 +122,12 @@ void IVOLDUAL::laplacian_smooth_jacobian
  IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
  const DUAL_IVOLVERT_ARRAY & ivolv_list,
  COORD_ARRAY & vertex_coord, 
+ float jacobian_limit, 
  int iteration)
  {
   const int DIM3(3);
   const int NUM_VERT_PER_HEXAHEDRON(8); 
   COORD_TYPE * vcoord = &(vertex_coord.front());
-  float jacobian_limit = 0.0;
 
   for (int it = 0; it < iteration; it++) {
     std::vector<int> negative_jabocian_list;
@@ -163,6 +163,7 @@ void IVOLDUAL::laplacian_smooth_jacobian
   COORD_TYPE * vcoord = &(vertex_coord.front());
 
 	for (int cur : negative_jabocian_list) {
+
     // Current node coordinates.
     COORD_TYPE *cur_coord = vcoord + cur*DIM3;
 
@@ -210,7 +211,7 @@ void IVOLDUAL::laplacian_move_vertex
 {
 
 	const int DIM3(3);
-  const float step_base(0.02);
+  const float step_base(0.1);
   const int NUM_VERT_PER_HEXAHEDRON(8); 
   COORD_TYPE * vcoord = &(vertex_coord.front());
 
@@ -271,7 +272,6 @@ void IVOLDUAL::laplacian_move_vertex
         target[d] = neigh_coord[d];
       }
     }
-
     // Restore neighbor coordinate to backup coord
     for (int d = 0; d < DIM3; d++) {
       ver_coord[d] = neigh_temp[d];
@@ -309,5 +309,4 @@ void IVOLDUAL::laplacian_move_vertex
   for (int d = 0; d < DIM3; d++) {
     ver_coord[d] = optimal[d];
   }
-
 }

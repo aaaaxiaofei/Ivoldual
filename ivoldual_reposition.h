@@ -52,7 +52,8 @@ namespace IVOLDUAL {
    const IVOLDUAL_DATA_FLAGS & param,
    IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
    const DUAL_IVOLVERT_ARRAY & ivolv_list,
-   COORD_ARRAY & vertex_coord, 
+   COORD_ARRAY & vertex_coord,
+   float laplacian_smooth_limit, 
    int iteration);
 
   /// Laplacian Smoothing for negative Jacobian
@@ -62,6 +63,7 @@ namespace IVOLDUAL {
    IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
    const DUAL_IVOLVERT_ARRAY & ivolv_list,
    COORD_ARRAY & vertex_coord, 
+   float jacobian_limit, 
    int iteration);
 
   void laplacian_smooth_jacobian
