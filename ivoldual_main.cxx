@@ -4,7 +4,7 @@
 
 /*
   IJK: Isosurface Jeneration Kode
-  Copyright (C) 2011-2017 Rephael Wenger
+  Copyright (C) 2011-2018 Rephael Wenger
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public License
@@ -202,7 +202,7 @@ void construct_interval_volume
     }
 
     if (output_info.flag_report_all_ivol_poly) {
-      report_all_ivol_poly
+      report_all_ivol_hex
         (output_info, ivoldual_data.ScalarGrid(), interval_volume);
     }
   }

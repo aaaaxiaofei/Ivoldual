@@ -198,6 +198,21 @@ namespace IVOLDUAL {
   // **************************************************
 
   /// Extract dual interval volume polytopes.
+  /// @param encoded_grid Encoding of each vertex grid.
+  /// - 0: Below interval volume.
+  /// - 1: In interval volume. Vertex lifted to one +.
+  /// - 2: In interval volume. Vertex lifted to two +'s.
+  /// - 3: Above interval volume.
+  /// @param[out] ivolpoly[] Vertices of interval volume polytopes (hexahedra).
+  /// - Poly i has vertices ivolpoly[i*8], ivolpoly[i*8+1], ..., 
+  ///     ivolpoly[i*8+7].
+  /// - Vertices are given by the index of the cube containing the vertex.
+  /// @param[out] poly_vertex[] Index of vertex with respect to the containing
+  ///     polytope.  Possible values are 0, 1, ..., 7.
+  /// @param[out] ivolpoly_info[] Information about interval volume polytopes.
+  ///     ivolpoly_info[i] contains information about polytope i,
+  ///     such as whether it is dual to a grid edge or
+  ///     a grid vertex, or whether it has reverse orientation.
   void extract_dual_ivolpoly
   (const IVOLDUAL_ENCODED_GRID & encoded_grid,
    std::vector<ISO_VERTEX_INDEX> & ivolpoly,

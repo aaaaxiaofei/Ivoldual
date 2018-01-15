@@ -3,7 +3,7 @@
 
 /*
   IJK: Isosurface Jeneration Kode
-  Copyright (C) 2011-2017 Rephael Wenger
+  Copyright (C) 2011-2018 Rephael Wenger
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public License
@@ -51,7 +51,8 @@ using namespace std;
 namespace {
 
   typedef enum
-    {SUBSAMPLE_OPT, SUPERSAMPLE_OPT, SUBDIVIDE_OPT, POSITION_OPT, CUBE_CENTER_OPT,
+    {SUBSAMPLE_OPT, SUPERSAMPLE_OPT, SUBDIVIDE_OPT, POSITION_OPT, 
+     CUBE_CENTER_OPT,
      SPLIT_AMBIG_PAIRS_OPT, SPLIT_AMBIG_PAIRSB_OPT, NO_SPLIT_AMBIG_PAIRS_OPT,
      MANIFOLD_OPT, RM_NON_MANIFOLD_OPT, MULTI_ISOV_OPT, SINGLE_ISOV_OPT, 
      SELECT_SPLIT_OPT, CONNECT_AMBIG_OPT,
@@ -205,6 +206,8 @@ namespace {
     options.AddToHelpMessage
       (SPLIT_AMBIG_PAIRSB_OPT, "Version which allows more splits.");
 
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+
     options.AddOptionNoArg
       (NO_SPLIT_AMBIG_PAIRS_OPT, "NO_SPLIT_AMBIG_PAIRS_OPT", REGULAR_OPTG, 
        "-no_split_ambig_pairs", "Do not split ambiguous pairs.");
@@ -239,8 +242,8 @@ namespace {
       (SINGLE_ISOV_OPT, "Isosurface may have non-manifold edges/vertices.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
-
     options.AddUsageOptionNewline(REGULAR_OPTG);
+
     options.AddUsageOptionBeginOr(REGULAR_OPTG);
 
     options.AddOptionNoArg
@@ -2129,7 +2132,7 @@ void IVOLDUAL::report_all_ivol_hex
 }
 
 
-void IVOLDUAL::report_all_ivol_poly
+void IVOLDUAL::report_all_ivol_hex
 (const OUTPUT_INFO & output_info,
  const DUALISO_GRID & grid, const DUAL_INTERVAL_VOLUME & interval_volume)
 {
@@ -2137,9 +2140,6 @@ void IVOLDUAL::report_all_ivol_poly
 
   output_file.open(output_info.report_ivol_poly_filename.c_str(), ios::out);
   if (output_file) {
-    /* DEBUG
-    report_all_ivol_poly(output_file, grid, interval_volume);
-    */
     report_all_ivol_hex(output_file, grid, interval_volume);
   }
   else {

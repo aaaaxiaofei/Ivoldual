@@ -508,9 +508,9 @@ namespace IVOLDUAL {
   (std::ostream & out, const DUALISO_GRID & grid,  
    const DUAL_INTERVAL_VOLUME & interval_volume);
 
-  /// Report all interval volume polytopes.
+  /// Report all interval volume hexahedra.
   /// - Version which opens output stream from output info.
-  void report_all_ivol_poly
+  void report_all_ivol_hex
   (const OUTPUT_INFO & output_info,
    const DUALISO_GRID & grid, const DUAL_INTERVAL_VOLUME & interval_volume);
 
