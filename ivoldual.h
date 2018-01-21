@@ -309,6 +309,26 @@ namespace IVOLDUAL {
    std::vector<GRID_CUBE_DATA> & cube_list,
    int & num_split);
 
+  /// Split interval volume vertex pairs which create non-manifold edges.
+  /// - Cubes containing vertices have only one ambiguous facet.
+  /// - Version which allows more splits.
+  /// -  Allow split if numv_in_lower_lifted > 1 but numv_in_upper_lifted = 1
+  ///    or vice versa.
+  void split_non_manifold_ivolv_pairs_ambigC
+  (const DUALISO_GRID & grid,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   const VERTEX_INDEX index_to_cube_list[],
+   std::vector<GRID_CUBE_DATA> & cube_list,
+   int & num_split);
+
+  /// Split interval volume vertex pairs which create non-manifold edges.
+  /// - Version which creates array index_to_cube_list[].
+  /// - Version which allows more splits.
+  void split_non_manifold_ivolv_pairs_ambigC
+  (const DUALISO_GRID & grid,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   std::vector<GRID_CUBE_DATA> & cube_list,
+   int & num_split);
 
   // **************************************************
   // POSITION INTERVAL VOLUME VERTICES

@@ -4,7 +4,7 @@
 
 /*
   IJK: Isosurface Jeneration Kode
-  Copyright (C) 2017 Rephael Wenger
+  Copyright (C) 2017-2018 Rephael Wenger
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public License
@@ -235,6 +235,10 @@ void IVOLDUAL::dual_contouring_interval_volume
   if (param.flag_split_ambig_pairsB) {
     // *** Probably not necessary
     split_non_manifold_ivolv_pairs_ambigB
+      (encoded_grid, ivoldual_table, cube_ivolv_list, num_non_manifold_split);
+  }
+  else if (param.flag_split_ambig_pairsC) {
+    split_non_manifold_ivolv_pairs_ambigC
       (encoded_grid, ivoldual_table, cube_ivolv_list, num_non_manifold_split);
   }
   else if (param.flag_split_ambig_pairs) {
@@ -820,6 +824,95 @@ namespace {
     return(true);
   }
 
+
+  // Return true if ivol vertices in cube are candidates for splitting
+  //   to avoid pair ambiguity.
+  // Version which allows more splits.
+  // Allow split if splitting will increase number of vertices
+  //   in lower or upper lifted cube.
+  //   (Does not necessarily need to do both.)
+  bool is_cube_ambig_split_candidateC
+  (const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   const GRID_CUBE_DATA & cube_data)
+  {
+    const TABLE_INDEX table_index = cube_data.table_index;
+    const int numv_in_lower_lifted = 
+      ivoldual_table.NumVerticesInLowerLifted(table_index);
+    const int numv_in_upper_lifted = 
+      ivoldual_table.NumVerticesInUpperLifted(table_index);
+    const TABLE_INDEX opposite_table_index =
+      ivoldual_table.OppositeTableIndex(table_index);
+
+    if (ivoldual_table.NumAmbiguousFacets(table_index) > 1) 
+      { return(false); }
+    if ((numv_in_lower_lifted > 1) && (numv_in_upper_lifted > 1))
+      { return(false); }
+
+    return(true);
+  }
+
+  // Return true if pair of cubes sharing ambiguous facet
+  //   have lower ambiguous facet and only one ivolv in each
+  //   or have upper ambiguous facet and only one ivolv in each.
+  bool does_cube_pair_have_ambiguity_problem
+  (const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   const TABLE_INDEX table_indexA,
+   const TABLE_INDEX table_indexB)
+  {
+    const int numv_in_lower_liftedA = 
+      ivoldual_table.NumVerticesInLowerLifted(table_indexA);
+    const int numv_in_upper_liftedA = 
+      ivoldual_table.NumVerticesInUpperLifted(table_indexA);
+    const int numv_in_lower_liftedB = 
+      ivoldual_table.NumVerticesInLowerLifted(table_indexB);
+    const int numv_in_upper_liftedB = 
+      ivoldual_table.NumVerticesInUpperLifted(table_indexB);
+
+    if (ivoldual_table.AmbiguousFacetBitsInLowerLifted(table_indexA) != 0) {
+      if ((numv_in_lower_liftedA == 1) && (numv_in_lower_liftedB == 1)) 
+        { return(true); }
+    }
+
+    if (ivoldual_table.AmbiguousFacetBitsInUpperLifted(table_indexA) != 0) {
+      if ((numv_in_upper_liftedA == 1) && (numv_in_upper_liftedB == 1)) 
+        { return(true); }
+    }
+
+    return(false);
+  }
+
+
+  // Return true if splitting ivol vertices separates all 
+  //   to avoid pair ambiguity.
+  // Version which checks split pairs.
+  bool is_cube_pair_ambig_split_candidate
+  (const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   const GRID_CUBE_DATA & cube_dataA,
+   const GRID_CUBE_DATA & cube_dataB)
+  {
+    const TABLE_INDEX table_indexA = cube_dataA.table_index;
+    const TABLE_INDEX table_indexB = cube_dataB.table_index;
+    const TABLE_INDEX opposite_table_indexA =
+      ivoldual_table.OppositeTableIndex(table_indexA);
+    const TABLE_INDEX opposite_table_indexB =
+      ivoldual_table.OppositeTableIndex(table_indexB);
+
+    if (ivoldual_table.NumAmbiguousFacets(table_indexA) > 1) 
+      { return(false); }
+    if (ivoldual_table.NumAmbiguousFacets(table_indexB) > 1) 
+      { return(false); }
+
+    if (does_cube_pair_have_ambiguity_problem
+        (ivoldual_table, table_indexA, table_indexB)) {
+
+      if (!does_cube_pair_have_ambiguity_problem
+          (ivoldual_table, opposite_table_indexA, opposite_table_indexB)) 
+        { return(true); }
+    }
+
+    return(false);
+  }
+
 }
 
 void IVOLDUAL::split_dual_ivolvert
@@ -977,6 +1070,82 @@ void IVOLDUAL::split_non_manifold_ivolv_pairs_ambigB
   IJK::set_index_to_cube_list(cube_list, index_to_cube_list);
 
   split_non_manifold_ivolv_pairs_ambigB
+    (grid, ivoldual_table, index_to_cube_list.PtrConst(), 
+     cube_list, num_split);
+}
+
+
+void IVOLDUAL::split_non_manifold_ivolv_pairs_ambigC
+(const DUALISO_GRID & grid,
+ const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+ const VERTEX_INDEX index_to_cube_list[],
+ std::vector<GRID_CUBE_DATA> & cube_list,
+ int & num_split)
+{
+  typedef typename DUALISO_GRID::NUMBER_TYPE NUM_TYPE;
+
+  const int dimension = grid.Dimension();
+  const NUM_TYPE num_cube_facets = IJK::compute_num_cube_facets(dimension);
+
+  num_split = 0;
+  for (NUM_TYPE i0 = 0; i0 < cube_list.size(); i0++) {
+
+    const TABLE_INDEX it0 = cube_list[i0].table_index;
+
+    if (ivoldual_table.NumAmbiguousFacets(it0) == 1) {
+      int orth_dir;
+      int side;
+      const VERTEX_INDEX cube_index0 = cube_list[i0].cube_index;
+
+      const bool flag_on_boundary = 
+        IJK::is_ambiguous_cube_facet_on_grid_boundary
+        (grid, ivoldual_table, cube_index0, it0, orth_dir, side);
+        
+      if (flag_on_boundary) {
+        if (is_cube_ambig_split_candidateC(ivoldual_table, cube_list[i0])) {
+
+          // Change table index of cube i0 opposite table
+          //   indices to split interval volume vertex.
+
+          cube_list[i0].table_index = 
+            ivoldual_table.OppositeTableIndex(it0);
+          num_split++;
+        }
+      }
+      else {
+        const VERTEX_INDEX cube_index1 =
+          grid.AdjacentVertex(cube_index0, orth_dir, side);
+        const VERTEX_INDEX i1 = index_to_cube_list[cube_index1];
+
+        if (is_cube_pair_ambig_split_candidate
+            (ivoldual_table, cube_list[i0], cube_list[i1])) {
+          const TABLE_INDEX it1 = cube_list[i1].table_index;
+
+          // Change table indices of cubes i0 and i1 to opposite table
+          //   indices to split interval volume vertices.
+          cube_list[i0].table_index = 
+            ivoldual_table.OppositeTableIndex(it0);
+          cube_list[i1].table_index = 
+            ivoldual_table.OppositeTableIndex(it1);
+          num_split += 2;
+        }
+      }
+    }
+  }
+}
+
+
+void IVOLDUAL::split_non_manifold_ivolv_pairs_ambigC
+(const DUALISO_GRID & grid,
+ const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+ std::vector<GRID_CUBE_DATA> & cube_list,
+ int & num_split)
+{
+  IJK::ARRAY<VERTEX_INDEX> index_to_cube_list(grid.NumVertices());
+
+  IJK::set_index_to_cube_list(cube_list, index_to_cube_list);
+
+  split_non_manifold_ivolv_pairs_ambigC
     (grid, ivoldual_table, index_to_cube_list.PtrConst(), 
      cube_list, num_split);
 }

@@ -4,7 +4,7 @@
 
 /*
   IJK: Isosurface Jeneration Kode
-  Copyright (C) 2017 Rephael Wenger
+  Copyright (C) 2017-2018 Rephael Wenger
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public License
@@ -250,6 +250,7 @@ namespace IVOLDUAL {
     /// If true, split vertices in ambiguous cubes sharing facets.
     bool flag_split_ambig_pairs;
     bool flag_split_ambig_pairsB;
+    bool flag_split_ambig_pairsC;
 
     /// Hexahedral triangulation method.
     HEX_TRI_METHOD hex_tri_method;

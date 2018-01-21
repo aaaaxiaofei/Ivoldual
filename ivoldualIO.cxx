@@ -53,7 +53,8 @@ namespace {
   typedef enum
     {SUBSAMPLE_OPT, SUPERSAMPLE_OPT, SUBDIVIDE_OPT, POSITION_OPT, 
      CUBE_CENTER_OPT,
-     SPLIT_AMBIG_PAIRS_OPT, SPLIT_AMBIG_PAIRSB_OPT, NO_SPLIT_AMBIG_PAIRS_OPT,
+     SPLIT_AMBIG_PAIRS_OPT, SPLIT_AMBIG_PAIRSB_OPT, SPLIT_AMBIG_PAIRSC_OPT, 
+     NO_SPLIT_AMBIG_PAIRS_OPT,
      MANIFOLD_OPT, RM_NON_MANIFOLD_OPT, MULTI_ISOV_OPT, SINGLE_ISOV_OPT, 
      SELECT_SPLIT_OPT, CONNECT_AMBIG_OPT,
      SEP_NEG_OPT, SEP_POS_OPT,
@@ -205,6 +206,12 @@ namespace {
        "-split_ambig_pairsB", "Split ambiguous pairs.");
     options.AddToHelpMessage
       (SPLIT_AMBIG_PAIRSB_OPT, "Version which allows more splits.");
+
+    options.AddOptionNoArg
+      (SPLIT_AMBIG_PAIRSC_OPT, "SPLIT_AMBIG_PAIRSC_OPT", REGULAR_OPTG, 
+       "-split_ambig_pairsC", "Split ambiguous pairs.");
+    options.AddToHelpMessage
+      (SPLIT_AMBIG_PAIRSC_OPT, "Version (different) which allows more splits.");
 
     options.AddUsageOptionNewline(REGULAR_OPTG);
 
@@ -602,9 +609,14 @@ bool process_option
     io_info.flag_split_ambig_pairsB = true;
     break;
 
+  case SPLIT_AMBIG_PAIRSC_OPT:
+    io_info.flag_split_ambig_pairsC = true;
+    break;
+
   case NO_SPLIT_AMBIG_PAIRS_OPT:
     io_info.flag_split_ambig_pairs = false;
     io_info.flag_split_ambig_pairsB = false;
+    io_info.flag_split_ambig_pairsC = false;
     break;
 
   case MANIFOLD_OPT:
