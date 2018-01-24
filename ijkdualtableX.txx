@@ -29,6 +29,7 @@
 
 #include <vector>
 
+
 namespace IJKDUALTABLE {
 
   // **************************************************
@@ -177,260 +178,119 @@ namespace IJKDUALTABLE {
    DUAL_TABLE_VINFO_TYPE & vinfo)
   {
     typedef typename DUAL_TABLE_TYPE::DIMENSION_TYPE DTYPE;
+    typedef typename DUAL_TABLE_TYPE::IVOL_VERTEX_INDEX_TYPE IVOLV_TYPE;
     typedef typename DUAL_TABLE_TYPE::TABLE_INDEX TABLE_INDEX;
     typedef typename DUAL_TABLE_VINFO_TYPE::NUMBER_TYPE NTYPE;
 
-    NTYPE iend[2];
+    IVOLV_TYPE ivolv;
 
     for (TABLE_INDEX it = 0; it < table.NumTableEntries(); it++) {
 
       // Initialize
-      for (NTYPE j = 0; j < table.Entry(it).NumVertices(); j++) 
+      for (IVOLV_TYPE j = 0; j < table.Entry(it).NumVertices(); j++) 
         { vinfo.VertexInfoNC(it, j).num_incident_isopoly = 0; }
 
       for (NTYPE ie = 0; ie < table.NumPolyEdges(); ie++) {
 
-        iend[0] = table.Cube().EdgeEndpoint(ie, 0);
-        iend[1] = table.Cube().EdgeEndpoint(ie, 1);
+        if (table.DoesLowerIsosurfaceIntersectEdge(it, ie, ivolv))
+          { vinfo.VertexInfoNC(it, ivolv).num_incident_isopoly++; }
 
-        if (table.EdgeHasDualIVolPoly(it, ie)) {
-          const NTYPE ivolv0 = table.LowerIncident(it, ie);
-          const NTYPE ivolv1 = table.UpperIncident(it, ie);
-
-          if (table.IsBelowIntervalVolume(it, iend[0]) ||
-              table.IsBelowIntervalVolume(it, iend[1])) {
-
-            if (table.OnLowerIsosurface(it, ivolv0))
-              { vinfo.VertexInfoNC(it, ivolv0).num_incident_isopoly++; }
-            if (table.OnLowerIsosurface(it, ivolv1))
-              { vinfo.VertexInfoNC(it, ivolv1).num_incident_isopoly++; }
-          }
-
-          if (table.IsAboveIntervalVolume(it, iend[0]) ||
-              table.IsAboveIntervalVolume(it, iend[1])) {
-
-            if (table.OnUpperIsosurface(it, ivolv0))
-              { vinfo.VertexInfoNC(it, ivolv0).num_incident_isopoly++; }
-            if (table.OnUpperIsosurface(it, ivolv1))
-              { vinfo.VertexInfoNC(it, ivolv1).num_incident_isopoly++; }
-          }
-        }
-        else if (table.IsInIntervalVolume(it, iend[0]) ||
-                 table.IsInIntervalVolume(it, iend[1])) {
-
-          if (table.IsInIntervalVolume(it, iend[0]))
-            { std::swap(iend[0], iend[1]); }
-
-          if (table.IsInIntervalVolume(it, iend[0])) { continue; }
-
-          const NTYPE ivolv = table.IncidentIVolVertex(it, iend[1]);
-
-          if (table.IsBelowIntervalVolume(it, iend[0])) {
-            if (table.OnLowerIsosurface(it, ivolv))
-              { vinfo.VertexInfoNC(it, ivolv).num_incident_isopoly++; }
-          }
-
-          if (table.IsAboveIntervalVolume(it, iend[0])) {
-            if (table.OnUpperIsosurface(it, ivolv))
-              { vinfo.VertexInfoNC(it, ivolv).num_incident_isopoly++; }
-          }
-        }
+        if (table.DoesUpperIsosurfaceIntersectEdge(it, ie, ivolv))
+          { vinfo.VertexInfoNC(it, ivolv).num_incident_isopoly++; }
       }
-
     }
   }
 
 
-  /// Determine separation cube vertices which are below/above 
-  ///   the interval volume.
-  /// @pre Call compute_ivoldual_table_num_incident_poly
-  ///   and compute_ivoldual_table_num_incident_isosurface_poly
-  ///   before calling this routine.
+  // **************************************************
+  // DETERMINE IVOL VERTEX CONNECTION DIRECTIONS
+  // **************************************************
+
+  /// Determine interval volume vertex connection directions.
   template <typename DUAL_TABLE_TYPE, 
             typename DUAL_TABLE_VINFO_TYPE>
-  void determine_separation_vertices_below_above_ivol
+  void determine_ivol_vertex_connection_directions
   (const DUAL_TABLE_TYPE & table,
    DUAL_TABLE_VINFO_TYPE & vinfo)
   {
     typedef typename DUAL_TABLE_TYPE::DIMENSION_TYPE DTYPE;
     typedef typename DUAL_TABLE_TYPE::TABLE_INDEX TABLE_INDEX;
     typedef typename DUAL_TABLE_VINFO_TYPE::NUMBER_TYPE NTYPE;
-    typedef typename DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE::CUBE_VERTEX_TYPE
-      CUBE_VERTEX_TYPE;
+    typedef typename DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE
+      VINFO_TYPE;
+    typedef typename VINFO_TYPE::CUBE_VERTEX_TYPE CUBE_VERTEX_TYPE;
+    typedef typename VINFO_TYPE::CUBE_EDGE_TYPE CUBE_EDGE_TYPE;
+    typedef typename VINFO_TYPE::DIR_BITS_TYPE DIR_BITS_TYPE;
 
-    const CUBE_VERTEX_TYPE UNDEFINED_CUBE_VERTEX =
-      DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE::UNDEFINED_CUBE_VERTEX;
-    const NTYPE CUBE_VERTEX_DEGREE(table.Dimension());
+    const NTYPE NUM_FACETS(table.Cube().NumFacets());
+    const NTYPE NUM_EDGES(table.Cube().NumEdges());
+    const NTYPE NUM_VERTICES(table.Cube().NumVertices());
     NTYPE ivolv[2], iend[2];
-    std::vector<CUBE_VERTEX_TYPE> candidate_separation_vertex;
-    std::vector<NTYPE> num_incident_edges_dual_to_isosurface;
-    IJK::PROCEDURE_ERROR error ("determine_separation_vertices");
+    DIR_BITS_TYPE connect_dir[2];
+    std::vector<DIR_BITS_TYPE> bit_mask(NUM_FACETS);
+
+
+    // Set bit_mask[]
+    for (NTYPE i = 0; i < NUM_FACETS; i++) 
+      { bit_mask[i] = (DIR_BITS_TYPE(1) << i); }
+
+    // Initialize connect_dir.
+    for (TABLE_INDEX it = 0; it < table.NumTableEntries(); it++) {
+      for (NTYPE ivolv = 0; ivolv < table.NumIVolVertices(it); ivolv++) {
+        vinfo.VertexInfoNC(it,ivolv).connect_dir = 0;
+      }
+    }
 
     for (TABLE_INDEX it = 0; it < table.NumTableEntries(); it++) {
 
-      const NTYPE num_ivolv = table.Entry(it).NumVertices();
+      for (CUBE_EDGE_TYPE ie = 0; ie < NUM_EDGES; ie++) {
 
-      candidate_separation_vertex.resize(num_ivolv);
-      num_incident_edges_dual_to_isosurface.resize(num_ivolv);
-
-      // Initialize
-      for (NTYPE j = 0; j < num_ivolv; j++) {
-        candidate_separation_vertex[j] = UNDEFINED_CUBE_VERTEX;
-        num_incident_edges_dual_to_isosurface[j] = 0;
-      }
-
-      for (NTYPE ie = 0; ie < table.NumPolyEdges(); ie++) {
         if (table.EdgeHasDualIVolPoly(it, ie)) {
           ivolv[0] = table.LowerIncident(it, ie);
           ivolv[1] = table.UpperIncident(it, ie);
-
           iend[0] = table.Cube().EdgeEndpoint(ie, 0);
           iend[1] = table.Cube().EdgeEndpoint(ie, 1);
+          connect_dir[0] = vinfo.VertexInfo(it, ivolv[0]).connect_dir;
+          connect_dir[1] = vinfo.VertexInfo(it, ivolv[1]).connect_dir;
+          DTYPE edge_dir = table.Cube().EdgeDir(ie);
 
-          for (NTYPE i = 0; i < 2; i++) {
-            for (NTYPE j = 0; j < 2; j++) {
+          for (DTYPE d = 1; d < table.Dimension(); d++) {
+            const DTYPE dir2 = (edge_dir+d)%table.Dimension();
 
-              const NTYPE iend_i = iend[i];
-              const NTYPE ivolv_j = ivolv[j];
-              if (vinfo.VertexInfo(it, ivolv_j).num_incident_isopoly != 
-                  CUBE_VERTEX_DEGREE)
-                { continue; }
-
-              if (table.OnLowerIsosurface(it, ivolv_j) &&
-                  table.IsBelowIntervalVolume(it,iend_i)) {
-                if (candidate_separation_vertex[ivolv_j] == 
-                    UNDEFINED_CUBE_VERTEX) {
-                  candidate_separation_vertex[ivolv_j] = iend_i;
-                  num_incident_edges_dual_to_isosurface[ivolv_j] = 1;
-                }
-                else if (candidate_separation_vertex[ivolv_j] == iend_i) {
-                  num_incident_edges_dual_to_isosurface[ivolv_j]++;
-                }
-              }
-
-              if (table.OnUpperIsosurface(it, ivolv_j) &&
-                  table.IsAboveIntervalVolume(it,iend_i)) {
-                if (candidate_separation_vertex[ivolv_j] == 
-                    UNDEFINED_CUBE_VERTEX) {
-                  candidate_separation_vertex[ivolv_j] = iend_i;
-                  num_incident_edges_dual_to_isosurface[ivolv_j] = 1;
-                }
-                else if (candidate_separation_vertex[ivolv_j] == iend_i) {
-                  num_incident_edges_dual_to_isosurface[ivolv_j]++;
-                }
-              }
+            if ((iend[0] & bit_mask[dir2]) == 0) {
+              connect_dir[0] = (connect_dir[0] | bit_mask[dir2]);
+              connect_dir[1] = (connect_dir[1] | bit_mask[dir2]);
+            }
+            else {
+              const DTYPE jfacet = dir2 + table.Dimension();
+              connect_dir[0] = (connect_dir[0] | bit_mask[jfacet]);
+              connect_dir[1] = (connect_dir[1] | bit_mask[jfacet]);
             }
           }
+
+          vinfo.VertexInfoNC(it, ivolv[0]).connect_dir = connect_dir[0];
+          vinfo.VertexInfoNC(it, ivolv[1]).connect_dir = connect_dir[1];
         }
       }
 
-      for (NTYPE iv0 = 0; iv0 < table.NumPolyVertices(); iv0++) {
-        if (table.IsInIntervalVolume(it, iv0)) {
-          const NTYPE ivolv = table.IncidentIVolVertex(it, iv0);
+
+      for (CUBE_VERTEX_TYPE iv = 0; iv < NUM_VERTICES; iv++) {
+
+        if (table.IsInIntervalVolume(it, iv)) {
+          ivolv[0] = table.IncidentIVolVertex(it, iv);
+          connect_dir[0] = vinfo.VertexInfo(it, ivolv[0]).connect_dir;
 
           for (DTYPE d = 0; d < table.Dimension(); d++) {
-
-            const NTYPE iv1 = table.Cube().VertexNeighbor(iv0, d);
-            if (table.OnLowerIsosurface(it, ivolv) &&
-                table.IsBelowIntervalVolume(it,iv1)) {
-              if (candidate_separation_vertex[ivolv] == 
-                  UNDEFINED_CUBE_VERTEX) {
-                candidate_separation_vertex[ivolv] = iv1;
-                num_incident_edges_dual_to_isosurface[ivolv] = 1;
-              }
-              else if (candidate_separation_vertex[ivolv] == iv1) {
-                num_incident_edges_dual_to_isosurface[ivolv]++;
-              }
+            if ((iv & bit_mask[d]) == 0) {
+              connect_dir[0] = (connect_dir[0] | bit_mask[d]);
             }
-
-            if (table.OnUpperIsosurface(it, ivolv) &&
-                table.IsAboveIntervalVolume(it,iv1)) {
-              if (candidate_separation_vertex[ivolv] == 
-                  UNDEFINED_CUBE_VERTEX) {
-                candidate_separation_vertex[ivolv] = iv1;
-                num_incident_edges_dual_to_isosurface[ivolv] = 1;
-              }
-              else if (candidate_separation_vertex[ivolv] == iv1) {
-                num_incident_edges_dual_to_isosurface[ivolv]++;
-              }
+            else {
+              const DTYPE jfacet = d + table.Dimension();
+              connect_dir[0] = (connect_dir[0] | bit_mask[jfacet]);
             }
           }
-        }
-      }
 
-      for (NTYPE j = 0; j < num_ivolv; j++) {
-        if (candidate_separation_vertex[j] != UNDEFINED_CUBE_VERTEX &&
-            num_incident_edges_dual_to_isosurface[j] == CUBE_VERTEX_DEGREE) {
-          vinfo.VertexInfoNC(it,j).separation_vertex = 
-            candidate_separation_vertex[j];
-        }
-      }
-
-      // Set separation vertices which are separated from other vertices
-      //   by an isosurface below the interval volume and an isosurface
-      //   above the interval volume.
-      for (NTYPE j = 0; j < num_ivolv; j++) {
-        candidate_separation_vertex[j] = UNDEFINED_CUBE_VERTEX;
-        num_incident_edges_dual_to_isosurface[j] = 0;
-      }
-
-      for (NTYPE ie = 0; ie < table.NumPolyEdges(); ie++) {
-        if (table.EdgeHasDualIVolPoly(it, ie)) {
-          ivolv[0] = table.LowerIncident(it, ie);
-          ivolv[1] = table.UpperIncident(it, ie);
-
-          iend[0] = table.Cube().EdgeEndpoint(ie, 0);
-          iend[1] = table.Cube().EdgeEndpoint(ie, 1);
-
-          if (table.IsInIntervalVolume(it, iend[0]) ||
-              table.IsInIntervalVolume(it, iend[1])) { continue; }
-
-          for (NTYPE i = 0; i < 2; i++) {
-            for (NTYPE j = 0; j < 2; j++) {
-
-              const NTYPE iendA = iend[i];
-              const NTYPE ivolvC = ivolv[j];
-              const NTYPE ivolvD = ivolv[1-j];
-              if (vinfo.VertexInfo(it, ivolvC).num_incident_isopoly != 
-                  CUBE_VERTEX_DEGREE)
-                { continue; }
-
-              if (vinfo.VertexInfo(it, ivolvD).separation_vertex != iendA)
-                { continue; }
-
-              if (table.OnLowerIsosurface(it, ivolvC) &&
-                  table.IsAboveIntervalVolume(it,iendA)) {
-                if (candidate_separation_vertex[ivolvC] == 
-                    UNDEFINED_CUBE_VERTEX) {
-                  candidate_separation_vertex[ivolvC] = iendA;
-                  num_incident_edges_dual_to_isosurface[ivolvC] = 1;
-                }
-                else if (candidate_separation_vertex[ivolvC] == iendA) {
-                  num_incident_edges_dual_to_isosurface[ivolvC]++;
-                }
-              }
-
-              if (table.OnUpperIsosurface(it, ivolvC) &&
-                  table.IsBelowIntervalVolume(it,iendA)) {
-                if (candidate_separation_vertex[ivolvC] == 
-                    UNDEFINED_CUBE_VERTEX) {
-                  candidate_separation_vertex[ivolvC] = iendA;
-                  num_incident_edges_dual_to_isosurface[ivolvC] = 1;
-                }
-                else if (candidate_separation_vertex[ivolvC] == iendA) {
-                  num_incident_edges_dual_to_isosurface[ivolvC]++;
-                }
-              }
-            }
-          }
-        }
-      }
-
-      for (NTYPE j = 0; j < num_ivolv; j++) {
-        if (candidate_separation_vertex[j] != UNDEFINED_CUBE_VERTEX &&
-            num_incident_edges_dual_to_isosurface[j] == CUBE_VERTEX_DEGREE) {
-          vinfo.VertexInfoNC(it,j).separation_vertex = 
-            candidate_separation_vertex[j];
+          vinfo.VertexInfoNC(it, ivolv[0]).connect_dir = connect_dir[0];
         }
       }
 
@@ -438,162 +298,93 @@ namespace IJKDUALTABLE {
   }
 
 
-  /// Determine separation cube vertices which are in the interval volume.
-  /// @pre Call compute_ivoldual_table_num_incident_poly
-  ///   and compute_ivoldual_table_num_incident_isosurface_poly
-  ///   before calling this routine.
+  /// Determine interval volume vertex isosurface connection directions,
+  /// i.e., connection directions of edges which lie on the isosurface.
   template <typename DUAL_TABLE_TYPE, 
             typename DUAL_TABLE_VINFO_TYPE>
-  void determine_separation_vertices_in_ivol
+  void determine_ivol_vertex_iso_connection_directions
   (const DUAL_TABLE_TYPE & table,
    DUAL_TABLE_VINFO_TYPE & vinfo)
   {
     typedef typename DUAL_TABLE_TYPE::DIMENSION_TYPE DTYPE;
     typedef typename DUAL_TABLE_TYPE::TABLE_INDEX TABLE_INDEX;
+    typedef typename DUAL_TABLE_TYPE::IVOL_VERTEX_INDEX_TYPE IVOLV_TYPE;
+    typedef typename DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE
+      VINFO_TYPE;
     typedef typename DUAL_TABLE_VINFO_TYPE::NUMBER_TYPE NTYPE;
-    typedef typename DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE::CUBE_VERTEX_TYPE
-      CUBE_VERTEX_TYPE;
+    typedef typename VINFO_TYPE::CUBE_VERTEX_TYPE CUBE_VERTEX_TYPE;
+    typedef typename VINFO_TYPE::CUBE_EDGE_TYPE CUBE_EDGE_TYPE;
+    typedef typename VINFO_TYPE::DIR_BITS_TYPE DIR_BITS_TYPE;
 
-    const CUBE_VERTEX_TYPE UNDEFINED_CUBE_VERTEX =
-      DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE::UNDEFINED_CUBE_VERTEX;
-    const NTYPE CUBE_VERTEX_DEGREE(table.Dimension());
-    NTYPE ivolv[2], iend[2];
-    std::vector<CUBE_VERTEX_TYPE> candidate_separation_vertex;
-    std::vector<NTYPE> num_incident_edges_dual_to_isosurface;
-    IJK::PROCEDURE_ERROR error ("determine_separation_vertices");
+    const NTYPE NUM_CUBE_FACETS(table.Cube().NumFacets());
+    CUBE_VERTEX_TYPE iend[2];
+    IVOLV_TYPE ivolv;
+    NTYPE jfacet;
+    DIR_BITS_TYPE iso_connect_dir;
+    std::vector<DIR_BITS_TYPE> bit_mask(NUM_CUBE_FACETS);
 
+
+    // Set bit_mask[]
+    for (NTYPE i = 0; i < NUM_CUBE_FACETS; i++) 
+      { bit_mask[i] = (DIR_BITS_TYPE(1) << i); }
+
+    // Initialize connect_dir.
     for (TABLE_INDEX it = 0; it < table.NumTableEntries(); it++) {
-
-      const NTYPE num_ivolv = table.Entry(it).NumVertices();
-
-      candidate_separation_vertex.resize(num_ivolv);
-      num_incident_edges_dual_to_isosurface.resize(num_ivolv);
-
-      // Initialize
-      for (NTYPE j = 0; j < num_ivolv; j++) {
-        candidate_separation_vertex[j] = UNDEFINED_CUBE_VERTEX;
-        num_incident_edges_dual_to_isosurface[j] = 0;
-      }
-
-      // Set separation vertices contained in a single isolated
-      //   interval volume polyhedron.
-      for (NTYPE iv0 = 0; iv0 < table.NumPolyVertices(); iv0++) {
-        if (table.IsInIntervalVolume(it, iv0)) {
-          const NTYPE ivolv = table.IncidentIVolVertex(it, iv0);
-
-          if (vinfo.VertexInfo(it,ivolv).num_incident_poly == 1) {
-            vinfo.VertexInfoNC(it,ivolv).separation_vertex = iv0;
-          }
-        }
-      }
-
-      for (NTYPE j = 0; j < num_ivolv; j++) {
-        candidate_separation_vertex[j] = UNDEFINED_CUBE_VERTEX;
-        num_incident_edges_dual_to_isosurface[j] = 0;
-      }
-
-      // Set separation vertices contained in an interval volume polyhedron
-      //   surrounded by a "layer" of polyhedra dual to cube edges.
-      for (NTYPE ie = 0; ie < table.NumPolyEdges(); ie++) {
-        if (table.EdgeHasDualIVolPoly(it, ie)) {
-          ivolv[0] = table.LowerIncident(it, ie);
-          ivolv[1] = table.UpperIncident(it, ie);
-
-          iend[0] = table.Cube().EdgeEndpoint(ie, 0);
-          iend[1] = table.Cube().EdgeEndpoint(ie, 1);
-
-          for (NTYPE i = 0; i < 2; i++) {
-            for (NTYPE j = 0; j < 2; j++) {
-
-              const NTYPE iendA = iend[i];
-              const NTYPE iendB = iend[1-i];
-              const NTYPE ivolv_j = ivolv[j];
-              if (vinfo.VertexInfo(it, ivolv_j).num_incident_isopoly != 
-                  CUBE_VERTEX_DEGREE)
-                { continue; }
-
-              if (table.IsInIntervalVolume(it,iendB)) {
-
-                if (table.OnLowerIsosurface(it, ivolv_j) &&
-                    table.IsBelowIntervalVolume(it,iendA)) {
-                  if (candidate_separation_vertex[ivolv_j] == 
-                      UNDEFINED_CUBE_VERTEX) {
-                    candidate_separation_vertex[ivolv_j] = iendB;
-                    num_incident_edges_dual_to_isosurface[ivolv_j] = 1;
-                  }
-                  else if (candidate_separation_vertex[ivolv_j] == iendB) {
-                    num_incident_edges_dual_to_isosurface[ivolv_j]++;
-                  }
-                }
-
-                if (table.OnUpperIsosurface(it, ivolv_j) &&
-                    table.IsAboveIntervalVolume(it,iendA)) {
-                  if (candidate_separation_vertex[ivolv_j] == 
-                      UNDEFINED_CUBE_VERTEX) {
-                    candidate_separation_vertex[ivolv_j] = iendB;
-                    num_incident_edges_dual_to_isosurface[ivolv_j] = 1;
-                  }
-                  else if (candidate_separation_vertex[ivolv_j] == iendB) {
-                    num_incident_edges_dual_to_isosurface[ivolv_j]++;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      for (NTYPE j = 0; j < num_ivolv; j++) {
-        if (candidate_separation_vertex[j] != UNDEFINED_CUBE_VERTEX &&
-            num_incident_edges_dual_to_isosurface[j] == CUBE_VERTEX_DEGREE) {
-
-          const NTYPE sep_vert = candidate_separation_vertex[j];
-          vinfo.VertexInfoNC(it,j).separation_vertex = sep_vert;
-
-          // Also set candidate_separation_vertex[j] to be separation vertex
-          //   of the incident interval volume vertex associated with j.
-          const NTYPE ivolv = table.IncidentIVolVertex(it, sep_vert);
-          vinfo.VertexInfoNC(it,ivolv).separation_vertex = sep_vert;
-        }
-      }
-
-    }
-
-  }
-
-
-  /// Determine separation cube vertex for ivol vertex incident
-  ///   on 3 isosurface polytopes.
-  /// @pre Call compute_ivoldual_table_num_incident_poly
-  ///   and compute_ivoldual_table_num_incident_isosurface_poly
-  ///   before calling this routine.
-  template <typename DUAL_TABLE_TYPE, 
-            typename DUAL_TABLE_VINFO_TYPE>
-  void determine_separation_vertices
-  (const DUAL_TABLE_TYPE & table,
-   DUAL_TABLE_VINFO_TYPE & vinfo)
-  {
-    typedef typename DUAL_TABLE_TYPE::TABLE_INDEX TABLE_INDEX;
-    typedef typename DUAL_TABLE_VINFO_TYPE::NUMBER_TYPE NTYPE;
-    typedef typename DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE::CUBE_VERTEX_TYPE
-      CUBE_VERTEX_TYPE;
-
-    const CUBE_VERTEX_TYPE UNDEFINED_CUBE_VERTEX =
-      DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE::UNDEFINED_CUBE_VERTEX;
-
-    // Initialize
-    for (TABLE_INDEX it = 0; it < table.NumTableEntries(); it++) {
-      const NTYPE num_ivolv = table.Entry(it).NumVertices();
-
-      for (NTYPE j = 0; j < num_ivolv; j++) {
-        vinfo.VertexInfoNC(it, j).separation_vertex = UNDEFINED_CUBE_VERTEX;
+      for (NTYPE ivolv = 0; ivolv < table.NumIVolVertices(it); ivolv++) {
+        vinfo.VertexInfoNC(it,ivolv).iso_connect_dir = 0;
       }
     }
 
-    determine_separation_vertices_below_above_ivol(table, vinfo);
-    determine_separation_vertices_in_ivol(table, vinfo);
+    for (TABLE_INDEX it = 0; it < table.NumTableEntries(); it++) {
+
+      for (CUBE_EDGE_TYPE ie = 0; ie < table.NumPolyEdges(); ie++) {
+
+        iend[0] = table.Cube().EdgeEndpoint(ie, 0);
+        iend[1] = table.Cube().EdgeEndpoint(ie, 1);
+        const DTYPE edge_dir = table.Cube().EdgeDir(ie);
+
+        if (table.DoesLowerIsosurfaceIntersectEdge(it, ie, ivolv)) {
+
+          if (table.IsBelowIntervalVolume(it, iend[1])) 
+            { std::swap(iend[0], iend[1]); }
+
+          for (DTYPE d = 1; d < table.Dimension(); d++) {
+            const DTYPE dir2 = (edge_dir+d)%table.Dimension();
+
+            if ((iend[0] & bit_mask[dir2]) == 0) { jfacet = dir2; }
+            else { jfacet = dir2 + table.Dimension(); }
+
+            iso_connect_dir = vinfo.VertexInfoNC(it, ivolv).iso_connect_dir;
+            vinfo.VertexInfoNC(it, ivolv).iso_connect_dir = 
+              (iso_connect_dir | bit_mask[jfacet]);
+          }
+        }
+
+        if (table.DoesUpperIsosurfaceIntersectEdge(it, ie, ivolv)) {
+
+          if (table.IsAboveIntervalVolume(it, iend[0])) 
+            { std::swap(iend[0], iend[1]); }
+
+          for (DTYPE d = 1; d < table.Dimension(); d++) {
+
+            const DTYPE dir2 = (edge_dir+d)%table.Dimension();
+
+            if ((iend[1] & bit_mask[dir2]) == 0) { jfacet = dir2; }
+            else { jfacet = dir2 + table.Dimension(); }
+
+            iso_connect_dir = vinfo.VertexInfoNC(it, ivolv).iso_connect_dir;
+            vinfo.VertexInfoNC(it, ivolv).iso_connect_dir = 
+              (iso_connect_dir | bit_mask[jfacet]);
+          }
+        }
+      }
+    }
   }
 
+
+  // **************************************************
+  // DETERMINE DOUBLY CONNECTED VERTICES
+  // **************************************************
 
   /// Determine interval volume vertices which are doubly connected
   ///   to some adjacent cube.
@@ -626,7 +417,197 @@ namespace IJKDUALTABLE {
     }
   }
 
+
+  // **************************************************
+  // DETERMINE SEPARATION VERTICES
+  // **************************************************
+
+  /// Return true if vertex with isosurface connection 
+  ///   directions iso_connect_dir separates a cube vertex.
+  /// @param[out] separation_vertex Separated cube vertex.
+  template <typename DTYPE, typename DIR_BITS_TYPE, typename VTYPE>
+  bool separates_cube_vertex
+  (const DTYPE dimension, const DIR_BITS_TYPE iso_connect_dir, 
+   VTYPE & separation_vertex)
+  {
+    // Initialize
+    separation_vertex = 0;
+
+    VTYPE num_iso_connect_dir = 0;
+
+    for (DTYPE d = 0; d < dimension; d++) {
+      const DIR_BITS_TYPE mask = (DIR_BITS_TYPE(1) << d);
+      const DIR_BITS_TYPE mask2 = (DIR_BITS_TYPE(1) << (d+dimension));
+      if ((mask & iso_connect_dir) == 0) {
+        if ((mask2 & iso_connect_dir) != 0) {
+          separation_vertex = (separation_vertex | mask);
+          num_iso_connect_dir++;
+        }
+      }
+      else if ((mask2 & iso_connect_dir) == 0) {
+        num_iso_connect_dir++;
+      }
+      else {
+        // Does not separate a cube vertex.
+        separation_vertex = 0;
+        return(false);
+      }
+    }
+
+    if (num_iso_connect_dir == dimension) 
+      { return(true); }
+    else {
+      // Does not separate a cube vertex.
+      separation_vertex = 0;
+      return(false);
+    }
+  }
+
+
+  /// Determine separation cube vertex for ivol vertex incident
+  ///   incident on dimension isosurface polytopes.
+  /// @pre Call compute_ivoldual_table_num_incident_poly
+  ///   and compute_ivoldual_table_num_incident_isosurface_poly
+  ///   before calling this routine.
+  template <typename DUAL_TABLE_TYPE, 
+            typename DUAL_TABLE_VINFO_TYPE>
+  void determine_separation_vertices
+  (const DUAL_TABLE_TYPE & table,
+   DUAL_TABLE_VINFO_TYPE & vinfo)
+  {
+    typedef typename DUAL_TABLE_TYPE::DIMENSION_TYPE DTYPE;
+    typedef typename DUAL_TABLE_TYPE::TABLE_INDEX TABLE_INDEX;
+    typedef typename DUAL_TABLE_VINFO_TYPE::NUMBER_TYPE NTYPE;
+    typedef typename DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE
+      VINFO_TYPE;
+    typedef typename VINFO_TYPE::CUBE_VERTEX_TYPE CUBE_VERTEX_TYPE;
+    typedef typename VINFO_TYPE::DIR_BITS_TYPE DIR_BITS_TYPE;
+
+    const DTYPE dimension = table.Dimension();
+    const CUBE_VERTEX_TYPE UNDEFINED_CUBE_VERTEX =
+      DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE::UNDEFINED_CUBE_VERTEX;
+
+    // Initialize
+    for (TABLE_INDEX it = 0; it < table.NumTableEntries(); it++) {
+      const NTYPE num_ivolv = table.Entry(it).NumVertices();
+
+      for (NTYPE j = 0; j < num_ivolv; j++) {
+        const DIR_BITS_TYPE iso_connect_dir =
+          vinfo.VertexInfo(it, j).iso_connect_dir;
+        CUBE_VERTEX_TYPE separation_vertex;
+
+        if (separates_cube_vertex
+            (dimension, iso_connect_dir, separation_vertex)) {
+          vinfo.VertexInfoNC(it, j).separation_vertex = separation_vertex;
+        }
+        else {
+          vinfo.VertexInfoNC(it, j).separation_vertex = UNDEFINED_CUBE_VERTEX;
+        }
+      }
+    }
+  }
+
+
+  // **************************************************
+  // DETERMINE SEPARATION EDGES
+  // **************************************************
+
+  /// Return true if vertex with isosurface connection 
+  ///   directions iso_connect_dir separates a cube edge.
+  /// @param[out] separation_vertex Separated cube vertex.
+  template <typename DTYPE, typename DIR_BITS_TYPE, 
+            typename CUBE_TYPE, typename ETYPE>
+  bool separates_cube_edge
+  (const DTYPE dimension, const DIR_BITS_TYPE iso_connect_dir, 
+   const CUBE_TYPE & cube, ETYPE & separation_edge)
+  {
+    // Initialize
+    separation_edge = 0;
+
+    ETYPE num_iso_connect_dir = 0;
+    ETYPE num_iso_connect_in_both_dir = 0;
+    ETYPE iend0 = 0;
+    DTYPE edge_dir = 0;
+
+    for (DTYPE d = 0; d < dimension; d++) {
+      const DIR_BITS_TYPE mask = (DIR_BITS_TYPE(1) << d);
+      const DIR_BITS_TYPE mask2 = (DIR_BITS_TYPE(1) << (d+dimension));
+
+      if ((mask & iso_connect_dir) == 0) {
+        if ((mask2 & iso_connect_dir) != 0) {
+          iend0 = (iend0 | mask);
+          num_iso_connect_dir++;
+        }
+      }
+      else if ((mask2 & iso_connect_dir) == 0) {
+        num_iso_connect_dir++;
+      }
+      else {
+        // Connects in both positive and negative directions.
+        num_iso_connect_in_both_dir++;
+        num_iso_connect_dir += 2;
+        edge_dir = d;
+      }
+    }
+
+    if (num_iso_connect_in_both_dir != 1) { return(false); }
+
+    if (num_iso_connect_dir != dimension+1) { return(false); }
+
+    separation_edge = cube.IncidentEdge(iend0, edge_dir);
+
+    return(true);
+  }
+
+
+  /// Determine separation cube edges for ivol vertex whose incident
+  ///   isosurface polytopes separate a cube edge.
+  /// @pre Call compute_ivoldual_table_num_incident_poly
+  ///   and compute_ivoldual_table_num_incident_isosurface_poly
+  ///   before calling this routine.
+  template <typename DUAL_TABLE_TYPE, 
+            typename DUAL_TABLE_VINFO_TYPE>
+  void determine_separation_edges
+  (const DUAL_TABLE_TYPE & table,
+   DUAL_TABLE_VINFO_TYPE & vinfo)
+  {
+    typedef typename DUAL_TABLE_TYPE::DIMENSION_TYPE DTYPE;
+    typedef typename DUAL_TABLE_TYPE::TABLE_INDEX TABLE_INDEX;
+    typedef typename DUAL_TABLE_VINFO_TYPE::NUMBER_TYPE NTYPE;
+    typedef typename DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE
+      VINFO_TYPE;
+    typedef typename VINFO_TYPE::CUBE_EDGE_TYPE CUBE_EDGE_TYPE;
+    typedef typename VINFO_TYPE::DIR_BITS_TYPE DIR_BITS_TYPE;
+
+    const DTYPE dimension = table.Dimension();
+    const DTYPE DIM2(2);
+    const CUBE_EDGE_TYPE UNDEFINED_CUBE_EDGE =
+      DUAL_TABLE_VINFO_TYPE::VERTEX_INFO_TYPE::UNDEFINED_CUBE_EDGE;
+
+    // Initialize
+    for (TABLE_INDEX it = 0; it < table.NumTableEntries(); it++) {
+      const NTYPE num_ivolv = table.Entry(it).NumVertices();
+
+      for (NTYPE j = 0; j < num_ivolv; j++) {
+        const DIR_BITS_TYPE iso_connect_dir =
+          vinfo.VertexInfo(it, j).iso_connect_dir;
+        CUBE_EDGE_TYPE separation_edge;
+
+        if (dimension > DIM2 &&
+            separates_cube_edge
+            (dimension, iso_connect_dir, table.Cube(), separation_edge)) {
+          vinfo.VertexInfoNC(it, j).separation_edge = separation_edge;
+        }
+        else {
+          vinfo.VertexInfoNC(it, j).separation_edge = UNDEFINED_CUBE_EDGE;
+        }
+
+      }
+    }
+  }
+
 }
 
 #endif
+
 

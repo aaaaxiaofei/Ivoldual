@@ -414,6 +414,14 @@ void IVOLDUAL::set_ivol_vertex_info
     const CUBE_VERTEX_TYPE icorner =
       ivoldual_table.VertexInfo(table_index, patch_index).separation_vertex;
 
+    // *** DEBUG ***
+    /*
+    using namespace std;
+    cerr << "ivolv: " << ivolv << " sep vert: " << int(icorner) << endl;
+    cerr << "  table_index: " << table_index
+         << "  patch_index: " << int(patch_index) << endl;
+    */
+
     if (icorner != UNDEFINED_CUBE_VERTEX) {
       ivolv_list[ivolv].separation_vertex = 
         grid.CubeVertex(cube_index, icorner);

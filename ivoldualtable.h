@@ -51,8 +51,11 @@ namespace IVOLDUAL {
 
   public:
     typedef unsigned char CUBE_VERTEX_TYPE;
+    typedef unsigned char CUBE_EDGE_TYPE;
+    typedef unsigned char DIR_BITS_TYPE;
 
     const static CUBE_VERTEX_TYPE UNDEFINED_CUBE_VERTEX = 255;
+    const static CUBE_EDGE_TYPE UNDEFINED_CUBE_EDGE = 255;
 
     int num_incident_poly;
     int num_incident_isopoly;
@@ -60,11 +63,23 @@ namespace IVOLDUAL {
     /// Separation vertex.
     CUBE_VERTEX_TYPE separation_vertex;
 
+    /// Separation edge.
+    CUBE_EDGE_TYPE separation_edge;
+
     /// If ivol vertex is doubly connected, then ivol vertex is
     ///   doubly connected across facet doubly_connected_facet.
     FACET_INDEX doubly_connected_facet;
 
     bool is_doubly_connected;        ///< True, if vertex is doubly connected.
+
+    /// Bit flag for connection direction.
+    /// If bit i is 1, then vertex connects across facet i.
+    DIR_BITS_TYPE connect_dir;
+
+    /// Bit flag for connection direction on isosurface.
+    /// If bit i is 1, then vertex connects across facet i
+    ///   and edge across facet i is on the isosurface.
+    DIR_BITS_TYPE iso_connect_dir;
 
     /// Number of interval volume polytopes incident on vertex.
     int NumIncidentPoly() const
