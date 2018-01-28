@@ -51,8 +51,8 @@ using namespace std;
 namespace {
 
   typedef enum
-    {SUBSAMPLE_OPT, SUPERSAMPLE_OPT, SUBDIVIDE_OPT, POSITION_OPT, 
-     CUBE_CENTER_OPT,
+    {SUBSAMPLE_OPT, SUPERSAMPLE_OPT, SUBDIVIDE_OPT, RM_DIAG_AMBIG_OPT,
+     POSITION_OPT, CUBE_CENTER_OPT,  
      SPLIT_AMBIG_PAIRS_OPT, SPLIT_AMBIG_PAIRSB_OPT, SPLIT_AMBIG_PAIRSC_OPT, 
      NO_SPLIT_AMBIG_PAIRS_OPT,
      MANIFOLD_OPT, RM_NON_MANIFOLD_OPT, MULTI_ISOV_OPT, SINGLE_ISOV_OPT, 
@@ -167,6 +167,14 @@ namespace {
     options.AddOptionNoArg
       (SUBDIVIDE_OPT, "SUBDIVIDE_OPT", REGULAR_OPTG, "-subdivide",    
        "Subdivide grid with plus value in the middle.");
+
+    options.AddUsageOptionEndOr(REGULAR_OPTG);
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+    options.AddUsageOptionBeginOr(REGULAR_OPTG);
+
+    options.AddOptionNoArg
+      (RM_DIAG_AMBIG_OPT, "RM_DIAG_AMBIG_OPT", REGULAR_OPTG, "-rm_diag_ambig",    
+       "Eliminate non-manifold case caused by two diagonally opposite plus vertices.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -588,6 +596,10 @@ bool process_option
 
   case SUBDIVIDE_OPT:
     io_info.flag_subdivide = true;
+    break;
+
+  case RM_DIAG_AMBIG_OPT:
+    io_info.flag_rm_diag_ambig = true;
     break;
 
   case POSITION_OPT:

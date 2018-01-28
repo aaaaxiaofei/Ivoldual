@@ -319,11 +319,7 @@ namespace IVOLDUAL {
     public IJKDUAL::DUALISO_DATA_BASE<IVOLDUAL_SCALAR_GRID,IVOLDUAL_DATA_FLAGS> 
   {
   public:
-    IVOLDUAL_DATA() {};
-
-    void SubdivideScalarGrid      /// Subdivide scalar_grid.
-      (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, IVOLDUAL_SCALAR_GRID & scalar_grid3, 
-       const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1); 
+    IVOLDUAL_DATA() {}; 
 
     /// Copy, subsample, supersample or subdivide scalar grid.
     /// @pre At most one of flag_subsample, flag_supersample or
@@ -332,15 +328,25 @@ namespace IVOLDUAL {
       (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, 
        const bool flag_subsample, const int subsample_resolution,
        const bool flag_supersample, const int supersample_resolution, 
-       const bool flag_subdivide, const SCALAR_TYPE isovalue0, 
-       const SCALAR_TYPE isovalue1);
+       const bool flag_subdivide, const bool flag_rm_diag_ambig,
+       const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
+
+    void SubdivideScalarGrid      /// Subdivide scalar_grid.
+      (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
+
+    void EvaluateSubdivideCenter
+      (int corner[], int edge[], int icenter,
+       const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
 
     void EliminateAmbigFacets
       (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1, 
        VERTEX_INDEX & changes_of_ambiguity);
 
-    int EliminateNonmanifold
+    int RmDiagonalAmbig
       (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
+
+    int symbol
+      (const int cur, const SCALAR_TYPE v0, const SCALAR_TYPE v1);
 
   };
 

@@ -89,7 +89,7 @@ int main(int argc, char **argv)
     ivoldual_data.SetScalarGrid
       (full_scalar_grid, io_info.flag_subsample, io_info.subsample_resolution, 
        io_info.flag_supersample, io_info.supersample_resolution, io_info.flag_subdivide, 
-       io_info.isovalue[0], io_info.isovalue[1]);
+       io_info.flag_rm_diag_ambig, io_info.isovalue[0], io_info.isovalue[1]);
 
     // set ivoldual info
     int dimension = ivoldual_data.ScalarGrid().Dimension();

@@ -81,33 +81,13 @@ void IVOLDUAL::IVOLDUAL_INFO::Clear()
 // CLASS IVOLDUAL_DATA MEMBER FUNCTIONS
 // **************************************************
 
-void IVOLDUAL::IVOLDUAL_DATA::SubdivideScalarGrid
-(const DUALISO_SCALAR_GRID_BASE & scalar_grid2, IVOLDUAL_SCALAR_GRID & scalar_grid3, 
- const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1) 
-{
-  const int subdivide_resolution = 2;
-
-  const int dimension = scalar_grid2.Dimension();
-  IJK::ARRAY<COORD_TYPE> spacing(dimension);
-  scalar_grid3.Subdivide(scalar_grid2, subdivide_resolution, isovalue0, isovalue1);
-
-  IJK::copy_coord(dimension, scalar_grid2.SpacingPtrConst(),
-                  spacing.Ptr());
-  IJK::divide_coord
-    (dimension, subdivide_resolution, spacing.PtrConst(), spacing.Ptr());
-  scalar_grid3.SetSpacing(spacing.PtrConst()); 
-
-  is_scalar_grid_set = true;
-}
-
-
 // Copy, subsample, supersample or subdivide scalar grid.
 void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
 (const DUALISO_SCALAR_GRID_BASE & scalar_grid2, 
  const bool flag_subsample, const int subsample_resolution,
  const bool flag_supersample, const int supersample_resolution, 
- const bool flag_subdivide, const SCALAR_TYPE isovalue0, 
- const SCALAR_TYPE isovalue1)
+ const bool flag_subdivide, const bool flag_rm_diag_ambig,
+ const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1)
 {
   IJK::PROCEDURE_ERROR error("IVOLDUAL_DATA::SetScalarGrid");
 
@@ -127,12 +107,151 @@ void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
   }
   else if (flag_subdivide) {
     // subdivide grid
-    IVOLDUAL_SCALAR_GRID scalar_grid3;
-    SubdivideScalarGrid(scalar_grid2, scalar_grid3, isovalue0, isovalue1);
+    int subdivide_resolution(2);
+    SupersampleScalarGrid(scalar_grid2, subdivide_resolution);
+    SubdivideScalarGrid(isovalue0, isovalue1);
   }
   else {
     CopyScalarGrid(scalar_grid2);
   };
+  // Eliminate non-manifold of diagonal '++' corner.
+  if (flag_rm_diag_ambig) {
+    RmDiagonalAmbig(isovalue0, isovalue1);
+  }
+}
+
+void IVOLDUAL::IVOLDUAL_DATA::SubdivideScalarGrid
+(const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1) 
+{
+
+  const AXIS_SIZE_TYPE * axis_size = scalar_grid.AxisSize();
+  int dx = axis_size[0], dy = axis_size[1], dz = axis_size[2];
+  int dxy = dx * dy;
+
+  for (int i = 0; i < scalar_grid.NumVertices(); i++) {
+    int x = i % dx;
+    int y = (i / dx) % dy;
+    int z = i / dx / dy;
+
+    // Facet center in X-Z plane
+    if (x % 2 == 1 && y % 2 == 0 && z % 2 == 1) {
+      int corner[] = {i-dxy-1, i-dxy+1, i+dxy+1, i+dxy-1};
+      int edge[] = {i-dxy, i+1, i+dxy, i-1};
+      EvaluateSubdivideCenter(corner, edge, i, isovalue0, isovalue1);
+    }
+    // Facet center in Y-Z plane
+    else if (x % 2 == 0 && y % 2 == 1 && z % 2 == 1) {
+      int corner[] = {i-dxy-dx, i-dxy+dx, i+dxy+dx, i+dxy-dx};
+      int edge[] = {i-dxy, i+dx, i+dxy, i-dx};
+      EvaluateSubdivideCenter(corner, edge, i, isovalue0, isovalue1);
+    }
+    // Facet center in X-Y plane
+    else if (x % 2 == 1 && y % 2 == 1 && z % 2 == 0) {
+      int corner[] = {i-dx-1, i-dx+1, i+dx+1, i+dx-1};
+      int edge[] = {i-dx, i+1, i+dx, i-1};
+      EvaluateSubdivideCenter(corner, edge, i, isovalue0, isovalue1);
+    }
+  }
+
+  for (int i = 0; i < scalar_grid.NumVertices(); i++) {
+    int x = i % dx;
+    int y = (i / dx) % dy;
+    int z = i / dx / dy;
+    // Vertex at cube center
+    if (x % 2 == 1 && y % 2 == 1 && z % 2 == 1) {
+      int corner[] = {i-dx-1, i-dx+1, i+dx+1, i+dx-1};
+      int edge[] = {i-dx, i+1, i+dx, i-1};
+      EvaluateSubdivideCenter(corner, edge, i, isovalue0, isovalue1);
+    }
+  }
+}
+
+void IVOLDUAL::IVOLDUAL_DATA::EvaluateSubdivideCenter
+(int corner[], int edge[], int icenter,
+ const SCALAR_TYPE v0, const SCALAR_TYPE v1)
+{
+  const int NUM_SIDES(4);
+
+  // Subdivide Rule 4
+  for (int i = 0; i < NUM_SIDES/2; i++) {
+    int cur = edge[i], oppo = edge[i+2];
+    if (symbol(cur, v0, v1) == symbol(oppo, v0, v1)) {
+      SCALAR_TYPE val = 
+          0.5*(scalar_grid.Scalar(cur) + scalar_grid.Scalar(oppo));
+      scalar_grid.Set(icenter, val);
+      return;
+    }
+  }
+
+  // Count number of symbols +/=/-
+  int num_plus = 0, num_minus = 0, num_equal = 0;
+  for (int i = 0; i < NUM_SIDES; i++) {
+    int cur = corner[i];
+    if (scalar_grid.Scalar(cur) < v0) num_minus++;
+    else if (scalar_grid.Scalar(cur) > v1) num_plus++;
+    else num_equal++;
+  }
+
+  // Subdivide Rule 2
+  if (num_plus == 3 || num_equal == 3 || num_minus == 3) {
+    for (int i = 0; i < NUM_SIDES; i++) {
+      int cur = corner[i];
+      int left = corner[(i+NUM_SIDES-1)%NUM_SIDES];
+      int right = corner[(i+1)%NUM_SIDES];
+
+      if (symbol(cur, v0, v1) == symbol(left, v0, v1) &&
+          symbol(cur, v0, v1) == symbol(right, v0, v1))
+      {
+        SCALAR_TYPE val = 
+          0.5*(scalar_grid.Scalar(left) + scalar_grid.Scalar(right));
+        scalar_grid.Set(icenter, val);
+        return;
+      }
+    }
+  }
+
+  // Subdivide Rule 3 and Rule 5
+  else if (num_plus == 2 || num_equal == 2 || num_minus == 2) {
+    bool flag_rule_five = false;
+    // Subdivide Rule 3
+    for (int i = 0; i < NUM_SIDES/2; i++) {
+      int cur = corner[i], oppo = corner[i+2];
+
+      if (symbol(cur, v0, v1) == symbol(oppo, v0, v1)) {
+        // Scalar grid index of vertex on edge
+        int e1 = edge[i], e2 = edge[(i+1)%NUM_SIDES], 
+            e3 = edge[(i+2)%NUM_SIDES], e4 = edge[(i+3)%NUM_SIDES];
+
+        if ((symbol(cur, v0, v1) == symbol(e1, v0, v1) &&
+             symbol(cur, v0, v1) == symbol(e2, v0, v1))
+            ||
+            (symbol(cur, v0, v1) == symbol(e3, v0, v1) &&
+             symbol(cur, v0, v1) == symbol(e4, v0, v1)))
+        {
+          SCALAR_TYPE val = 
+            0.5*(scalar_grid.Scalar(cur) + scalar_grid.Scalar(oppo));
+          scalar_grid.Set(icenter, val);  
+          return;       
+        }  
+        flag_rule_five = true;
+      }
+    }
+    // Subdivide Rule 5
+    if (flag_rule_five) {
+      SCALAR_TYPE val = 0.5*(v0 + v1);
+      scalar_grid.Set(icenter, val);  
+    }
+  }
+}
+
+int IVOLDUAL::IVOLDUAL_DATA::symbol
+(const int cur, const SCALAR_TYPE v0, const SCALAR_TYPE v1)
+{
+  int mark;
+  if (scalar_grid.Scalar(cur) < v0) mark = 0;
+  else if (scalar_grid.Scalar(cur) > v1) mark = 3;
+  else mark = 2;
+  return mark;
 }
 
 void IVOLDUAL::IVOLDUAL_DATA::EliminateAmbigFacets
@@ -140,21 +259,17 @@ void IVOLDUAL::IVOLDUAL_DATA::EliminateAmbigFacets
  VERTEX_INDEX & changes_of_ambiguity)
 {
   int last_changes = 1;
-
   while (last_changes) {
     // Eliminate non-manifold cases caused by opposite diagonal plus vertices.
-    last_changes = EliminateNonmanifold(isovalue0, isovalue1);
-
+    last_changes = RmDiagonalAmbig(isovalue0, isovalue1);
     // Eliminate non-manifold cases caused by ambiguous facets.
     last_changes += scalar_grid.EliminateAmbiguity(isovalue0, isovalue1);
-
     changes_of_ambiguity += last_changes;
   }
-
   scalar_grid.AddOuterLayer();
 }
 
-int IVOLDUAL::IVOLDUAL_DATA::EliminateNonmanifold
+int IVOLDUAL::IVOLDUAL_DATA::RmDiagonalAmbig
 (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1)
 {
   int changes_of_cube = 0;
@@ -165,7 +280,6 @@ int IVOLDUAL::IVOLDUAL_DATA::EliminateNonmanifold
   TABLE_INDEX table_index;
 
   IJK_FOR_EACH_GRID_CUBE(icube, scalar_grid, VERTEX_INDEX) {
-
     IVOLDUAL::compute_ivoltable_index_of_grid_cube<4>
       (scalar_grid, isovalue0, isovalue1, icube,
        interior_code, above_code, table_index);
@@ -178,78 +292,6 @@ int IVOLDUAL::IVOLDUAL_DATA::EliminateNonmanifold
     }
   }
   return changes_of_cube;
-}
-
-void IVOLDUAL::IVOLDUAL_SCALAR_GRID::Subdivide
-(const DUALISO_SCALAR_GRID_BASE & scalar_grid2, const int subdivide_period, 
- const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1)
-{  
-  const DTYPE dimension = scalar_grid2.Dimension();
-  IJK::ARRAY<ATYPE> subdivide_axis_size(dimension);
-  IJK::PROCEDURE_ERROR error("IVOLDUAL_SCALAR_GRID::Subdivide");
-
-  for (DTYPE d = 0; d < dimension; d++) {
-    subdivide_axis_size[d] =
-      IJK::compute_supersample_size(scalar_grid2.AxisSize(d), subdivide_period);
-  }
-
-  this->SetSize(dimension, subdivide_axis_size.PtrConst());
-
-  if (this->NumVertices() < 1) { return; };
-
-  SupersampleCopy(scalar_grid2, subdivide_period);
-  SubdivideInterpolate(subdivide_period, isovalue0, isovalue1);
-
-}
-
-void IVOLDUAL::IVOLDUAL_SCALAR_GRID::SubdivideInterpolate
-(const int subdivide_period, const SCALAR_TYPE isovalue0, 
- const SCALAR_TYPE isovalue1)
-{
-  const DTYPE dimension = this->Dimension();
-  IJK::ARRAY<ATYPE> subgrid_axis_size(dimension);
-  IJK::ARRAY<ATYPE> subsample_period(dimension);
-  IJK::ARRAY<VTYPE> axis_increment(dimension);
-  compute_increment(*this, axis_increment.Ptr());
-
-  for (DTYPE d = 0; d < this->Dimension(); d++) {
-    for (DTYPE j = 0; j < d; j++) { subsample_period[j] = 1; };
-    for (DTYPE j = d; j < this->Dimension(); j++)
-      { subsample_period[j] = subdivide_period; };
-    for (DTYPE j = 0; j < this->Dimension(); j++)
-      { subgrid_axis_size[j] = this->AxisSize(j); };
-    subgrid_axis_size[d] = 1;
-
-    NTYPE numv;
-    IJK::compute_subsample_size
-      (this->Dimension(), subgrid_axis_size.PtrConst(),
-       subsample_period.PtrConst(), numv);
-
-    IJK::ARRAY<VTYPE> vlist(numv);
-    IJK::subsample_subgrid_vertices
-      (*this, 0, subgrid_axis_size.PtrConst(),
-       subsample_period.PtrConst(), vlist.Ptr());
-
-    for (VTYPE x = 0; x+1 < this->AxisSize(d); x += subdivide_period) {
-
-      VTYPE inc0 = x*axis_increment[d];
-      VTYPE inc1 = inc0 + subdivide_period*axis_increment[d];
-      for (VTYPE i = 0; i < numv; i++) {
-        VTYPE v0 = vlist[i] + inc0;
-        VTYPE v1 = vlist[i] + inc1;
-
-        VTYPE v2 = v0;
-        for (VTYPE j = 1; j < subdivide_period; j++) {
-          v2 += axis_increment[d];
-          STYPE s0 = this->scalar[v0];
-          STYPE s1 = this->scalar[v1];
-
-          // Linear interpolation.
-          this->scalar[v2] = 0.5*(s0+s1);
-        }
-      }
-    }
-  }
 }
 
 /// Eliminate ambiguity facets in supersample grid.
