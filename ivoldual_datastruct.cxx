@@ -42,6 +42,7 @@ void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
   flag_lsmooth_elength = false;
   flag_lsmooth_jacobian = false;
   flag_split_hex = false;
+  flag_set_interior_code_from_scalar = false;
   default_interior_code = 2;
   lsmooth_elength_iter = 1;
   lsmooth_jacobian_iter = 1;

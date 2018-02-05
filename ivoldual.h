@@ -145,6 +145,18 @@ namespace IVOLDUAL {
    IVOLDUAL_ENCODED_GRID & encoded_grid,
    IVOLDUAL_INFO & dualiso_info);
 
+  /// Encode grid vertices. Set interior codes based on scalar grid.
+  /// - Vertices with scalar value between isovalue0 
+  ///     and (isovalue0+isovalue1)/2 receive encoded value 1.
+  /// - Vertices with scalar value between (isovalue0+isovalue1)/2 
+  ///     and isovalue1 receive encoded value 2.
+  /// - Used for case analysis.
+  void encode_grid_vertices_set_interior_from_scalar
+  (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
+   const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
+   IVOLDUAL_ENCODED_GRID & encoded_grid,
+   IVOLDUAL_INFO & dualiso_info);
+
 
   // **************************************************
   // SET IVOLTABLE INFO FOR EACH ACTIVE GRID CUBE

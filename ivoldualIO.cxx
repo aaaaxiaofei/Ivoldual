@@ -58,7 +58,7 @@ namespace {
      MANIFOLD_OPT, RM_NON_MANIFOLD_OPT, MULTI_ISOV_OPT, SINGLE_ISOV_OPT, 
      SELECT_SPLIT_OPT, CONNECT_AMBIG_OPT,
      SEP_NEG_OPT, SEP_POS_OPT,
-     ICODE1_OPT, ICODE2_OPT,
+     ICODE1_OPT, ICODE2_OPT, ICODE_SCALAR_OPT,
      TRIMESH_OPT, TRIMESH_UNIFORM_OPT,
      TRIMESH_SPLIT_MAX_OPT, TRIMESH_MAX_ANGLE_OPT,
      TRIMESH_ONLY_TRI12_OPT,
@@ -456,6 +456,18 @@ namespace {
        "Set encoded value of grid vertices in the interior ",
        "of the interval volume to 2.");
 
+    options.AddOptionNoArg
+      (ICODE_SCALAR_OPT, "ICODE_SCALAR_OPT", EXTENDED_OPTG, "-icode_scalar", 
+       "Set interior code from scalar grid.");
+    options.AddToHelpMessage
+      (ICODE_SCALAR_OPT, 
+       "Vertices with scalar value between isovalue0 and (isovalue0+isovalue1)/2",
+       "receive encoded value 1.");
+    options.AddToHelpMessage
+      (ICODE_SCALAR_OPT, 
+       "Vertices with scalar value between (isovalue0+isovalue1)/2 and isovalue1",
+       "receive encoded value 2.");
+
     options.AddUsageOptionEndOr(EXTENDED_OPTG);
     options.AddUsageOptionNewline(EXTENDED_OPTG);
 
@@ -675,6 +687,10 @@ bool process_option
 
   case ICODE2_OPT:
     io_info.default_interior_code = 2;
+    break;
+
+  case ICODE_SCALAR_OPT:
+    io_info.flag_set_interior_code_from_scalar = true;
     break;
 
   case TRIMESH_OPT:

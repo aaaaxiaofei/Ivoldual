@@ -278,6 +278,14 @@ namespace IVOLDUAL {
     ///   of the interval volume.
     GRID_VERTEX_ENCODING default_interior_code;
 
+    /// Set interior code based on scalar values.
+    /// - Vertices with scalar value between isovalue0 
+    ///     and (isovalue0+isovalue1)/2 receive encoded value 1.
+    /// - Vertices with scalar value between (isovalue0+isovalue1)/2 
+    ///     and isovalue1 receive encoded value 2.
+    /// - Used for case analysis.
+    bool flag_set_interior_code_from_scalar;
+
   public:
 
     /// Constructor.

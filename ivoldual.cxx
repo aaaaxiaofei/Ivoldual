@@ -211,9 +211,15 @@ void IVOLDUAL::dual_contouring_interval_volume
   dualiso_info.time.Clear();
 
   IVOLDUAL_ENCODED_GRID encoded_grid;
-  encode_grid_vertices
-    (scalar_grid, isovalue0, isovalue1, default_interior_code, 
-     encoded_grid, dualiso_info);
+  if (param.flag_set_interior_code_from_scalar) {
+    encode_grid_vertices_set_interior_from_scalar
+      (scalar_grid, isovalue0, isovalue1, encoded_grid, dualiso_info);
+  }
+  else {
+    encode_grid_vertices
+      (scalar_grid, isovalue0, isovalue1, default_interior_code, 
+       encoded_grid, dualiso_info);
+  }
 
   std::vector<ISO_VERTEX_INDEX> ivolpoly;
   std::vector<POLY_VERTEX_INDEX> poly_vertex;
@@ -333,6 +339,35 @@ void IVOLDUAL::encode_grid_vertices
 }
 
 
+// Encode grid vertices. Set interior codes based on scalar grid.
+// Used for case analysis.
+void IVOLDUAL::encode_grid_vertices_set_interior_from_scalar
+(const DUALISO_SCALAR_GRID_BASE & scalar_grid,
+ const SCALAR_TYPE isovalue0,  const SCALAR_TYPE isovalue1, 
+ IVOLDUAL_ENCODED_GRID & encoded_grid,
+ IVOLDUAL_INFO & dualiso_info)
+{
+  const int dimension = scalar_grid.Dimension();
+  const AXIS_SIZE_TYPE * axis_size = scalar_grid.AxisSize();
+  const SCALAR_TYPE isovalue_average = (isovalue0+isovalue1)/2.0;
+
+  encoded_grid.SetSize(dimension, axis_size);
+
+  for (VERTEX_INDEX iv = 0; iv < scalar_grid.NumVertices(); iv++) {
+    if (scalar_grid.Scalar(iv) < isovalue0) 
+      { encoded_grid.Set(iv, 0); }
+    else if (scalar_grid.Scalar(iv) > isovalue1) 
+      { encoded_grid.Set(iv, 3); }
+    else if (scalar_grid.Scalar(iv) < isovalue_average) 
+      { encoded_grid.Set(iv, 1); }
+    else {
+      // (scalar_grid.Scalar(iv) > isovalue_average)
+      encoded_grid.Set(iv, 2);
+    }
+  }
+}
+
+
 // **************************************************
 // SET IVOLTABLE INFO FOR EACH ACTIVE GRID CUBE
 // **************************************************
@@ -413,14 +448,6 @@ void IVOLDUAL::set_ivol_vertex_info
 
     const CUBE_VERTEX_TYPE icorner =
       ivoldual_table.VertexInfo(table_index, patch_index).separation_vertex;
-
-    // *** DEBUG ***
-    /*
-    using namespace std;
-    cerr << "ivolv: " << ivolv << " sep vert: " << int(icorner) << endl;
-    cerr << "  table_index: " << table_index
-         << "  patch_index: " << int(patch_index) << endl;
-    */
 
     if (icorner != UNDEFINED_CUBE_VERTEX) {
       ivolv_list[ivolv].separation_vertex = 
@@ -604,7 +631,8 @@ namespace {
       if (s1 >= 2) { return(true); }
     }
     else if (s0 == 1) {
-      if (s1 == 3) { return(true); }
+      if (s1 > 1)
+        { return(true); }
     }
 
     return(false);
@@ -1463,7 +1491,9 @@ namespace {
           return(true);
         }
         else {
-          return(false);
+          // iv0 and iv1 are in the interval volume.
+          isovalueX = (s0+s1)/2.0;
+          return(true);
         }
       }
     }
