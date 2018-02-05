@@ -337,6 +337,7 @@ namespace IVOLDUAL {
        const bool flag_subsample, const int subsample_resolution,
        const bool flag_supersample, const int supersample_resolution, 
        const bool flag_subdivide, const bool flag_rm_diag_ambig,
+       const bool flag_add_outer_layer, 
        const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
 
     void SubdivideScalarGrid      /// Subdivide scalar_grid.

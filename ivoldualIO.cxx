@@ -74,6 +74,7 @@ namespace {
      INFO_OPT, TIME_OPT, OUT_IVOLV_OPT, OUT_IVOLP_OPT, WRITE_SCALAR_OPT,
      SPLIT_HEX_OPT, LSMOOTH_ELENGTH_OPT, LSMOOTH_JACOBIAN_OPT,
      ELENGTH_THRESHOLD_OPT, JACOBIAN_THRESHOLD_OPT,
+     ADD_OUTER_LAYER_OPT,
      UNKNOWN_OPT} OPTION_TYPE;
 
   typedef enum {
@@ -354,6 +355,14 @@ namespace {
       (JACOBIAN_THRESHOLD_OPT, "JACOBIAN_THRESHOLD_OPT", REGULAR_OPTG, 
        "-jacobian_threshold", "S", 
        "Jacobian threshold of performing Laplacian smoothing.");
+
+    options.AddUsageOptionEndOr(REGULAR_OPTG);
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+    options.AddUsageOptionBeginOr(REGULAR_OPTG);
+
+    options.AddOptionNoArg
+      (ADD_OUTER_LAYER_OPT, "ADD_OUTER_LAYER_OPT", REGULAR_OPTG, 
+       "-add_outer_layer", "Add outer layer to the scalar grid.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -771,6 +780,10 @@ bool process_option
   case JACOBIAN_THRESHOLD_OPT:
     io_info.lsmooth_jacobian_threshold = get_arg_float(iarg, argc, argv, error);
     iarg++;
+    break;
+
+  case ADD_OUTER_LAYER_OPT:
+    io_info.flag_add_outer_layer = true;
     break;
 
   case OFF_OPT:
@@ -2383,6 +2396,8 @@ void IVOLDUAL::IO_INFO::Init()
   flag_supersample = false;
   supersample_resolution = 2;
   flag_subdivide = false;
+  flag_rm_diag_ambig = false;
+  flag_add_outer_layer = false;
   flag_color_alternating = false;  // color simplices in alternating cubes
   flag_color_vert = false;         // color isosurface boundary vertices
   region_length = 1;

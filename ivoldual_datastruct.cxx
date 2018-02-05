@@ -88,6 +88,7 @@ void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
  const bool flag_subsample, const int subsample_resolution,
  const bool flag_supersample, const int supersample_resolution, 
  const bool flag_subdivide, const bool flag_rm_diag_ambig,
+ const bool flag_add_outer_layer, 
  const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1)
 {
   IJK::PROCEDURE_ERROR error("IVOLDUAL_DATA::SetScalarGrid");
@@ -118,6 +119,10 @@ void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
   // Eliminate non-manifold of diagonal '++' corner.
   if (flag_rm_diag_ambig) {
     RmDiagonalAmbig(isovalue0, isovalue1);
+  }
+  // Add outer layer to the scalar grid.
+  if (flag_add_outer_layer) {
+    scalar_grid.AddOuterLayer();
   }
 }
 

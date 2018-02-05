@@ -96,6 +96,7 @@ namespace IVOLDUAL {
     int supersample_resolution;
     bool flag_subdivide;
     bool flag_rm_diag_ambig;
+    bool flag_add_outer_layer;
     bool flag_color_alternating;  ///< Color simplices in alternating cubes
     int region_length;
 
