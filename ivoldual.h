@@ -348,8 +348,8 @@ namespace IVOLDUAL {
   /// - Version which allows more splits than split_non_manifold_ivolv_pairs_ambigD.
   /// -  Allow split if numv_in_lower_lifted > 1 but numv_in_upper_lifted = 1
   ///    or vice versa.
-  /// -  Allow split if numv_in_lower_lifted > 1 and numv_in_lower_lifted > 1.
-  /// -  Allow split if numv_in_upper_lifted > 1 and numv_in_upper_lifted > 1.
+  /// -  Allow split if new configuration has numv_in_lower_lifted > 1 for both cubes.
+  /// -  Allow split if new configuration has numv_in_upper_lifted > 1 for both cubes.
   void split_non_manifold_ivolv_pairs_ambigD
   (const DUALISO_GRID & grid,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
