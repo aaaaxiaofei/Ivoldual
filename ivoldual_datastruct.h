@@ -251,6 +251,7 @@ namespace IVOLDUAL {
     bool flag_split_ambig_pairs;
     bool flag_split_ambig_pairsB;
     bool flag_split_ambig_pairsC;
+    bool flag_split_ambig_pairsD;
 
     /// Hexahedral triangulation method.
     HEX_TRI_METHOD hex_tri_method;

@@ -54,6 +54,7 @@ namespace {
     {SUBSAMPLE_OPT, SUPERSAMPLE_OPT, SUBDIVIDE_OPT, RM_DIAG_AMBIG_OPT,
      POSITION_OPT, CUBE_CENTER_OPT,  
      SPLIT_AMBIG_PAIRS_OPT, SPLIT_AMBIG_PAIRSB_OPT, SPLIT_AMBIG_PAIRSC_OPT, 
+     SPLIT_AMBIG_PAIRSD_OPT, 
      NO_SPLIT_AMBIG_PAIRS_OPT,
      MANIFOLD_OPT, RM_NON_MANIFOLD_OPT, MULTI_ISOV_OPT, SINGLE_ISOV_OPT, 
      SELECT_SPLIT_OPT, CONNECT_AMBIG_OPT,
@@ -221,6 +222,13 @@ namespace {
        "-split_ambig_pairsC", "Split ambiguous pairs.");
     options.AddToHelpMessage
       (SPLIT_AMBIG_PAIRSC_OPT, "Version (different) which allows more splits.");
+
+    options.AddOptionNoArg
+      (SPLIT_AMBIG_PAIRSD_OPT, "SPLIT_AMBIG_PAIRSD_OPT", REGULAR_OPTG, 
+       "-split_ambig_pairsD", "Split ambiguous pairs.");
+    options.AddToHelpMessage
+      (SPLIT_AMBIG_PAIRSD_OPT, 
+       "Version (different) which allows more splits than C.");
 
     options.AddUsageOptionNewline(REGULAR_OPTG);
 
@@ -646,10 +654,15 @@ bool process_option
     io_info.flag_split_ambig_pairsC = true;
     break;
 
+  case SPLIT_AMBIG_PAIRSD_OPT:
+    io_info.flag_split_ambig_pairsD = true;
+    break;
+
   case NO_SPLIT_AMBIG_PAIRS_OPT:
     io_info.flag_split_ambig_pairs = false;
     io_info.flag_split_ambig_pairsB = false;
     io_info.flag_split_ambig_pairsC = false;
+    io_info.flag_split_ambig_pairsD = false;
     break;
 
   case MANIFOLD_OPT:

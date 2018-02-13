@@ -36,6 +36,7 @@ void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
   flag_split_ambig_pairs = false;
   flag_split_ambig_pairsB = false;
   flag_split_ambig_pairsC = false;
+  flag_split_ambig_pairsD = false;
   flag_rm_non_manifold = false;
   flag_add_isov_dual_to_hexahedra = false;
   flag_orient_in = false;
