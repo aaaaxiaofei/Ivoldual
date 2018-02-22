@@ -168,12 +168,21 @@ void IVOLDUAL::IVOLDUAL_DATA::SubdivideScalarGrid
     if (x % 2 == 1 && y % 2 == 1 && z % 2 == 1) {
       int corner[] = {i-dx-1, i-dx+1, i+dx+1, i+dx-1};
       int edge[] = {i-dx, i+1, i+dx, i-1};
-      EvaluateSubdivideCenter(corner, edge, i, isovalue0, isovalue1);
+      if (!EvaluateSubdivideCenter(corner, edge, i, isovalue0, isovalue1)) {
+        int corner1[] = {i-dxy-1, i-dxy+1, i+dxy+1, i+dxy-1};
+        int edge1[] = {i-dxy, i+1, i+dxy, i-1};
+
+        if (!EvaluateSubdivideCenter(corner1, edge1, i, isovalue0, isovalue1)) {
+          int corner2[] = {i-dxy-dx, i-dxy+dx, i+dxy+dx, i+dxy-dx};
+          int edge2[] = {i-dxy, i+dx, i+dxy, i-dx};
+          EvaluateSubdivideCenter(corner2, edge2, i, isovalue0, isovalue1);
+        }
+      }
     }
   }
 }
 
-void IVOLDUAL::IVOLDUAL_DATA::EvaluateSubdivideCenter
+bool IVOLDUAL::IVOLDUAL_DATA::EvaluateSubdivideCenter
 (int corner[], int edge[], int icenter,
  const SCALAR_TYPE v0, const SCALAR_TYPE v1)
 {
@@ -186,7 +195,7 @@ void IVOLDUAL::IVOLDUAL_DATA::EvaluateSubdivideCenter
       SCALAR_TYPE val = 
           0.5*(scalar_grid.Scalar(cur) + scalar_grid.Scalar(oppo));
       scalar_grid.Set(icenter, val);
-      return;
+      return true;
     }
   }
 
@@ -212,7 +221,7 @@ void IVOLDUAL::IVOLDUAL_DATA::EvaluateSubdivideCenter
         SCALAR_TYPE val = 
           0.5*(scalar_grid.Scalar(left) + scalar_grid.Scalar(right));
         scalar_grid.Set(icenter, val);
-        return;
+        return true;
       }
     }
   }
@@ -221,8 +230,8 @@ void IVOLDUAL::IVOLDUAL_DATA::EvaluateSubdivideCenter
   else if (num_plus == 2 || num_equal == 2 || num_minus == 2) {
     bool flag_rule_five = false;
     // Subdivide Rule 3
-    for (int i = 0; i < NUM_SIDES/2; i++) {
-      int cur = corner[i], oppo = corner[i+2];
+    for (int i = 0; i < NUM_SIDES; i++) {
+      int cur = corner[i], oppo = corner[(i+2)%4];
 
       if (symbol(cur, v0, v1) == symbol(oppo, v0, v1)) {
         // Scalar grid index of vertex on edge
@@ -235,10 +244,11 @@ void IVOLDUAL::IVOLDUAL_DATA::EvaluateSubdivideCenter
             (symbol(cur, v0, v1) == symbol(e3, v0, v1) &&
              symbol(cur, v0, v1) == symbol(e4, v0, v1)))
         {
+          
           SCALAR_TYPE val = 
             0.5*(scalar_grid.Scalar(cur) + scalar_grid.Scalar(oppo));
           scalar_grid.Set(icenter, val);  
-          return;       
+          return true;       
         }  
         flag_rule_five = true;
       }
@@ -246,9 +256,11 @@ void IVOLDUAL::IVOLDUAL_DATA::EvaluateSubdivideCenter
     // Subdivide Rule 5
     if (flag_rule_five) {
       SCALAR_TYPE val = 0.5*(v0 + v1);
-      scalar_grid.Set(icenter, val);  
+      scalar_grid.Set(icenter, val); 
+      return true; 
     }
   }
+  return false;
 }
 
 int IVOLDUAL::IVOLDUAL_DATA::symbol

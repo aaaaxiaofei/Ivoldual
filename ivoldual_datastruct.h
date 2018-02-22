@@ -344,7 +344,7 @@ namespace IVOLDUAL {
     void SubdivideScalarGrid      /// Subdivide scalar_grid.
       (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
 
-    void EvaluateSubdivideCenter
+    bool EvaluateSubdivideCenter
       (int corner[], int edge[], int icenter,
        const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
 
