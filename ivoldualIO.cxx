@@ -75,6 +75,7 @@ namespace {
      INFO_OPT, TIME_OPT, OUT_IVOLV_OPT, OUT_IVOLP_OPT, WRITE_SCALAR_OPT,
      SPLIT_HEX_OPT, LSMOOTH_ELENGTH_OPT, LSMOOTH_JACOBIAN_OPT,
      ELENGTH_THRESHOLD_OPT, JACOBIAN_THRESHOLD_OPT,
+     SPLIT_HEX_THRESHOLD_OPT,
      ADD_OUTER_LAYER_OPT,
      UNKNOWN_OPT} OPTION_TYPE;
 
@@ -363,6 +364,15 @@ namespace {
       (JACOBIAN_THRESHOLD_OPT, "JACOBIAN_THRESHOLD_OPT", REGULAR_OPTG, 
        "-jacobian_threshold", "S", 
        "Jacobian threshold of performing Laplacian smoothing.");
+
+    options.AddUsageOptionEndOr(REGULAR_OPTG);
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+    options.AddUsageOptionBeginOr(REGULAR_OPTG);
+
+    options.AddOption1Arg
+      (SPLIT_HEX_THRESHOLD_OPT, "SPLIT_HEX_THRESHOLD_OPT", REGULAR_OPTG, 
+       "-split_hex_threshold", "S", 
+       "Threshold for -split_hex option.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -792,6 +802,11 @@ bool process_option
 
   case JACOBIAN_THRESHOLD_OPT:
     io_info.lsmooth_jacobian_threshold = get_arg_float(iarg, argc, argv, error);
+    iarg++;
+    break;
+
+  case SPLIT_HEX_THRESHOLD_OPT:
+    io_info.split_hex_threshold = get_arg_float(iarg, argc, argv, error);
     iarg++;
     break;
 

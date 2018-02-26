@@ -274,6 +274,7 @@ namespace IVOLDUAL {
     int lsmooth_jacobian_iter;
     float lsmooth_elength_threshold;
     float lsmooth_jacobian_threshold;
+    float split_hex_threshold;
 
     /// Default encoded value (1 or 2) for vertices in the interior
     ///   of the interval volume.

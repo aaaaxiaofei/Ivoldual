@@ -280,7 +280,7 @@ void IVOLDUAL::dual_contouring_interval_volume
   if (param.flag_split_hex) {
     subdivide_hex
       (ivolpoly_vert, ivoldual_table, vertex_adjacency_list,
-        ivolv_list, ivolpoly_info, vertex_coord);
+        ivolv_list, ivolpoly_info, vertex_coord, param.split_hex_threshold);
   }
   if (param.flag_lsmooth_elength) {
      laplacian_smooth_elength

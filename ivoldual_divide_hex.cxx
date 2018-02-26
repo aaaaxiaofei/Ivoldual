@@ -35,7 +35,8 @@ void IVOLDUAL::subdivide_hex
  IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
  DUAL_IVOLVERT_ARRAY & ivolv_list,
  IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
- COORD_ARRAY & vertex_coord)
+ COORD_ARRAY & vertex_coord, 
+ COORD_TYPE jacobian_limit)
  {
   const int DIM3(3);
   const int NUM_VERT_PER_HEXAHEDRON(8);
@@ -50,7 +51,7 @@ void IVOLDUAL::subdivide_hex
       COORD_TYPE jacob;        
       compute_hexahedron_Jacobian_determinant
         (ivolpoly_vert, ihex, vertex_coord, icorner, jacob);
-      if (jacob < 0 && 
+      if (jacob < jacobian_limit && 
       		ivolv_list[cur].num_incident_hex == 1 && 
 		      ivolv_list[cur].num_incident_iso_quad == 3 && 
 		      ivolv_list[cur].flag_missing_ivol_hexahedra == false) 
@@ -146,7 +147,7 @@ void IVOLDUAL::subdivide_hex_to_four
 					vertex_coord.resize(vertex_coord.size() + DIM3);
 					for (int d = 0; d < DIM3; d++) {
 						vertex_coord[iw[i]*DIM3+d] = 0.5 * (vertex_coord[iv[0] * DIM3 + d] + 
-																							  vertex_coord[iv[i] * DIM3 + d]);
+															vertex_coord[iv[i] * DIM3 + d]);
 					}
 					new_vertex[iv[i]] = iw[i];
 					ivolv_list.push_back(ivolv_list.back());

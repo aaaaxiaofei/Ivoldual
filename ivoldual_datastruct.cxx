@@ -49,6 +49,7 @@ void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
   lsmooth_jacobian_iter = 1;
   lsmooth_elength_threshold = 0.1;
   lsmooth_jacobian_threshold = 0.0;
+  split_hex_threshold = 0.0;
 }
 
 // **************************************************

@@ -39,7 +39,8 @@ namespace IVOLDUAL {
    IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
    DUAL_IVOLVERT_ARRAY & ivolv_list,
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
-   COORD_ARRAY & vertex_coord);
+   COORD_ARRAY & vertex_coord, 
+   COORD_TYPE jacobian_limit);
 
   void subdivide_hex_to_four
   (std::vector<VERTEX_INDEX> & ivolpoly_vert,
