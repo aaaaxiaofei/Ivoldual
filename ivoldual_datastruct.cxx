@@ -126,6 +126,27 @@ void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
   if (flag_add_outer_layer) {
     scalar_grid.AddOuterLayer();
   }
+      const AXIS_SIZE_TYPE * axis_size = scalar_grid.AxisSize();
+    int dx = axis_size[0], dy = axis_size[1], dz = axis_size[2];
+    int dxy = dx * dy;
+    for (int i = 0; i < scalar_grid.NumVertices(); i++) {
+      // if (i / dxy > 2) scalar_grid.Set(i, 130);
+      printf("%5.3f   ", scalar_grid.Scalar(i));
+      if (i%dx == dx - 1) printf("\n");
+      if (i%dxy == dxy - 1) printf("\n");
+    }
+
+    for (int i = 0; i < scalar_grid.NumVertices(); i++) {
+      // if (i / dxy > 2) scalar_grid.Set(i, 130);
+      if (scalar_grid.Scalar(i) < isovalue0)
+        printf("-\t");
+      else if (scalar_grid.Scalar(i) > isovalue1)
+        printf("+\t");
+      else 
+        printf("=\t");
+      if (i%dx == dx - 1) printf("\n");
+      if (i%dxy == dxy - 1) printf("\n");
+    }
 }
 
 void IVOLDUAL::IVOLDUAL_DATA::SubdivideScalarGrid
@@ -433,9 +454,7 @@ void IVOLDUAL::IVOLDUAL_SCALAR_GRID::AddOuterLayer()
   VERTEX_INDEX iw = 0;
 
   for(int k = 0; k < dim_z; k++) {
-
     for(int j = 0; j < dim_y; j++) {
-
       for(int i = 0; i < dim_x; i++) {
         this->Set(iw++, scalar_grid3.Scalar(iv));
         if (i == 0 || i+1 == dim_x)
@@ -448,7 +467,6 @@ void IVOLDUAL::IVOLDUAL_SCALAR_GRID::AddOuterLayer()
           iw++;
         }
       }
-
     }
 
     if (k == 0 || k+1 == dim_z) {
@@ -466,11 +484,18 @@ void IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateDiagonalNonmanifold
 (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1,
  VTYPE icube) 
 {
+  int dx = this->axis_size[0];
+  int dy = this->axis_size[1];
+  int dz = this->axis_size[2];
 
   for (int k = 0; k < this->NumCubeVertices(); k++) {
     int idx = this->CubeVertex(icube, k);
-    
-    if (this->Scalar(idx) > isovalue1) {
+    int x = idx % dx;
+    int y = (idx / dx) % dy;
+    int z = idx / dx / dy;
+
+    // Vertex is at cube edge center or cube center
+    if (this->Scalar(idx) > isovalue1 && (x+y+z)%2 == 1) {
       this->Set(idx, 0.5*(isovalue0 + isovalue1));
       break;
     }
