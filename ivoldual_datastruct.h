@@ -349,6 +349,10 @@ namespace IVOLDUAL {
       (int corner[], int edge[], int icenter,
        const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
 
+    bool CheckManifold
+      (int corner[], int edge[], int icenter,
+       const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
+
     void EliminateAmbigFacets
       (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1, 
        VERTEX_INDEX & changes_of_ambiguity);
