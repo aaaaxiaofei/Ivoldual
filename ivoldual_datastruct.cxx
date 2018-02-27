@@ -121,32 +121,12 @@ void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
   // Eliminate non-manifold of diagonal '++' corner.
   if (flag_rm_diag_ambig) {
     RmDiagonalAmbig(isovalue0, isovalue1);
+    SubdivideScalarGrid(isovalue0, isovalue1);
   }
   // Add outer layer to the scalar grid.
   if (flag_add_outer_layer) {
     scalar_grid.AddOuterLayer();
   }
-      const AXIS_SIZE_TYPE * axis_size = scalar_grid.AxisSize();
-    int dx = axis_size[0], dy = axis_size[1], dz = axis_size[2];
-    int dxy = dx * dy;
-    for (int i = 0; i < scalar_grid.NumVertices(); i++) {
-      // if (i / dxy > 2) scalar_grid.Set(i, 130);
-      printf("%5.3f   ", scalar_grid.Scalar(i));
-      if (i%dx == dx - 1) printf("\n");
-      if (i%dxy == dxy - 1) printf("\n");
-    }
-
-    for (int i = 0; i < scalar_grid.NumVertices(); i++) {
-      // if (i / dxy > 2) scalar_grid.Set(i, 130);
-      if (scalar_grid.Scalar(i) < isovalue0)
-        printf("-\t");
-      else if (scalar_grid.Scalar(i) > isovalue1)
-        printf("+\t");
-      else 
-        printf("=\t");
-      if (i%dx == dx - 1) printf("\n");
-      if (i%dxy == dxy - 1) printf("\n");
-    }
 }
 
 void IVOLDUAL::IVOLDUAL_DATA::SubdivideScalarGrid
@@ -188,18 +168,22 @@ void IVOLDUAL::IVOLDUAL_DATA::SubdivideScalarGrid
     int z = i / dx / dy;
     // Vertex at cube center
     if (x % 2 == 1 && y % 2 == 1 && z % 2 == 1) {
-      int corner[] = {i-dx-1, i-dx+1, i+dx+1, i+dx-1};
-      int edge[] = {i-dx, i+1, i+dx, i-1};
-      if (!EvaluateSubdivideCenter(corner, edge, i, isovalue0, isovalue1)) {
-        int corner1[] = {i-dxy-1, i-dxy+1, i+dxy+1, i+dxy-1};
-        int edge1[] = {i-dxy, i+1, i+dxy, i-1};
+      int cornerXY[] = {i-dx-1, i-dx+1, i+dx+1, i+dx-1};
+      int edgeXY[] = {i-dx, i+1, i+dx, i-1};
+      EvaluateSubdivideCenter(cornerXY, edgeXY, i, isovalue0, isovalue1);
 
-        if (!EvaluateSubdivideCenter(corner1, edge1, i, isovalue0, isovalue1)) {
-          int corner2[] = {i-dxy-dx, i-dxy+dx, i+dxy+dx, i+dxy-dx};
-          int edge2[] = {i-dxy, i+dx, i+dxy, i-dx};
-          EvaluateSubdivideCenter(corner2, edge2, i, isovalue0, isovalue1);
-        }
+      int cornerXZ[] = {i-dxy-1, i-dxy+1, i+dxy+1, i+dxy-1};
+      int edgeXZ[] = {i-dxy, i+1, i+dxy, i-1};
+      if (!CheckManifold(cornerXZ, edgeXZ, i, isovalue0, isovalue1)) {
+        EvaluateSubdivideCenter(cornerXZ, edgeXZ, i, isovalue0, isovalue1);
       }
+
+      int cornerYZ[] = {i-dxy-dx, i-dxy+dx, i+dxy+dx, i+dxy-dx};
+      int edgeYZ[] = {i-dxy, i+dx, i+dxy, i-dx};
+      if (!CheckManifold(cornerYZ, edgeYZ, i, isovalue0, isovalue1)) {
+        EvaluateSubdivideCenter(cornerYZ, edgeYZ, i, isovalue0, isovalue1);
+      }
+
     }
   }
 }
@@ -293,6 +277,25 @@ int IVOLDUAL::IVOLDUAL_DATA::symbol
   else if (scalar_grid.Scalar(cur) > v1) mark = 3;
   else mark = 2;
   return mark;
+}
+
+bool IVOLDUAL::IVOLDUAL_DATA::CheckManifold
+(int corner[], int edge[], int icenter,
+ const SCALAR_TYPE v0, const SCALAR_TYPE v1)
+{
+  const int NUM_SIDES(4);
+  for (int i = 0; i < NUM_SIDES; i++) {
+    int cur = corner[i];
+    int left = edge[(i+NUM_SIDES-1)%NUM_SIDES];
+    int right = edge[i];
+    if (symbol(icenter, v0, v1) == symbol(cur, v0, v1) &&
+        symbol(left, v0, v1) == symbol(right, v0, v1) &&
+        symbol(cur, v0, v1) != symbol(left, v0, v1)) 
+      {
+        return false;
+      }
+  }
+  return true;
 }
 
 void IVOLDUAL::IVOLDUAL_DATA::EliminateAmbigFacets
