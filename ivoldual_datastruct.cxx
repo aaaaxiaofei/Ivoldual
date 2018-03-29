@@ -120,8 +120,15 @@ void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
   };
   // Eliminate non-manifold of diagonal '++' corner.
   if (flag_rm_diag_ambig) {
-    RmDiagonalAmbig(isovalue0, isovalue1);
-    SubdivideScalarGrid(isovalue0, isovalue1);
+    int recur = 0;
+    while (RmDiagonalAmbig(isovalue0, isovalue1, 0)) {
+      SubdivideScalarGrid(isovalue0, isovalue1);
+      if (++recur == 10) {
+        printf("Too many iterations in -rm_diag_ambig, break!\n");
+        break;
+      }
+    }
+    RmDiagonalAmbig(isovalue0, isovalue1, 1);
   }
   // Add outer layer to the scalar grid.
   if (flag_add_outer_layer) {
@@ -162,28 +169,83 @@ void IVOLDUAL::IVOLDUAL_DATA::SubdivideScalarGrid
     }
   }
 
+  EvaluateCubeCenter(isovalue0, isovalue1);
+}
+
+void IVOLDUAL::IVOLDUAL_DATA::EvaluateCubeCenter
+(const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1) 
+{
+  const AXIS_SIZE_TYPE * axis_size = scalar_grid.AxisSize();
+  int dx = axis_size[0], dy = axis_size[1], dz = axis_size[2];
+  int dxy = dx * dy;
+
   for (int i = 0; i < scalar_grid.NumVertices(); i++) {
     int x = i % dx;
     int y = (i / dx) % dy;
     int z = i / dx / dy;
+
+    std::vector<SCALAR_TYPE> non_manifold_list;
     // Vertex at cube center
     if (x % 2 == 1 && y % 2 == 1 && z % 2 == 1) {
+
+      SCALAR_TYPE minus_val = 0.0, equal_val = 0.0, plus_val = 0.0;
+
       int cornerXY[] = {i-dx-1, i-dx+1, i+dx+1, i+dx-1};
-      int edgeXY[] = {i-dx, i+1, i+dx, i-1};
-      EvaluateSubdivideCenter(cornerXY, edgeXY, i, isovalue0, isovalue1);
+      int edgeXY[] = {i-dx, i+1, i+dx, i-1};      
 
       int cornerXZ[] = {i-dxy-1, i-dxy+1, i+dxy+1, i+dxy-1};
       int edgeXZ[] = {i-dxy, i+1, i+dxy, i-1};
-      if (!CheckManifold(cornerXZ, edgeXZ, i, isovalue0, isovalue1)) {
-        EvaluateSubdivideCenter(cornerXZ, edgeXZ, i, isovalue0, isovalue1);
-      }
 
       int cornerYZ[] = {i-dxy-dx, i-dxy+dx, i+dxy+dx, i+dxy-dx};
       int edgeYZ[] = {i-dxy, i+dx, i+dxy, i-dx};
-      if (!CheckManifold(cornerYZ, edgeYZ, i, isovalue0, isovalue1)) {
-        EvaluateSubdivideCenter(cornerYZ, edgeYZ, i, isovalue0, isovalue1);
+
+      // Evaluate cube center in X-Y plane
+      EvaluateSubdivideCenter(cornerXY, edgeXY, i, isovalue0, isovalue1);
+      if (CheckManifold(cornerXZ, edgeXZ, i, isovalue0, isovalue1) &&
+          CheckManifold(cornerYZ, edgeYZ, i, isovalue0, isovalue1)) {
+        continue;
+      }
+      else {
+        if (symbol(i, isovalue0, isovalue1) == 0) 
+          { minus_val = scalar_grid.Scalar(i); }
+        else if (symbol(i, isovalue0, isovalue1) == 2)
+          { equal_val = scalar_grid.Scalar(i); }
+        else if (symbol(i, isovalue0, isovalue1) == 3)
+          { plus_val = scalar_grid.Scalar(i); }
       }
 
+      // Evaluate cube center in X-Z plane
+      EvaluateSubdivideCenter(cornerXZ, edgeXZ, i, isovalue0, isovalue1);
+      if (CheckManifold(cornerYZ, edgeYZ, i, isovalue0, isovalue1) &&
+          CheckManifold(cornerXY, edgeXY, i, isovalue0, isovalue1)) {
+        continue;
+      }
+      else {
+        if (symbol(i, isovalue0, isovalue1) == 0) 
+          { minus_val = scalar_grid.Scalar(i); }
+        else if (symbol(i, isovalue0, isovalue1) == 2)
+          { equal_val = scalar_grid.Scalar(i); }
+        else if (symbol(i, isovalue0, isovalue1) == 3)
+          { plus_val = scalar_grid.Scalar(i); }
+      }
+
+      EvaluateSubdivideCenter(cornerYZ, edgeYZ, i, isovalue0, isovalue1);
+      if (CheckManifold(cornerXZ, edgeXZ, i, isovalue0, isovalue1) &&
+          CheckManifold(cornerXY, edgeXY, i, isovalue0, isovalue1)) {
+        continue;
+      }
+      else {
+        if (symbol(i, isovalue0, isovalue1) == 0) 
+          { minus_val = scalar_grid.Scalar(i); }
+        else if (symbol(i, isovalue0, isovalue1) == 2)
+          { equal_val = scalar_grid.Scalar(i); }
+        else if (symbol(i, isovalue0, isovalue1) == 3)
+          { plus_val = scalar_grid.Scalar(i); }
+      }
+
+      if (equal_val > 0 && plus_val > 0) {
+        scalar_grid.Set(i, plus_val);
+      }
     }
   }
 }
@@ -288,12 +350,23 @@ bool IVOLDUAL::IVOLDUAL_DATA::CheckManifold
     int cur = corner[i];
     int left = edge[(i+NUM_SIDES-1)%NUM_SIDES];
     int right = edge[i];
+
     if (symbol(icenter, v0, v1) == symbol(cur, v0, v1) &&
-        symbol(left, v0, v1) == symbol(right, v0, v1) &&
-        symbol(cur, v0, v1) != symbol(left, v0, v1)) 
-      {
-        return false;
-      }
+      symbol(left, v0, v1) != symbol(cur, v0, v1) &&
+      symbol(right, v0, v1) != symbol(cur, v0, v1)) 
+    {
+      if (symbol(left, v0, v1) == symbol(right, v0, v1) || 
+          symbol(cur, v0, v1) != 2)
+        { return false; }
+    }
+
+    if (symbol(left, v0, v1) == symbol(right, v0, v1) &&
+      symbol(left, v0, v1) != symbol(cur, v0, v1) &&
+      symbol(left, v0, v1) != symbol(icenter, v0, v1) &&
+      symbol(left, v0, v1) != 2) 
+    {
+      return false;
+    }
   }
   return true;
 }
@@ -305,7 +378,7 @@ void IVOLDUAL::IVOLDUAL_DATA::EliminateAmbigFacets
   int last_changes = 1;
   while (last_changes) {
     // Eliminate non-manifold cases caused by opposite diagonal plus vertices.
-    last_changes = RmDiagonalAmbig(isovalue0, isovalue1);
+    last_changes = RmDiagonalAmbig(isovalue0, isovalue1, 0);
     // Eliminate non-manifold cases caused by ambiguous facets.
     last_changes += scalar_grid.EliminateAmbiguity(isovalue0, isovalue1);
     changes_of_ambiguity += last_changes;
@@ -314,7 +387,8 @@ void IVOLDUAL::IVOLDUAL_DATA::EliminateAmbigFacets
 }
 
 int IVOLDUAL::IVOLDUAL_DATA::RmDiagonalAmbig
-(const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1)
+(const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1, 
+ int caseID)
 {
   int changes_of_cube = 0;
   const int DIM3(3);
@@ -324,15 +398,27 @@ int IVOLDUAL::IVOLDUAL_DATA::RmDiagonalAmbig
   TABLE_INDEX table_index;
 
   IJK_FOR_EACH_GRID_CUBE(icube, scalar_grid, VERTEX_INDEX) {
+
     IVOLDUAL::compute_ivoltable_index_of_grid_cube<4>
       (scalar_grid, isovalue0, isovalue1, icube,
        interior_code, above_code, table_index);
-    
-    if (ivoldual_table.NumAmbiguousFacets(table_index) == 0 && 
-        ivoldual_table.IsNonManifold(table_index)) {
-      // Eliminate non-manifold caused by diagonal plus vertices
-      scalar_grid.EliminateDiagonalNonmanifold(isovalue0, isovalue1, icube);
-      changes_of_cube++;
+
+    int idx1 = -1, idx2 = -1, num_plus = 0;
+    for (int k = 0; k < scalar_grid.NumCubeVertices(); k++) {
+      int idx = scalar_grid.CubeVertex(icube, k);
+      if (scalar_grid.Scalar(idx) > isovalue1) {
+        num_plus++;
+        if (num_plus == 1) idx1 = k;
+        else if (num_plus == 2) idx2 = k;
+        else break;
+      }
+    }
+
+    if (num_plus == 2 && idx1 + idx2 == 7)  {
+      int num_change = 0;
+      scalar_grid.EliminateDiagonalNonmanifold
+        (isovalue0, isovalue1, icube, caseID, num_change);
+      changes_of_cube += num_change;
     }
   }
   return changes_of_cube;
@@ -352,7 +438,6 @@ int IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateAmbiguity
 
   for (VTYPE i = 0; i < this->NumVertices(); i++) {
     
-
     for (DTYPE d = 0; d < dim; d++) {
 
       VTYPE v01_idx = this->NextVertex(i, d);
@@ -485,7 +570,7 @@ void IVOLDUAL::IVOLDUAL_SCALAR_GRID::AddOuterLayer()
 
 void IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateDiagonalNonmanifold
 (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1,
- VTYPE icube) 
+ VTYPE icube, int caseID, int& num_change) 
 {
   int dx = this->axis_size[0];
   int dy = this->axis_size[1];
@@ -497,9 +582,18 @@ void IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateDiagonalNonmanifold
     int y = (idx / dx) % dy;
     int z = idx / dx / dy;
 
-    // Vertex is at cube edge center or cube center
-    if (this->Scalar(idx) > isovalue1 && (x+y+z)%2 == 1) {
+    // Vertex is at cube edge center
+    if (caseID == 0 && this->Scalar(idx) > isovalue1 && 
+        (x+y+z)%2 == 1 && (x%2)+(y%2)+(z%2) < 3) {    
       this->Set(idx, 0.5*(isovalue0 + isovalue1));
+      num_change = 1;
+      break;
+    }
+    // Vertex is at the cube center
+    else if (caseID == 1 && this->Scalar(idx) > isovalue1 && 
+        (x+y+z)%2 == 1 && (x%2)+(y%2)+(z%2) == 3) {      
+      this->Set(idx, 0.5*(isovalue0 + isovalue1));
+      num_change = 1;
       break;
     }
   }

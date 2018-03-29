@@ -70,7 +70,7 @@ namespace IVOLDUAL {
 
     void EliminateDiagonalNonmanifold
       (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1, 
-       VTYPE icube);
+       VTYPE icube, int caseID, int& num_change);
 
     void AddOuterLayer();
   };
@@ -345,6 +345,9 @@ namespace IVOLDUAL {
     void SubdivideScalarGrid      /// Subdivide scalar_grid.
       (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
 
+    void EvaluateCubeCenter      /// Subdivide scalar_grid.
+      (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
+
     bool EvaluateSubdivideCenter
       (int corner[], int edge[], int icenter,
        const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
@@ -358,7 +361,8 @@ namespace IVOLDUAL {
        VERTEX_INDEX & changes_of_ambiguity);
 
     int RmDiagonalAmbig
-      (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
+      (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1, 
+       int caseID);
 
     int symbol
       (const int cur, const SCALAR_TYPE v0, const SCALAR_TYPE v1);
