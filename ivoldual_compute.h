@@ -48,6 +48,15 @@ namespace IVOLDUAL {
    const int icorner,
    COORD_TYPE & Jacobian_determinant);
 
+  /// Compute the normalized Jacobian matrix determinants of 
+  /// a hexahedron at a given corner.
+  void compute_hexahedron_normalized_Jacobian_determinant
+  (const std::vector<VERTEX_INDEX> & hex_vert,
+   const int ihex,
+   const std::vector<COORD_TYPE> & vertex_coord,
+   const int icorner,
+   COORD_TYPE & Jacobian_determinant);
+
 }
 
 #endif

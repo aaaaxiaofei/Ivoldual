@@ -61,3 +61,27 @@ void IVOLDUAL::compute_hexahedron_Jacobian_determinant
     (hex_vert, ihex, POSITIVE_ORIENTATION, vertex_coord, cube, icorner,
      Jacobian_determinant);
 }
+
+// Compute the normalized Jacobian matrix determinant of a hexahedron
+//   at a given corner.
+void IVOLDUAL::compute_hexahedron_normalized_Jacobian_determinant
+(const std::vector<VERTEX_INDEX> & hex_vert,
+ const int ihex,
+ const std::vector<COORD_TYPE> & vertex_coord,
+ const int icorner,
+ COORD_TYPE & Jacobian_determinant)
+{
+  const int DIM3(3);
+  const int POSITIVE_ORIENTATION(1);
+  const int NUM_VERT_PER_HEX(8);
+  const VERTEX_INDEX * hex_i_vert = &(hex_vert[ihex*NUM_VERT_PER_HEX]);
+  const COORD_TYPE * vcoord = IJK::vector2pointer(vertex_coord);
+
+  COORD_TYPE max_small_magnitude(0.0);
+  bool flag_zero;
+  IJK::CUBE_FACE_INFO<int,int,int> cube(DIM3);
+
+  IJK::compute_hexahedron_normalized_Jacobian_determinant_3D
+    (hex_i_vert, POSITIVE_ORIENTATION, vcoord, cube, icorner,
+      max_small_magnitude, Jacobian_determinant, flag_zero);
+}
