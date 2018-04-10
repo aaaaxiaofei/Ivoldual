@@ -87,7 +87,7 @@ void IVOLDUAL::compute_hexahedron_normalized_Jacobian_determinant
   bool flag_zero;
   IJK::CUBE_FACE_INFO<int,int,int> cube(DIM3);
 
-  IJK::compute_hexahedron_normalized_Jacobian_determinant_3D
+  IJK::compute_normalized_Jacobian_determinant_at_hex_vertex_3D
     (hex_i_vert, POSITIVE_ORIENTATION, vcoord, cube, icorner,
       max_small_magnitude, Jacobian_determinant, flag_zero);
 }
