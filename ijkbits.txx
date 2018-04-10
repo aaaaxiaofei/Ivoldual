@@ -30,6 +30,7 @@ namespace IJK {
   // BIT OPERATIONS
   // **************************************************
 
+  /// Convert to an array of digits with the given base.
   template <typename ITYPE, typename BTYPE, typename DTYPE,
             typename NTYPE, typename ETYPE>
   void convert2base(const ITYPE ival, const BTYPE base, 
@@ -49,6 +50,28 @@ namespace IJK {
       throw error;
     };
   }
+
+
+  /// Convert to a string of 0's and 1's.
+  /// @param num_bits Number of 0's and 1's in output string.
+  ///    If ival has more than num_bits bits, high order bits are ignored.
+  template <typename ITYPE, typename NTYPE, typename STYPE>
+  void convert2bit_string(const ITYPE ival,
+                          const NTYPE num_bits,
+                          STYPE & bit_string)
+  {
+    // Initialize.
+    bit_string = "";
+
+    ITYPE jval = ival;
+    for (NTYPE i = 0; i < num_bits; i++) {
+      const ITYPE bit = jval % 2;
+      if (bit == 0) { bit_string = STYPE("0") + bit_string; }
+      else { bit_string = STYPE("1") + bit_string; }
+      jval = jval/2;
+    }
+  }
+
 
   /// Count number of zero and one bits in first num_bits of ival.
   template <typename ITYPE, typename NTYPE, typename NTYPE2, typename NTYPE3>

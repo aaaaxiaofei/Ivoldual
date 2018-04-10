@@ -632,16 +632,19 @@ namespace IJK {
 
   ///@{
 
-  /// Triangulate a single polygon.
+  /// Triangulate a single polygon by adding diagonals from the polygon
+  ///   vertex with the maximum angle
   /// - Split maximum polygon angle.
   /// - Polygon vertices are listed in clockwise or counter-clockwise order
   ///   around the polygon.
   /// - Add new triangles to vector tri_vert.
+  /// - If some polygon edge has length (near) zero, the triangulation
+  ///   will be from an arbitrary vertex.
   template <typename DTYPE, typename CTYPE, typename NTYPE,
             typename VTYPE0, typename VTYPE1, typename MTYPE>
   void triangulate_polygon_split_max_angle
   (const DTYPE dimension,
-   const CTYPE * vert_coord,
+   const CTYPE * vertex_coord,
    const NTYPE num_poly_vert,
    const VTYPE0 * poly_vert,
    const MTYPE max_small_magnitude,
@@ -653,22 +656,23 @@ namespace IJK {
     if (num_poly_vert < 3) { return; };
 
     NTYPE k_min_cos = 0;        // Index of the vertex with min_cos
-    NTYPE iv0 = poly_vert[0];
-    NTYPE iv1 = poly_vert[num_poly_vert-1];
+    NTYPE iv0 = poly_vert[num_poly_vert-1];
+    NTYPE iv1 = poly_vert[0];
     NTYPE iv2 = poly_vert[1];
 
-    compute_cos_angle
-      (dimension, vert_coord+iv0*dimension, vert_coord+iv1*dimension,
-       vert_coord+iv2*dimension, max_small_magnitude, min_cos, flag_zero);
+    compute_cos_triangle_angle_coord_list
+      (dimension, vertex_coord, iv0, iv1, iv2, max_small_magnitude,
+       min_cos, flag_zero);
 
     for (NTYPE i = 1; i < num_poly_vert; i++) {
-      iv0 = poly_vert[i];
-      iv1 = poly_vert[i-1];
+      iv0 = poly_vert[i-1];
+      iv1 = poly_vert[i];
       iv2 = poly_vert[((i+1)%num_poly_vert)];
       CTYPE cos_v0;
-      compute_cos_angle
-        (dimension, vert_coord+iv0*dimension, vert_coord+iv1*dimension,
-         vert_coord+iv2*dimension, max_small_magnitude, cos_v0, flag_zero);
+
+      compute_cos_triangle_angle_coord_list
+        (dimension, vertex_coord, iv0, iv1, iv2, max_small_magnitude,
+         cos_v0, flag_zero);
 
       if (cos_v0 < min_cos) {
         k_min_cos = i;
@@ -686,7 +690,7 @@ namespace IJK {
             typename VTYPE0, typename VTYPE1,
             typename MTYPE, typename ITYPE>
   void triangulate_polygon_list_split_max_angle
-  (const DTYPE dimension, const CTYPE * vert_coord,
+  (const DTYPE dimension, const CTYPE * vertex_coord,
    const NTYPE0 * num_poly_vert, const VTYPE0 * poly_vert,
    const ITYPE * first_poly_vert, const NTYPE1 num_poly,
    const MTYPE max_small_magnitude,
@@ -694,7 +698,7 @@ namespace IJK {
   {
     for (NTYPE1 ipoly = 0; ipoly < num_poly; ipoly++) {
       triangulate_polygon_split_max_angle
-        (dimension, vert_coord, num_poly_vert[ipoly], 
+        (dimension, vertex_coord, num_poly_vert[ipoly], 
          poly_vert+first_poly_vert[ipoly], max_small_magnitude, tri_vert);
     }
   }

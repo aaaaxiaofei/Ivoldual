@@ -688,12 +688,12 @@ namespace IJK {
     const NTYPE DIM3(3);
     const IJK::CUBE_FACE_INFO<NTYPE,NTYPE,NTYPE> cube_face_info(DIM3);
     const NTYPE NUM_VERT_PER_TETRAHEDRON(4);
-    const NTYPE NUM_CUBE_VERT(8);
-    const NTYPE NUM_CUBE_FACETS(6);
-    const char DEFAULT_TRIANGULATION_FLAG[NUM_CUBE_VERT]
+    const NTYPE num_cube_vert = cube_face_info.NumVertices();
+    const NTYPE num_cube_facets = cube_face_info.NumFacets();
+    const char DEFAULT_TRIANGULATION_FLAG[num_cube_vert]
       = { char(0), char(06), char(05), char(030),
           char(03), char(050), char(060), char(0) };
-    const bool VERTEX_FACET_FLAGS[NUM_CUBE_VERT][NUM_CUBE_FACETS]
+    const bool VERTEX_FACET_FLAGS[num_cube_vert][num_cube_facets]
       = { { true, true, true, false, false, false},
           { false, true, true, true, false, false},
           { true, false, true, false, true, false},
@@ -717,7 +717,7 @@ namespace IJK {
 
     for (NTYPE ipoly0 = 0; ipoly0 < hex_mesh.NumPoly(); ipoly0++) {
 
-      for (NTYPE jfacet0 = 0; jfacet0 < NUM_CUBE_FACETS; jfacet0++) {
+      for (NTYPE jfacet0 = 0; jfacet0 < num_cube_facets; jfacet0++) {
         if (hexmesh_adjacency.IsAdjacent(ipoly0, jfacet0)) {
           const NTYPE ipoly1 = hexmesh_adjacency.AdjacentPoly(ipoly0, jfacet0);
           const NTYPE jfacet1 = 
