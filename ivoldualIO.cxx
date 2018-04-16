@@ -73,9 +73,9 @@ namespace {
      LABEL_WITH_ISOVALUE_OPT,
      NO_WRITE_OPT, SILENT_OPT, NO_WARN_OPT,
      INFO_OPT, TIME_OPT, OUT_IVOLV_OPT, OUT_IVOLP_OPT, WRITE_SCALAR_OPT,
-     SPLIT_HEX_OPT, LSMOOTH_ELENGTH_OPT, LSMOOTH_JACOBIAN_OPT,
+     SPLIT_HEX_OPT, COLLAPSE_HEX_OPT, LSMOOTH_ELENGTH_OPT, LSMOOTH_JACOBIAN_OPT,
      ELENGTH_THRESHOLD_OPT, JACOBIAN_THRESHOLD_OPT,
-     SPLIT_HEX_THRESHOLD_OPT,
+     SPLIT_HEX_THRESHOLD_OPT, COLLAPSE_HEX_THRESHOLD_OPT, 
      ADD_OUTER_LAYER_OPT,
      UNKNOWN_OPT} OPTION_TYPE;
 
@@ -170,14 +170,6 @@ namespace {
     options.AddOptionNoArg
       (SUBDIVIDE_OPT, "SUBDIVIDE_OPT", REGULAR_OPTG, "-subdivide",    
        "Subdivide grid with plus value in the middle.");
-
-    options.AddUsageOptionEndOr(REGULAR_OPTG);
-    options.AddUsageOptionNewline(REGULAR_OPTG);
-    options.AddUsageOptionBeginOr(REGULAR_OPTG);
-
-    options.AddOptionNoArg
-      (RM_DIAG_AMBIG_OPT, "RM_DIAG_AMBIG_OPT", REGULAR_OPTG, "-rm_diag_ambig",    
-       "Eliminate non-manifold case caused by two diagonally opposite plus vertices.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -324,7 +316,11 @@ namespace {
 
     options.AddOptionNoArg
       (SPLIT_HEX_OPT, "SPLIT_HEX_OPT", REGULAR_OPTG, "-split_hex", 
-       "Split hexaheron to eliminate negative Jacobian polytope");
+       "Split hexaheron to eliminate negative Jacobian polytope.");
+
+    options.AddOptionNoArg
+      (COLLAPSE_HEX_OPT, "COLLAPSE_HEX_OPT", REGULAR_OPTG, "-collapse_hex", 
+       "Collapse hexaheron to eliminate negative Jacobian of internal vertex.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -337,10 +333,6 @@ namespace {
 
     options.AddToHelpMessage
       (LSMOOTH_ELENGTH_OPT, "S is the minimum accepted edge length.");
-
-    options.AddUsageOptionEndOr(REGULAR_OPTG);
-    options.AddUsageOptionNewline(REGULAR_OPTG);
-    options.AddUsageOptionBeginOr(REGULAR_OPTG);
 
     options.AddOption1Arg
       (LSMOOTH_JACOBIAN_OPT, "LSMOOTH_JACOBIAN_OPT", REGULAR_OPTG, 
@@ -356,28 +348,33 @@ namespace {
        "-elength_threshold", "S", 
        "Edge length threshold of performing Laplacian smoothing.");
 
-    options.AddUsageOptionEndOr(REGULAR_OPTG);
-    options.AddUsageOptionNewline(REGULAR_OPTG);
-    options.AddUsageOptionBeginOr(REGULAR_OPTG);
-
     options.AddOption1Arg
       (JACOBIAN_THRESHOLD_OPT, "JACOBIAN_THRESHOLD_OPT", REGULAR_OPTG, 
        "-jacobian_threshold", "S", 
        "Jacobian threshold of performing Laplacian smoothing.");
-
-    options.AddUsageOptionEndOr(REGULAR_OPTG);
-    options.AddUsageOptionNewline(REGULAR_OPTG);
-    options.AddUsageOptionBeginOr(REGULAR_OPTG);
 
     options.AddOption1Arg
       (SPLIT_HEX_THRESHOLD_OPT, "SPLIT_HEX_THRESHOLD_OPT", REGULAR_OPTG, 
        "-split_hex_threshold", "S", 
        "Threshold for -split_hex option.");
 
+    options.AddOption1Arg
+      (COLLAPSE_HEX_THRESHOLD_OPT, "COLLAPSE_HEX_THRESHOLD_OPT", REGULAR_OPTG, 
+       "-collapse_hex_threshold", "S", 
+       "Threshold for -collapse_hex option.");
+
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
     options.AddUsageOptionBeginOr(REGULAR_OPTG);
 
+    options.AddOptionNoArg
+      (RM_DIAG_AMBIG_OPT, "RM_DIAG_AMBIG_OPT", REGULAR_OPTG, "-rm_diag_ambig",    
+       "Eliminate non-manifold case caused by two diagonally opposite plus vertices.");
+
+    options.AddUsageOptionEndOr(REGULAR_OPTG);
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+    options.AddUsageOptionBeginOr(REGULAR_OPTG);
+    
     options.AddOptionNoArg
       (ADD_OUTER_LAYER_OPT, "ADD_OUTER_LAYER_OPT", REGULAR_OPTG, 
        "-add_outer_layer", "Add outer layer to the scalar grid.");
@@ -783,6 +780,10 @@ bool process_option
     io_info.flag_split_hex = true;
     break;
 
+  case COLLAPSE_HEX_OPT:
+    io_info.flag_collapse_hex = true;
+    break;
+
   case LSMOOTH_ELENGTH_OPT:
     io_info.lsmooth_elength_iter = get_arg_int(iarg, argc, argv, error);
     io_info.flag_lsmooth_elength = true;
@@ -807,6 +808,11 @@ bool process_option
 
   case SPLIT_HEX_THRESHOLD_OPT:
     io_info.split_hex_threshold = get_arg_float(iarg, argc, argv, error);
+    iarg++;
+    break;
+
+  case COLLAPSE_HEX_THRESHOLD_OPT:
+    io_info.collapse_hex_threshold = get_arg_float(iarg, argc, argv, error);
     iarg++;
     break;
 

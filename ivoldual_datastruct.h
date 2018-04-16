@@ -116,6 +116,9 @@ namespace IVOLDUAL {
     /// Separation vertex.
     VERTEX_INDEX separation_vertex;
 
+    /// Map for degenerate mesh.
+    ISO_VERTEX_INDEX map_to;
+
     /// Separation edge direction.
     /// Separation edge has lower/left endpoint separation_vertex.
     VERTEX_INDEX separation_edge_direction;
@@ -127,7 +130,7 @@ namespace IVOLDUAL {
     bool is_doubly_connected;        ///< True, if vertex is doubly connected.
     bool in_loop;                    ///< True, if vertex is in loop.
     bool in_box;                     ///< True, if vertex is in box.
-    bool in_pseudobox;               ///< True, if vertex is in pseudobox.
+    bool in_pseudobox;               ///< True, if vertex is in pseudobox.   
 
   protected:
     void Init();                    ///< Initialization function.
@@ -270,11 +273,13 @@ namespace IVOLDUAL {
     bool flag_lsmooth_elength;
     bool flag_lsmooth_jacobian;
     bool flag_split_hex;
+    bool flag_collapse_hex;
     int lsmooth_elength_iter;
     int lsmooth_jacobian_iter;
     float lsmooth_elength_threshold;
     float lsmooth_jacobian_threshold;
     float split_hex_threshold;
+    float collapse_hex_threshold;
 
     /// Default encoded value (1 or 2) for vertices in the interior
     ///   of the interval volume.

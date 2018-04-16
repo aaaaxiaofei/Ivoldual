@@ -43,6 +43,7 @@ void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
   flag_lsmooth_elength = false;
   flag_lsmooth_jacobian = false;
   flag_split_hex = false;
+  flag_collapse_hex = false;
   flag_set_interior_code_from_scalar = false;
   default_interior_code = 2;
   lsmooth_elength_iter = 1;
@@ -50,6 +51,7 @@ void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
   lsmooth_elength_threshold = 0.1;
   lsmooth_jacobian_threshold = 0.0;
   split_hex_threshold = 0.0;
+  collapse_hex_threshold = 0.0;
 }
 
 // **************************************************

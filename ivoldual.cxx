@@ -278,19 +278,24 @@ void IVOLDUAL::dual_contouring_interval_volume
 
   // Mesh quality improvement.
   if (param.flag_split_hex) {
-    subdivide_hex
-      (ivolpoly_vert, ivoldual_table, vertex_adjacency_list,
-        ivolv_list, ivolpoly_info, vertex_coord, param.split_hex_threshold);
+    split_hex
+    (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list,
+     ivolpoly_info, vertex_coord, param.split_hex_threshold);
+  }
+  if (param.flag_collapse_hex) {
+    collapse_hex
+    (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list, 
+     ivolpoly_info, vertex_coord, param.collapse_hex_threshold);
   }
   if (param.flag_lsmooth_elength) {
-     laplacian_smooth_elength
-     (scalar_grid, ivoldual_table, param, vertex_adjacency_list, ivolv_list, 
-      vertex_coord, param.lsmooth_elength_threshold, param.lsmooth_elength_iter);         
+    laplacian_smooth_elength
+    (scalar_grid, ivoldual_table, param, vertex_adjacency_list, ivolv_list, 
+     vertex_coord, param.lsmooth_elength_threshold, param.lsmooth_elength_iter);         
   }
   if (param.flag_lsmooth_jacobian) {
     laplacian_smooth_jacobian
-      (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list, 
-       vertex_coord, param.lsmooth_jacobian_threshold, param.lsmooth_jacobian_iter);
+    (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list, 
+     vertex_coord, param.lsmooth_jacobian_threshold, param.lsmooth_jacobian_iter);
   } 
 
   if (param.flag_orient_in) {
@@ -463,7 +468,10 @@ void IVOLDUAL::set_ivol_vertex_info
     ivolv_list[ivolv].doubly_connected_facet =
       ivoldual_table.VertexInfo(table_index, patch_index).
       doubly_connected_facet;
+    ivolv_list[ivolv].map_to = ivolv;
   }
+
+
 
   determine_ivol_vertices_missing_incident_hex
     (ivoldual_table, poly_vert, ivolv_list);
