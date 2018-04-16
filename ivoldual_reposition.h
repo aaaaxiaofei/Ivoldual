@@ -23,8 +23,6 @@
 #ifndef _IVOLDUAL_REPOSITION_
 #define _IVOLDUAL_REPOSITION_
 
-#include <string>
-
 #include "ijk.txx"
 
 #include "ivoldual_types.h"
@@ -74,10 +72,11 @@ namespace IVOLDUAL {
    COORD_ARRAY & vertex_coord, 
    std::vector<int> negative_jabocian_list);
 
-  void laplacian_move_vertex
+  void gradient_move_vertex
 	(const std::vector<VERTEX_INDEX> & ivolpoly_cube,
 	 const IVOLDUAL_CUBE_TABLE & ivoldual_table,
 	 IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> vertex_poly_incidence,
 	 const DUAL_IVOLVERT_ARRAY & ivolv_list,
 	 COORD_ARRAY & vertex_coord, 
 	 COORD_TYPE *ver_coord, int ver_index,	 

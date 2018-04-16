@@ -76,7 +76,7 @@ void IVOLDUAL::laplacian_smooth_elength
       // Store sum of neighbor coordinates.
       COORD_TYPE neigh_sum[d]; 
       IJK::set_coord(d, 0.0, neigh_sum);
-      bool needMoving = false;
+      bool flag_moving = false;
       int adj_count = 0;
 
       // Loop over adjacent vertices of the current vertex
@@ -101,14 +101,14 @@ void IVOLDUAL::laplacian_smooth_elength
 
         // Check if minimum distance is valid.
         if (dist < laplacian_smooth_limit) {
-          needMoving = true;
+          flag_moving = true;
         }
 
         adj_count++;
       }
 
       // Update current node coordinate.
-      if (needMoving) {
+      if (flag_moving) {
         IJK::divide_coord(d, adj_count, neigh_sum, neigh_sum);
         IJK::copy_coord(d, neigh_sum, cur_coord);
       }
@@ -130,22 +130,23 @@ void IVOLDUAL::laplacian_smooth_jacobian
   COORD_TYPE * vcoord = &(vertex_coord.front());
 
   for (int it = 0; it < iteration; it++) {
-    std::vector<int> negative_jabocian_list;
+    std::vector<int> negative_jacobian_list;
     // Find all vertices with negative Jacobian.
     for (int ihex = 0; ihex < ivolpoly_vert.size()/8; ihex++) {
       for (int i = 0; i < 8; i++) {
         // Compute Jacobian at current vertex
         COORD_TYPE jacob;        
-        compute_hexahedron_Jacobian_determinant
+        compute_hexahedron_normalized_Jacobian_determinant
           (ivolpoly_vert, ihex, vertex_coord, i, jacob);
+
         if (jacob < jacobian_limit) {
-          negative_jabocian_list.push_back(ivolpoly_vert[ihex * 8 + i]);
+          negative_jacobian_list.push_back(ivolpoly_vert[ihex * 8 + i]);
         }
       }
     }
     laplacian_smooth_jacobian
       (ivolpoly_vert, ivoldual_table, vertex_adjacency_list,
-       ivolv_list, vertex_coord,negative_jabocian_list);
+       ivolv_list, vertex_coord, negative_jacobian_list);
   }
 }
 
@@ -156,13 +157,19 @@ void IVOLDUAL::laplacian_smooth_jacobian
  IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
  const DUAL_IVOLVERT_ARRAY & ivolv_list,
  COORD_ARRAY & vertex_coord, 
- std::vector<int> negative_jabocian_list)
+ std::vector<int> negative_jacobian_list)
 {
 	const int DIM3(3);
   const int NUM_VERT_PER_HEXAHEDRON(8); 
   COORD_TYPE * vcoord = &(vertex_coord.front());
 
-	for (int cur : negative_jabocian_list) {
+  // Polytopes dual to vertex.
+  IJK::POLYMESH_DATA<VERTEX_INDEX,int, 
+    IJK::HEX_TRIANGULATION_INFO<char,char>> hex_data;
+  hex_data.AddPolytopes(ivolpoly_vert, NUM_VERT_PER_HEXAHEDRON);
+  IJK::VERTEX_POLY_INCIDENCE<int,int> vertex_poly_incidence(hex_data);
+
+	for (int cur : negative_jacobian_list) {
 
     // Current node coordinates.
     COORD_TYPE *cur_coord = vcoord + cur*DIM3;
@@ -189,24 +196,25 @@ void IVOLDUAL::laplacian_smooth_jacobian
       bool adjOnUpper = ivoldual_table.OnUpperIsosurface(table_adj, ivolv_adj);
 
       if (cube_cur == cube_adj) {
-      	laplacian_move_vertex
-	      	(ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list,
-	       	 vertex_coord,neigh_coord, adj, adjOnLower, adjOnUpper);
-	      laplacian_move_vertex
-	      	(ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list,
-	       	 vertex_coord,cur_coord, cur, curOnLower, curOnUpper);
+      	gradient_move_vertex
+	      	(ivolpoly_vert, ivoldual_table, vertex_adjacency_list, vertex_poly_incidence, 
+           ivolv_list, vertex_coord,neigh_coord, adj, adjOnLower, adjOnUpper);
+	      gradient_move_vertex
+	      	(ivolpoly_vert, ivoldual_table, vertex_adjacency_list, vertex_poly_incidence, 
+           ivolv_list, vertex_coord,cur_coord, cur, curOnLower, curOnUpper);
       }
     }
   }
 }
 
-void IVOLDUAL::laplacian_move_vertex
+void IVOLDUAL::gradient_move_vertex
 (const std::vector<VERTEX_INDEX> & ivolpoly_vert,
  const IVOLDUAL_CUBE_TABLE & ivoldual_table,
  IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+ IJK::VERTEX_POLY_INCIDENCE<int,int> vertex_poly_incidence,
  const DUAL_IVOLVERT_ARRAY & ivolv_list,
  COORD_ARRAY & vertex_coord,
- COORD_TYPE *ver_coord, int ver_index,	
+ COORD_TYPE *ver_coord, int ver_index,
  bool flag_onLower,  bool flag_onUpper)
 {
 
@@ -214,12 +222,6 @@ void IVOLDUAL::laplacian_move_vertex
   const float step_base(0.1);
   const int NUM_VERT_PER_HEXAHEDRON(8); 
   COORD_TYPE * vcoord = &(vertex_coord.front());
-
- 	// Polytopes dual to vertex.
-  IJK::POLYMESH_DATA<VERTEX_INDEX,int, 
-    IJK::HEX_TRIANGULATION_INFO<char,char>> hex_data;
-  hex_data.AddPolytopes(ivolpoly_vert, NUM_VERT_PER_HEXAHEDRON);
-  IJK::VERTEX_POLY_INCIDENCE<int,int> vertex_poly_incidence(hex_data);
 
   COORD_TYPE target[DIM3];
   float pre_jacobian = -1.0;
@@ -260,10 +262,15 @@ void IVOLDUAL::laplacian_move_vertex
     COORD_TYPE min_jacobian = 1.0;
     for (int ipoly = 0; ipoly < vertex_poly_incidence.NumIncidentPoly(ver_index); ipoly++) {
       const int ihex = vertex_poly_incidence.IncidentPoly(ver_index, ipoly);
-      COORD_TYPE min_jacob, max_jacob;
-      compute_min_max_hexahedron_Jacobian_determinant
-        (ivolpoly_vert, ihex, vertex_coord, min_jacob, max_jacob);
-      min_jacobian = std::min(min_jacob, min_jacobian);
+
+      for (int i = 0; i < 8; i++) {
+        // Compute Jacobian at current vertex
+        COORD_TYPE jacob;        
+        compute_hexahedron_normalized_Jacobian_determinant
+          (ivolpoly_vert, ihex, vertex_coord, i, jacob);
+
+        min_jacobian = std::min(jacob, min_jacobian);
+      }
     }
 
     if (min_jacobian > pre_jacobian) {
@@ -292,10 +299,14 @@ void IVOLDUAL::laplacian_move_vertex
 		COORD_TYPE min_jacobian = 1.0;
     for (int ipoly = 0; ipoly < vertex_poly_incidence.NumIncidentPoly(ver_index); ipoly++) {
       const int ihex = vertex_poly_incidence.IncidentPoly(ver_index, ipoly);
-      COORD_TYPE min_jacob, max_jacob;
-      compute_min_max_hexahedron_Jacobian_determinant
-        (ivolpoly_vert, ihex, vertex_coord, min_jacob, max_jacob);
-      min_jacobian = std::min(min_jacob, min_jacobian);
+
+      for (int i = 0; i < 8; i++) {
+        // Compute Jacobian at current vertex
+        COORD_TYPE jacob;        
+        compute_hexahedron_normalized_Jacobian_determinant
+          (ivolpoly_vert, ihex, vertex_coord, i, jacob);
+        min_jacobian = std::min(jacob, min_jacobian);
+      }
     }
     if (min_jacobian > pre_jacobian) {
       pre_jacobian = min_jacobian;
