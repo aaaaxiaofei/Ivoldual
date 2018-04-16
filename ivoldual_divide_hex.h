@@ -32,8 +32,18 @@
 /// ivoldual classes and routines.
 namespace IVOLDUAL {
 
-  /// Subdivide hexahedron.
-  void subdivide_hex
+  /// Split hexahedron.
+  void split_hex
+  (std::vector<VERTEX_INDEX> & ivolpoly_vert,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   DUAL_IVOLVERT_ARRAY & ivolv_list,
+   IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
+   COORD_ARRAY & vertex_coord, 
+   COORD_TYPE jacobian_limit);
+
+  /// Collapse hexahedron.
+  void collapse_hex
   (std::vector<VERTEX_INDEX> & ivolpoly_vert,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,

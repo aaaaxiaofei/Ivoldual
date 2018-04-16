@@ -29,7 +29,7 @@
 using namespace IJK;
 using namespace IVOLDUAL;
 
-void IVOLDUAL::subdivide_hex
+void IVOLDUAL::collapse_hex
 (std::vector<VERTEX_INDEX> & ivolpoly_vert,
  const IVOLDUAL_CUBE_TABLE & ivoldual_table,
  IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
@@ -39,17 +39,68 @@ void IVOLDUAL::subdivide_hex
  COORD_TYPE jacobian_limit)
  {
   const int DIM3(3);
-  const int NUM_VERT_PER_HEXAHEDRON(8);
+  const int NUM_VERT_PER_HEX(8);
+  std::vector<std::pair<VERTEX_INDEX, VERTEX_INDEX>> vertex_subdivide_list;
+
+  // Loop over polytopeS to find vertex with negative Jacobian and indentation.
+  for (int ihex = 0; ihex < ivolpoly_vert.size() / NUM_VERT_PER_HEX; ihex++) {
+    for (int icorner = 0; icorner < NUM_VERT_PER_HEX; icorner++) {
+    	
+    	int cur = ivolpoly_vert[ihex*8+icorner];
+      // Compute Jacobian at current vertex
+      COORD_TYPE jacob;        
+      compute_hexahedron_normalized_Jacobian_determinant
+        (ivolpoly_vert, ihex, vertex_coord, icorner, jacob);
+      if (jacob < jacobian_limit && ivolv_list[cur].num_incident_hex == 4 && 
+      	  ivolv_list[cur].num_incident_iso_quad == 0)
+      {
+      	// Push back the opposite vertex in the cube to the negative Jacobian vertex.
+      	int index_indent = ivolpoly_vert[ihex*8+icorner];
+      	int index_indent_oppo = ivolpoly_vert[ihex*8 + 7 - icorner];
+
+      	if (ivolv_list[index_indent_oppo].num_incident_iso_quad != 0 && 
+      		  ivolv_list[index_indent_oppo].num_incident_hex == 1) {
+	      	ivolv_list[index_indent].map_to = index_indent_oppo;
+	      	ivolpoly_info[ihex].flag_subdivide_hex = true;
+	      }
+      }
+    }
+  }
+
+  // Remove deleted hexahedra.
+  std::vector<VERTEX_INDEX> ivolpoly_vert_new;
+  for (int i = 0; i < ivolpoly_info.size(); i++) {
+  	if (!ivolpoly_info[i].flag_subdivide_hex) {
+  		for (int j = 0; j < 8; j++) {
+  			int cur = ivolpoly_vert[i*8 + j];
+  			ivolpoly_vert_new.push_back(ivolv_list[cur].map_to);
+  		} 		
+  	}
+  }
+  ivolpoly_vert = move(ivolpoly_vert_new);
+}
+
+void IVOLDUAL::split_hex
+(std::vector<VERTEX_INDEX> & ivolpoly_vert,
+ const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+ IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+ DUAL_IVOLVERT_ARRAY & ivolv_list,
+ IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
+ COORD_ARRAY & vertex_coord, 
+ COORD_TYPE jacobian_limit)
+ {
+  const int DIM3(3);
+  const int NUM_VERT_PER_HEX(8);
   std::vector<std::pair<VERTEX_INDEX, VERTEX_INDEX>> vertex_subdivide_list;
 
   // Loop over every polytope to find vertex with negative Jacobian and indentation feature.
-  for (int ihex = 0; ihex < ivolpoly_vert.size() / NUM_VERT_PER_HEXAHEDRON; ihex++) {
-    for (int icorner = 0; icorner < NUM_VERT_PER_HEXAHEDRON; icorner++) {
+  for (int ihex = 0; ihex < ivolpoly_vert.size() / NUM_VERT_PER_HEX; ihex++) {
+    for (int icorner = 0; icorner < NUM_VERT_PER_HEX; icorner++) {
     	int cur = ivolpoly_vert[ihex*8+icorner];
 
       // Compute Jacobian at current vertex
       COORD_TYPE jacob;        
-      compute_hexahedron_Jacobian_determinant
+      compute_hexahedron_normalized_Jacobian_determinant
         (ivolpoly_vert, ihex, vertex_coord, icorner, jacob);
       if (jacob < jacobian_limit && 
       		ivolv_list[cur].num_incident_hex == 1 && 
@@ -95,14 +146,14 @@ void IVOLDUAL::subdivide_hex_to_four
   VERTEX_INDEX iw[8];
   std::unordered_map<int, int> new_vertex;
   const int DIM3(3);
-  const int NUM_VERT_PER_HEXAHEDRON(8);
+  const int NUM_VERT_PER_HEX(8);
   IJK::CUBE_FACE_INFO<int, int, int> cube(DIM3);
   std::unordered_map<VERTEX_INDEX, int> forbiden;
 
   // Polytopes dual to vertex.
   IJK::POLYMESH_DATA<VERTEX_INDEX,int, 
     IJK::HEX_TRIANGULATION_INFO<char,char>> hex_data;
-  hex_data.AddPolytopes(ivolpoly_vert, NUM_VERT_PER_HEXAHEDRON);
+  hex_data.AddPolytopes(ivolpoly_vert, NUM_VERT_PER_HEX);
   IJK::VERTEX_POLY_INCIDENCE<int,int> vertex_poly_incidence(hex_data);
 
   // Loop over all vertices around which the hexhedra needs subdivid.
@@ -189,10 +240,10 @@ void IVOLDUAL::generate_children_polytope
 (std::vector<VERTEX_INDEX> & ivolpoly_vert,
  int iv[], int iw[], int corner[])
 {
-	bool flag_reverse[8] = 
-  	{false, true, true, false, true, false, false, true};
 	std::vector<VERTEX_INDEX> new_ivolpoly_vert;
-
+	bool flag_reverse[8] = {false, true, true, false, 
+		                      true, false, false, true};
+	
 	new_ivolpoly_vert.push_back(iv[0]);
 	new_ivolpoly_vert.push_back(iw[1]);
 	new_ivolpoly_vert.push_back(iw[2]);
