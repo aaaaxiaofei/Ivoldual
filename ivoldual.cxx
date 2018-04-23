@@ -186,7 +186,10 @@ void IVOLDUAL::dual_contouring_interval_volume
   const bool flag_always_separate_opposite(true);
   const GRID_VERTEX_ENCODING default_interior_code =
     param.default_interior_code;
+  const VERTEX_INDEX num_grid_vertices = scalar_grid.NumVertices();
   int num_non_manifold_split(0);
+  IJK::ARRAY<VERTEX_INDEX> index_to_cube_list
+    (num_grid_vertices, num_grid_vertices);
   IVOL_POLYMESH polymesh;
   IVOL_VERTEX_ADJACENCY_LIST vertex_adjacency_list(dimension);
   CUBE_FACE_INFO cube_info(dimension);
@@ -237,6 +240,7 @@ void IVOLDUAL::dual_contouring_interval_volume
 
   set_cube_ivoltable_info
     (encoded_grid, ivoldual_table, cube_ivolv_list);
+  IJK::set_index_to_cube_list(cube_ivolv_list, index_to_cube_list);
 
   if (param.flag_split_ambig_pairsB) {
     // *** Probably not necessary
@@ -273,7 +277,8 @@ void IVOLDUAL::dual_contouring_interval_volume
     (ivolv_list, cube_ivolv_list);
 
   set_ivol_vertex_info
-    (scalar_grid, ivoldual_table, ivolpoly_vert, cube_ivolv_list,
+    (scalar_grid, ivoldual_table, ivolpoly_vert, 
+     cube_ivolv_list, index_to_cube_list.PtrConst(),
      vertex_adjacency_list, ivolv_list);
 
   // Mesh quality improvement.
@@ -432,13 +437,20 @@ void IVOLDUAL::set_ivol_vertex_info
  const IVOLDUAL_CUBE_TABLE & ivoldual_table,
  const std::vector<ISO_VERTEX_INDEX> & poly_vert,
  const std::vector<GRID_CUBE_DATA> & cube_list,
+ const VERTEX_INDEX index_to_cube_list[],
  const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
  DUAL_IVOLVERT_ARRAY & ivolv_list)
 {
   typedef IVOLDUAL_TABLE_VERTEX_INFO::CUBE_VERTEX_TYPE CUBE_VERTEX_TYPE;
+  typedef IVOLDUAL_TABLE_VERTEX_INFO::CUBE_EDGE_TYPE CUBE_EDGE_TYPE;
 
+  const int DIM3(3);
   const CUBE_VERTEX_TYPE UNDEFINED_CUBE_VERTEX =
     IVOLDUAL_TABLE_VERTEX_INFO::UNDEFINED_CUBE_VERTEX;
+  const CUBE_EDGE_TYPE UNDEFINED_CUBE_EDGE = 
+    IVOLDUAL_TABLE_VERTEX_INFO::UNDEFINED_CUBE_EDGE;
+  const CUBE_FACE_INFO cube(DIM3);
+
 
   for (IVOL_VERTEX_INDEX ivolv = 0; ivolv < ivolv_list.size(); ivolv++) {
     const TABLE_INDEX table_index = ivolv_list[ivolv].table_index;
@@ -449,11 +461,20 @@ void IVOLDUAL::set_ivol_vertex_info
     ivolv_list[ivolv].separation_vertex = grid.NumVertices();
     ivolv_list[ivolv].separation_edge_direction = 0;
 
+    ivolv_list[ivolv].connect_dir = 
+      ivoldual_table.VertexInfo(table_index, patch_index).connect_dir;
+
     ivolv_list[ivolv].num_incident_hex = 
       ivoldual_table.VertexInfo(table_index, patch_index).NumIncidentPoly();
 
     ivolv_list[ivolv].num_incident_iso_quad = 
       ivoldual_table.VertexInfo(table_index, patch_index).NumIncidentIsoPoly();
+
+    ivolv_list[ivolv].flag_lower_isosurface = 
+      ivoldual_table.OnLowerIsosurface(table_index, patch_index);
+
+    ivolv_list[ivolv].flag_upper_isosurface = 
+      ivoldual_table.OnUpperIsosurface(table_index, patch_index);
 
     const CUBE_VERTEX_TYPE icorner =
       ivoldual_table.VertexInfo(table_index, patch_index).separation_vertex;
@@ -461,6 +482,16 @@ void IVOLDUAL::set_ivol_vertex_info
     if (icorner != UNDEFINED_CUBE_VERTEX) {
       ivolv_list[ivolv].separation_vertex = 
         grid.CubeVertex(cube_index, icorner);
+    }
+
+    const CUBE_EDGE_TYPE iedge =
+      ivoldual_table.VertexInfo(table_index, patch_index).separation_edge;
+
+    if (iedge != UNDEFINED_CUBE_EDGE) {
+      const CUBE_VERTEX_TYPE icorner = cube.EdgeEndpoint(iedge, 0);
+      ivolv_list[ivolv].separation_vertex = 
+        grid.CubeVertex(cube_index, icorner);
+      ivolv_list[ivolv].separation_edge_direction = cube.EdgeDir(iedge);
     }
 
     ivolv_list[ivolv].is_doubly_connected =
@@ -481,6 +512,13 @@ void IVOLDUAL::set_ivol_vertex_info
 
   determine_ivol_vertices_in_isosurface_pseudoboxes
     (vertex_adjacency_list, cube_list, ivolv_list);
+
+  determine_ivol_vertices_adjacent_to_upper_and_lower_isosurfaces
+    (vertex_adjacency_list, ivolv_list);
+
+  determine_thin_regions
+    (grid, cube_list, index_to_cube_list, vertex_adjacency_list, ivolv_list);
+
 }
 
 
@@ -570,6 +608,122 @@ void IVOLDUAL::set_in_pseudobox
     if (ivolv_list[ivolv].NumIncidentIsoQuad() > 0) 
       { ivolv_list[ivolv].in_pseudobox = true; }
   }
+}
+
+
+void IVOLDUAL::determine_ivol_vertices_adjacent_to_upper_and_lower_isosurfaces
+(const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+ DUAL_IVOLVERT_ARRAY & ivolv_list)
+{
+  const int NUM_CUBE_VERTICES(8);
+  VERTEX_INDEX box_corner[NUM_CUBE_VERTICES];
+
+  for (IVOL_VERTEX_INDEX ivolv = 0; ivolv < ivolv_list.size(); ivolv++) {
+    ivolv_list[ivolv].flag_adjacent_to_upper_isosurface = false;
+    ivolv_list[ivolv].flag_adjacent_to_lower_isosurface = false;
+  }
+
+
+  for (IVOL_VERTEX_INDEX ivolv0 = 0; 
+       ivolv0 < vertex_adjacency_list.NumVertices(); ivolv0++) {
+
+    ivolv_list[ivolv0].flag_adjacent_to_lower_isosurface = false;
+    ivolv_list[ivolv0].flag_adjacent_to_upper_isosurface = false;
+
+    for (int j = 0; j < vertex_adjacency_list.NumAdjacent(ivolv0); j++) {
+      IVOL_VERTEX_INDEX ivolv1 = 
+        vertex_adjacency_list.AdjacentVertex(ivolv0, j);
+
+      if (ivolv_list[ivolv1].flag_lower_isosurface) 
+        { ivolv_list[ivolv0].flag_adjacent_to_lower_isosurface = true; }
+
+      if (ivolv_list[ivolv1].flag_upper_isosurface) 
+        { ivolv_list[ivolv0].flag_adjacent_to_upper_isosurface = true; }
+    }
+  }
+}
+
+
+void IVOLDUAL::determine_thin_regions
+(const DUALISO_GRID & grid,
+ const std::vector<GRID_CUBE_DATA> & cube_list,
+ const VERTEX_INDEX index_to_cube_list[],
+ const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+ DUAL_IVOLVERT_ARRAY & ivolv_list)
+{
+  typedef DUAL_IVOLVERT::DIR_BITS_TYPE DIR_BITS_TYPE;
+
+  const int DIM3(3);
+  DIR_BITS_TYPE mask[DIM3] = 
+    { DIR_BITS_TYPE(1), DIR_BITS_TYPE(2), DIR_BITS_TYPE(4) };
+  IJK::PROCEDURE_ERROR error("determine_thin_regions");
+
+  for (IVOL_VERTEX_INDEX ivolv = 0; ivolv < ivolv_list.size(); ivolv++) 
+    { ivolv_list[ivolv].in_thin_region = false; }
+
+  for (IVOL_VERTEX_INDEX ivolv0 = 0; 
+       ivolv0 < vertex_adjacency_list.NumVertices(); ivolv0++) {
+
+    const VERTEX_INDEX cube_index0 = ivolv_list[ivolv0].cube_index;
+
+    // Skip vertices which are not on isosurface or not bent degree 4.
+    if (ivolv_list[ivolv0].NumIncidentIsoQuad() != 4) { continue; }
+    if (ivolv_list[ivolv0].separation_vertex >= grid.NumVertices()) 
+      { continue; }
+
+    if (ivolv_list[ivolv0].in_thin_region) {
+      // Already flagged as in thin region
+      continue;
+    }
+
+    if (ivolv_list[ivolv0].flag_missing_ivol_hexahedra) { 
+      // Separation edge is on grid boundary.
+      continue; 
+    }
+
+    const int edge_dir = ivolv_list[ivolv0].separation_edge_direction;
+
+    const int d1 = (edge_dir+1)%DIM3;
+    const int d2 = (edge_dir+2)%DIM3;
+    const DIR_BITS_TYPE connect_dir = ivolv_list[ivolv0].connect_dir;
+
+    VERTEX_INDEX cube_index1;
+    if ((mask[d1] & connect_dir) == 0) 
+      { cube_index1 = grid.NextVertex(cube_index0, d1); }
+    else
+      { cube_index1 = grid.PrevVertex(cube_index0, d1); }
+
+    if ((mask[d2] & connect_dir) == 0) 
+      { cube_index1 = grid.NextVertex(cube_index1, d2); }
+    else
+      { cube_index1 = grid.PrevVertex(cube_index1, d2); }
+
+    const int i1 = index_to_cube_list[cube_index1];
+
+    if (i1 == grid.NumVertices()) {
+      // Grid cube cube_index1 is not active.  Skip.
+      continue;
+    }
+
+    IVOL_VERTEX_INDEX ivolv1 = cube_list[i1].first_isov;
+    for (int j = 0; j < cube_list[i1].num_isov; j++) {
+
+      // Skip vertices which are not on isosurface or not bent degree 4.
+      if (ivolv_list[ivolv1].NumIncidentIsoQuad() != 4) { continue; }
+      if (ivolv_list[ivolv1].separation_vertex >= grid.NumVertices()) 
+      { continue; }
+
+      if ((ivolv_list[ivolv1].separation_vertex ==
+           ivolv_list[ivolv0].separation_vertex) &&
+          (ivolv_list[ivolv1].separation_edge_direction ==
+           ivolv_list[ivolv0].separation_edge_direction)) {
+        ivolv_list[ivolv0].in_thin_region = true;
+        ivolv_list[ivolv1].in_thin_region = true;
+        break;
+      }
+    }
+  }
+
 }
 
 

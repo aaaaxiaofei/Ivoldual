@@ -35,5 +35,6 @@ void IVOLDUAL::IVOLDUAL_CUBE_TABLE::Init()
   determine_ivol_vertex_connection_directions(*this, vertex_info);
   determine_ivol_vertex_iso_connection_directions(*this, vertex_info);
   determine_separation_vertices(*this, vertex_info);
+  determine_separation_edges(*this, vertex_info);
   determine_doubly_connected_ivol3D_vertices(*this, vertex_info);
 }

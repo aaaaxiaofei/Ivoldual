@@ -32,6 +32,8 @@
 // Initialize
 void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
 {
+  const COORD_TYPE ONE_THIRD(1.0/3.0);
+
   hex_tri_method = UNDEFINED_HEX_TRI;
   flag_split_ambig_pairs = false;
   flag_split_ambig_pairsB = false;
@@ -52,6 +54,9 @@ void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
   lsmooth_jacobian_threshold = 0.0;
   split_hex_threshold = 0.0;
   collapse_hex_threshold = 0.0;
+
+  flag_separate_thin = false;
+  thin_separation_distance = ONE_THIRD;
 }
 
 // **************************************************
@@ -608,8 +613,12 @@ void IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateDiagonalNonmanifold
 
 void IVOLDUAL::DUAL_IVOLVERT::Init()
 {
+  // Data from interval volume lookup table.
   num_incident_hex = 0;
   num_incident_iso_quad = 0;
+  flag_lower_isosurface = false;
+  flag_upper_isosurface = false;
+
   separation_vertex = 0;
   separation_edge_direction = 0;
   flag_missing_ivol_hexahedra = false;
@@ -617,4 +626,6 @@ void IVOLDUAL::DUAL_IVOLVERT::Init()
   in_loop = false;
   in_box = false;
   in_pseudobox = false;
+  flag_adjacent_to_lower_isosurface = false;
+  flag_adjacent_to_upper_isosurface = false;
 }

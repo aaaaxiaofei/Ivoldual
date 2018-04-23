@@ -30,6 +30,7 @@
 
 #include "ijkdual_datastruct.h"
 #include "ivoldual_types.h"
+#include "ivoldualtable.h"
 
 
 namespace IVOLDUAL {
@@ -96,6 +97,12 @@ namespace IVOLDUAL {
 
   public:
 
+    typedef IVOLDUAL_TABLE_VERTEX_INFO::DIR_BITS_TYPE DIR_BITS_TYPE;
+
+    /// Bit flag for connection direction.
+    /// If bit i is 1, then vertex connects across facet i.
+    DIR_BITS_TYPE connect_dir;
+
     /// Number of hexahedra incident on the vertex in the lookup table.
     /// - If there are no missing ivol hexahedra, then num_incident_hex
     ///   equals the number of incident hexahedra in the mesh.
@@ -107,6 +114,16 @@ namespace IVOLDUAL {
     ///   equals the number of incident isosurface quadrilaterals in the mesh.
     DEGREE_TYPE num_incident_iso_quad;
 
+    // *** CHANGE TO flag_on_lower_isosurface ***
+    /// True if vertex is on the lower isosurface.
+    bool flag_lower_isosurface;
+
+    // *** CHANGE TO flag_on_upper_isosurface ***
+    /// True if vertex is on the upper isosurface.
+    /// - A vertex cannot be in both the lower and upper isosurface.
+    /// - A vertex could be in neither lower nor upper isosurface.
+    bool flag_upper_isosurface;
+
     /// If true, the mesh is missing some interval volume hexahedra
     ///   which would normally be incident on the vertex.
     /// The hexahedra are missing because they are dual to grid edges
@@ -115,9 +132,6 @@ namespace IVOLDUAL {
 
     /// Separation vertex.
     VERTEX_INDEX separation_vertex;
-
-    /// Map for degenerate mesh.
-    ISO_VERTEX_INDEX map_to;
 
     /// Separation edge direction.
     /// Separation edge has lower/left endpoint separation_vertex.
@@ -130,7 +144,17 @@ namespace IVOLDUAL {
     bool is_doubly_connected;        ///< True, if vertex is doubly connected.
     bool in_loop;                    ///< True, if vertex is in loop.
     bool in_box;                     ///< True, if vertex is in box.
-    bool in_pseudobox;               ///< True, if vertex is in pseudobox.   
+    bool in_pseudobox;               ///< True, if vertex is in pseudobox.
+    bool in_thin_region;             ///< True, if vertex is in thin region.
+
+    /// If true, adjacent to upper isosurface.
+    bool flag_adjacent_to_upper_isosurface;
+
+    /// If true, adjacent to lower isosurface.
+    bool flag_adjacent_to_lower_isosurface;
+
+    /// Map for degenerate mesh.
+    ISO_VERTEX_INDEX map_to;
 
   protected:
     void Init();                    ///< Initialization function.
@@ -280,6 +304,13 @@ namespace IVOLDUAL {
     float lsmooth_jacobian_threshold;
     float split_hex_threshold;
     float collapse_hex_threshold;
+
+    /// If true, separate isosurface vertices in thin regions
+    ///   from cube facets.
+    bool flag_separate_thin;
+
+    /// Separation distance for thin regions.
+    COORD_TYPE thin_separation_distance;
 
     /// Default encoded value (1 or 2) for vertices in the interior
     ///   of the interval volume.

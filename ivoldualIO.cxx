@@ -2088,10 +2088,28 @@ namespace {
     out << "  Num incident iso quad: "
         << int(ivolv_list[ivolv].NumIncidentIsoQuad()) << ".";
     out << endl;
+    if (ivolv_list[ivolv].flag_lower_isosurface)
+      { out << "  On lower isosurface." << endl; }
+    else if (ivolv_list[ivolv].flag_adjacent_to_lower_isosurface)
+      { out << "  Adjacent to lower isosurface." << endl; }
+
+    if (ivolv_list[ivolv].flag_upper_isosurface)
+      { out << "  On upper isosurface." << endl; }
+    else if (ivolv_list[ivolv].flag_adjacent_to_upper_isosurface)
+      { out << "  Adjacent to upper isosurface." << endl; }
 
     if (ivolv_list[ivolv].NumIncidentIsoQuad() == 3) {
       out << "  Separation vertex: "
           << ivolv_list[ivolv].separation_vertex << endl;
+    }
+
+    if (ivolv_list[ivolv].NumIncidentIsoQuad() == 4 &&
+        ivolv_list[ivolv].separation_vertex < grid.NumVertices()) {
+      const int edge_dir = ivolv_list[ivolv].separation_edge_direction;
+      const VERTEX_INDEX iend0 = ivolv_list[ivolv].separation_vertex;
+      const VERTEX_INDEX iend1 = grid.NextVertex(iend0, edge_dir);
+      out << "  Separation edge: (" << iend0 << "," << iend1 << ") "
+          << " direction: " << edge_dir << endl;
     }
 
     if (ivolv_list[ivolv].in_box) 
@@ -2102,6 +2120,10 @@ namespace {
 
     if (ivolv_list[ivolv].flag_missing_ivol_hexahedra) {
       out << "  Missing incident ivol hexahedra." << endl;
+    }
+
+    if (ivolv_list[ivolv].in_thin_region) {
+      out << "  In thin region." << endl;
     }
 
   }

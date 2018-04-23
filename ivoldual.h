@@ -182,6 +182,7 @@ namespace IVOLDUAL {
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    const std::vector<ISO_VERTEX_INDEX> & poly_vert,
    const std::vector<GRID_CUBE_DATA> & cube_list,
+   const VERTEX_INDEX index_to_cube_list[],
    const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
    DUAL_IVOLVERT_ARRAY & ivolv_list);
 
@@ -197,6 +198,17 @@ namespace IVOLDUAL {
   void determine_ivol_vertices_in_isosurface_pseudoboxes
   (const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
    const std::vector<GRID_CUBE_DATA> & cube_list,
+   DUAL_IVOLVERT_ARRAY & ivolv_list);
+
+  void determine_ivol_vertices_adjacent_to_upper_and_lower_isosurfaces
+  (const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   DUAL_IVOLVERT_ARRAY & ivolv_list);
+
+  void determine_thin_regions
+  (const DUALISO_GRID & grid,
+   const std::vector<GRID_CUBE_DATA> & cube_list,
+   const VERTEX_INDEX index_to_cube_list[],
+   const IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
    DUAL_IVOLVERT_ARRAY & ivolv_list);
 
   /// Set flag in_pseudobox to true for all ivol vertices in cube cube_ivolv.
