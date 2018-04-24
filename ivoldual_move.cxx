@@ -221,23 +221,23 @@ void IVOLDUAL::expand_thin_regions
 
     if ((mask[d1] & connect_dir) == 0) {
       move_ivol_vertex_away_from_cube_facet
-        (cube_list, ivolv_list, ivolv, d1, separation_distance, 
+        (cube_list, ivolv_list, ivolv, d1+DIM3, separation_distance, 
          vertex_coord, flag_moved1);
     }
     else {
       move_ivol_vertex_away_from_cube_facet
-        (cube_list, ivolv_list, ivolv, d1+DIM3, separation_distance, 
+        (cube_list, ivolv_list, ivolv, d1, separation_distance, 
          vertex_coord, flag_moved1);
     }
 
     if ((mask[d2] & connect_dir) == 0) {
       move_ivol_vertex_away_from_cube_facet
-        (cube_list, ivolv_list, ivolv, d2, separation_distance, 
+        (cube_list, ivolv_list, ivolv, d2+DIM3, separation_distance, 
          vertex_coord, flag_moved2);
     }
     else {
       move_ivol_vertex_away_from_cube_facet
-        (cube_list, ivolv_list, ivolv, d2+DIM3, separation_distance, 
+        (cube_list, ivolv_list, ivolv, d2, separation_distance, 
          vertex_coord, flag_moved2);
     }
 
