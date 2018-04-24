@@ -34,10 +34,9 @@ void IVOLDUAL::eliminate_non_manifold_grid
  const SCALAR_TYPE isovalue1, 
  IVOLDUAL_INFO & dualiso_info) 
 {
-  VERTEX_INDEX changes_of_non_manifold = 0;
-  ivoldual_data.EliminateAmbigFacets
-    (isovalue0, isovalue1, changes_of_non_manifold);
-  dualiso_info.non_manifold_changes = changes_of_non_manifold;
+  int num_changes = 0;
+  ivoldual_data.EliminateAmbigFacets(isovalue0, isovalue1, num_changes);
+  dualiso_info.num_non_manifold_changes = num_changes;
 }
 
 void IVOLDUAL::laplacian_smooth_elength

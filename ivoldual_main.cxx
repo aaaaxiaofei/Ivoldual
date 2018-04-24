@@ -88,7 +88,8 @@ int main(int argc, char **argv)
     // subsample and supersample parameters are hard-coded here.
     ivoldual_data.SetScalarGrid
       (full_scalar_grid, io_info.flag_subsample, io_info.subsample_resolution, 
-       io_info.flag_supersample, io_info.supersample_resolution, io_info.flag_subdivide, 
+       io_info.flag_supersample, io_info.supersample_resolution, 
+       io_info.flag_subdivide, 
        io_info.flag_rm_diag_ambig, io_info.flag_add_outer_layer,
        io_info.isovalue[0], io_info.isovalue[1]);
 
@@ -114,10 +115,12 @@ int main(int argc, char **argv)
     construct_interval_volume
       (io_info, ivoldual_data, dualiso_time, io_time, dualiso_info);
 
+    /* OBSOLETE.  MOVED TO report_ivol_info.
     // print out total number of changes for eliminating non-manifold
     if (io_info.flag_rm_non_manifold) {
       report_non_manifold_changes(dualiso_info);
     }
+    */
     
     if (io_info.flag_report_time) {
 
@@ -194,7 +197,7 @@ void construct_interval_volume
     output_info.SetDimension(dimension, num_cube_vertices);
     set_output_info(io_info, i, output_info);
 
-    output_dual_isosurface
+    output_dual_interval_volume
       (output_info, ivoldual_data, interval_volume, dualiso_info, io_time);
 
     if (output_info.flag_report_all_isov) {

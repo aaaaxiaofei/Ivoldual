@@ -281,6 +281,14 @@ void IVOLDUAL::dual_contouring_interval_volume
      cube_ivolv_list, index_to_cube_list.PtrConst(),
      vertex_adjacency_list, ivolv_list);
 
+  // Expand thin regions.
+  if (param.flag_expand_thin_regions) {
+    int num_moved;
+    expand_thin_regions
+      (scalar_grid, cube_ivolv_list, ivolv_list,
+       param.thin_separation_distance, vertex_coord, num_moved);
+  }
+
   // Mesh quality improvement.
   if (param.flag_split_hex) {
     split_hex

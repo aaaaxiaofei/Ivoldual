@@ -43,6 +43,7 @@ using namespace IVOLDUAL;
 
 using namespace std;
 
+
 // **************************************************
 // PARSE COMMAND LINE
 // **************************************************
@@ -77,6 +78,7 @@ namespace {
      ELENGTH_THRESHOLD_OPT, JACOBIAN_THRESHOLD_OPT,
      SPLIT_HEX_THRESHOLD_OPT, COLLAPSE_HEX_THRESHOLD_OPT, 
      ADD_OUTER_LAYER_OPT,
+     EXPAND_THIN_REGIONS_OPT,
      UNKNOWN_OPT} OPTION_TYPE;
 
   typedef enum {
@@ -209,6 +211,8 @@ namespace {
        "-split_ambig_pairsB", "Split ambiguous pairs.");
     options.AddToHelpMessage
       (SPLIT_AMBIG_PAIRSB_OPT, "Version which allows more splits.");
+
+    options.AddUsageOptionNewline(REGULAR_OPTG);
 
     options.AddOptionNoArg
       (SPLIT_AMBIG_PAIRSC_OPT, "SPLIT_AMBIG_PAIRSC_OPT", REGULAR_OPTG, 
@@ -353,6 +357,8 @@ namespace {
        "-jacobian_threshold", "S", 
        "Jacobian threshold of performing Laplacian smoothing.");
 
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+
     options.AddOption1Arg
       (SPLIT_HEX_THRESHOLD_OPT, "SPLIT_HEX_THRESHOLD_OPT", REGULAR_OPTG, 
        "-split_hex_threshold", "S", 
@@ -365,21 +371,28 @@ namespace {
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
-    options.AddUsageOptionBeginOr(REGULAR_OPTG);
 
     options.AddOptionNoArg
-      (RM_DIAG_AMBIG_OPT, "RM_DIAG_AMBIG_OPT", REGULAR_OPTG, "-rm_diag_ambig",    
-       "Eliminate non-manifold case caused by two diagonally opposite plus vertices.");
+      (RM_DIAG_AMBIG_OPT, "RM_DIAG_AMBIG_OPT", REGULAR_OPTG, "-rm_diag_ambig",
+       "Eliminate non-manifold case caused by two");
+    options.AddToHelpMessage
+      (RM_DIAG_AMBIG_OPT, "diagonally opposite plus vertices.");
 
-    options.AddUsageOptionEndOr(REGULAR_OPTG);
-    options.AddUsageOptionNewline(REGULAR_OPTG);
-    options.AddUsageOptionBeginOr(REGULAR_OPTG);
-    
     options.AddOptionNoArg
       (ADD_OUTER_LAYER_OPT, "ADD_OUTER_LAYER_OPT", REGULAR_OPTG, 
        "-add_outer_layer", "Add outer layer to the scalar grid.");
 
-    options.AddUsageOptionEndOr(REGULAR_OPTG);
+    options.AddUsageOptionNewline(REGULAR_OPTG);
+
+    options.AddOptionNoArg
+      (EXPAND_THIN_REGIONS_OPT, "EXPAND_THIN_REGIONS_OPT", REGULAR_OPTG, 
+       "-expand_thin_regions", "Expand thin regions.");
+    options.AddToHelpMessage
+      (EXPAND_THIN_REGIONS_OPT, 
+       "Move isosurface vertices bounding thin regions",
+       "away from grid facets.");
+    options.AddSynonym(EXPAND_THIN_REGIONS_OPT, "-expand_thin");
+
     options.AddUsageOptionNewline(REGULAR_OPTG);
     options.AddUsageOptionBeginOr(REGULAR_OPTG);
 
@@ -820,6 +833,10 @@ bool process_option
     io_info.flag_add_outer_layer = true;
     break;
 
+  case EXPAND_THIN_REGIONS_OPT:
+    io_info.flag_expand_thin_regions = true;
+    break;
+
   case OFF_OPT:
     io_info.flag_output_off = true;
     io_info.is_file_format_set = true;
@@ -1085,9 +1102,91 @@ bool IVOLDUAL::check_input
   return(true);
 }
 
+
 // **************************************************
+// OUTPUT DUAL INTERVAL VOLUME
+// **************************************************
+
+// Output dual interval volume.
+void IVOLDUAL::output_dual_interval_volume
+(const OUTPUT_INFO & output_info, 
+ const IVOLDUAL_DATA & ivoldual_data,
+ const DUAL_INTERVAL_VOLUME & interval_volume,
+ const IVOLDUAL_INFO & ivoldual_info, IO_TIME & io_time)
+{
+  if (output_info.use_triangle_mesh) {
+    output_dual_interval_volume_simplices
+      (output_info, ivoldual_data, interval_volume.vertex_coord, 
+       interval_volume.tri_vert, ivoldual_info, io_time);
+  }
+  else {
+    output_dual_interval_volume
+      (output_info, ivoldual_data, interval_volume.vertex_coord, 
+       interval_volume.isopoly_vert, ivoldual_info, io_time);
+  }
+}
+
+
+// Output dual interval volume simplices.
+void IVOLDUAL::output_dual_interval_volume_simplices
+(const OUTPUT_INFO & output_info, 
+ const IVOLDUAL_DATA & ivoldual_data,
+ const COORD_ARRAY & vertex_coord,
+ const VERTEX_INDEX_ARRAY & simplex_vert,
+ const IVOLDUAL_INFO & ivoldual_info, IO_TIME & io_time)
+{
+  if (!output_info.flag_use_stdout && !output_info.flag_silent) {
+    report_ivol_info(output_info, ivoldual_data,
+                    vertex_coord, simplex_vert, ivoldual_info);
+  }
+
+  if (!output_info.flag_nowrite) {
+    write_dual_tri_mesh(output_info, vertex_coord, simplex_vert, io_time);
+  }
+}
+
+// Output dual interval volume hexahedra.
+void IVOLDUAL::output_dual_interval_volume
+(const OUTPUT_INFO & output_info, 
+ const IVOLDUAL_DATA & ivoldual_data,
+ const COORD_ARRAY & vertex_coord,
+ const VERTEX_INDEX_ARRAY & hex_vert,
+ const IVOLDUAL_INFO & ivoldual_info, IO_TIME & io_time)
+{
+  if (!output_info.flag_use_stdout && !output_info.flag_silent) {
+    report_ivol_info(output_info, ivoldual_data, 
+                    vertex_coord, hex_vert, ivoldual_info);
+  }
+
+  if (!output_info.flag_nowrite) 
+    { write_dual_mesh(output_info, vertex_coord, hex_vert, io_time); }
+}
+
+
+// ************************************************************************
+// REPORT SCALAR FIELD OR INTERVAL VOLUME INFORMAITON
+// ************************************************************************
+
+void IVOLDUAL::report_ivol_info
+(const OUTPUT_INFO & output_info, 
+ const IVOLDUAL_DATA & ivoldual_data,
+ const COORD_ARRAY & vertex_coord, 
+ const VERTEX_INDEX_ARRAY & plist, 
+ const IVOLDUAL_INFO & ivoldual_info)
+{
+  report_iso_info(output_info, ivoldual_data, 
+                  vertex_coord, plist, ivoldual_info);
+
+  if (output_info.flag_rm_non_manifold) {
+    // print total number of changes for eliminating non-manifold
+    report_non_manifold_changes(ivoldual_info); 
+  }
+}
+
+
+// ************************************************************************
 // READ NEARLY RAW RASTER DATA (nrrd) FILE
-// **************************************************
+// ************************************************************************
 
 void IVOLDUAL::read_nrrd_file
 (const char * input_filename, DUALISO_SCALAR_GRID & scalar_grid, 
@@ -2741,9 +2840,9 @@ void IVOLDUAL::set_color_alternating
 
 /// Report number of changes for eliminating non-manifold
 void IVOLDUAL::report_non_manifold_changes
- (IVOLDUAL_INFO & dualiso_info) 
+(const IVOLDUAL_INFO & ivoldual_info) 
 {
   std::cout << "    " 
    << "# ambiguous facets changed to avoid non-manifold facets: "
-   << dualiso_info.non_manifold_changes << std::endl; 
+   << ivoldual_info.num_non_manifold_changes << std::endl; 
 }

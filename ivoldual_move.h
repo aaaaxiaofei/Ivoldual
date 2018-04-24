@@ -46,16 +46,30 @@ namespace IVOLDUAL {
   // MOVE POINT/VERTEX AWAY FROM CUBE FACETS
   // *****************************************************************
 
+  /// Move point so it is at least distance from a given cube facet.
+  /// @pre 0 <= distance <= 0.5.
+  void move_point_away_from_cube_facet_3D
+  (const GRID_COORD_TYPE cube_coord[], const int jfacet,
+   const COORD_TYPE distance, COORD_TYPE point_coord[], bool & flag_moved);
+
+  /// Move interval volume vertex so it is at least distance 
+  ///   from grid cube facet jfacet.
+  void move_ivol_vertex_away_from_cube_facet
+  (const std::vector<GRID_CUBE_DATA> & cube_list,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
+   const IVOL_VERTEX_INDEX ivolv, const int jfacet, const COORD_TYPE distance, 
+   COORD_ARRAY & vertex_coord, bool & flag_moved);
+
   /// Move point so it is at least distance from all cube facets.
   /// @param[out] flag_moved True, if vertex coordinates are changed.
   /// @pre 0 <= distance <= 0.5.
-  void move_point_away_from_cube_facets_3D
+  void move_point_away_from_all_cube_facets_3D
   (const GRID_COORD_TYPE cube_coord[], const COORD_TYPE distance, 
    COORD_TYPE point_coord[], bool & flag_moved);
 
   /// Move interval volume vertex so it is at least distance 
   ///   from all grid cube facets.
-  void move_ivol_vertex_away_from_cube_facets
+  void move_ivol_vertex_away_from_all_cube_facets
   (const std::vector<GRID_CUBE_DATA> & cube_list,
    const DUAL_IVOLVERT_ARRAY & ivolv_list,
    const IVOL_VERTEX_INDEX ivolv, const COORD_TYPE distance, 
@@ -82,6 +96,20 @@ namespace IVOLDUAL {
    const DUAL_IVOLVERT_ARRAY & ivolv_list,
    const IVOL_VERTEX_INDEX ivolv, const COORD_TYPE distance, 
    COORD_ARRAY & vertex_coord, bool & flag_moved);
+
+
+  // *****************************************************************
+  // EXPAND THIN REGIONS
+  // *****************************************************************
+
+  /// Expand thin regions.
+  /// Move isosurface vertices in thin regions away from grid cube facets.
+  void expand_thin_regions
+  (const DUALISO_GRID & grid, const std::vector<GRID_CUBE_DATA> & cube_list,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list, 
+   const COORD_TYPE separation_distance,
+   COORD_ARRAY & vertex_coord,
+   int & num_moved);
 
 }
 

@@ -221,6 +221,7 @@ namespace IVOLDUAL {
     double write_time;      ///< Wall time to write output.
   };
 
+
   // **************************************************
   // PARSE COMMAND LINE
   // **************************************************
@@ -233,6 +234,48 @@ namespace IVOLDUAL {
     (const IO_INFO & io_info, 
      const DUALISO_SCALAR_GRID_BASE & scalar_grid,
      IJK::ERROR & error);
+
+
+  // **************************************************
+  // OUTPUT DUAL INTERVAL VOLUME
+  // **************************************************
+
+  /// Output dual interval volume
+  void output_dual_interval_volume
+  (const OUTPUT_INFO & output_info, 
+   const IVOLDUAL_DATA & ivoldual_data,
+   const DUAL_INTERVAL_VOLUME & interval_volume,
+   const IVOLDUAL_INFO & ivoldual_info, IO_TIME & io_time);
+
+  /// Output dual interval volume simplices.
+  void output_dual_interval_volume_simplices
+  (const OUTPUT_INFO & output_info, 
+   const IVOLDUAL_DATA & ivoldual_data,
+   const COORD_ARRAY & vertex_coord,
+   const VERTEX_INDEX_ARRAY & simplex_vert,
+   const IVOLDUAL_INFO & ivoldual_info, IO_TIME & io_time);
+
+  /// Output dual interval volume hexahedra.
+  void output_dual_interval_volume
+  (const OUTPUT_INFO & output_info, 
+   const IVOLDUAL_DATA & ivoldual_data,
+   const COORD_ARRAY & vertex_coord,
+   const VERTEX_INDEX_ARRAY & hex_vert,
+   const IVOLDUAL_INFO & ivoldual_info, IO_TIME & io_time);
+
+
+  // ************************************************************************
+  // REPORT SCALAR FIELD OR INTERVAL VOLUME INFORMAITON
+  // ************************************************************************
+
+  /// Report scalar field or interval volume information.
+  void report_ivol_info
+  (const OUTPUT_INFO & output_info, 
+   const IVOLDUAL_DATA & ivoldual_data,
+   const COORD_ARRAY & vertex_coord, 
+   const VERTEX_INDEX_ARRAY & plist, 
+   const IVOLDUAL_INFO & ivoldual_info);
+
 
   // **************************************************
   // READ NEARLY RAW RASTER DATA (nrrd) FILE
@@ -549,8 +592,7 @@ namespace IVOLDUAL {
   // **************************************************
 
   /// Report number of changes for eliminating non-manifold
-  void report_non_manifold_changes
-  (IVOLDUAL_INFO & dualiso_info);
+  void report_non_manifold_changes(const IVOLDUAL_INFO & dualiso_info);
 }
 
 #endif

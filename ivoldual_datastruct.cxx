@@ -55,7 +55,7 @@ void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
   split_hex_threshold = 0.0;
   collapse_hex_threshold = 0.0;
 
-  flag_separate_thin = false;
+  flag_expand_thin_regions = false;
   thin_separation_distance = ONE_THIRD;
 }
 
@@ -84,7 +84,8 @@ IVOLDUAL::IVOLDUAL_INFO::IVOLDUAL_INFO(const int dimension)
 
 void IVOLDUAL::IVOLDUAL_INFO::Clear() 
 {
-  non_manifold_changes = 0;
+  num_non_manifold_changes = 0;
+  num_vertices_moved_in_expand_thin = 0;
 }
 
 // **************************************************

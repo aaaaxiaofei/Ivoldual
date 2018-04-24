@@ -305,9 +305,9 @@ namespace IVOLDUAL {
     float split_hex_threshold;
     float collapse_hex_threshold;
 
-    /// If true, separate isosurface vertices in thin regions
-    ///   from cube facets.
-    bool flag_separate_thin;
+    /// If true, expand thin regions.
+    ///   Move isosurface vertices in thin regions away from cube facets.
+    bool flag_expand_thin_regions;
 
     /// Separation distance for thin regions.
     COORD_TYPE thin_separation_distance;
@@ -422,7 +422,8 @@ namespace IVOLDUAL {
     IVOLDUAL_INFO();
     IVOLDUAL_INFO(const int dimension);
 
-    VERTEX_INDEX non_manifold_changes;
+    int num_non_manifold_changes;
+    int num_vertices_moved_in_expand_thin;
 
     void Clear(); // clear all data
   };
