@@ -1164,27 +1164,6 @@ void IVOLDUAL::output_dual_interval_volume
 
 
 // ************************************************************************
-// REPORT SCALAR FIELD OR INTERVAL VOLUME INFORMAITON
-// ************************************************************************
-
-void IVOLDUAL::report_ivol_info
-(const OUTPUT_INFO & output_info, 
- const IVOLDUAL_DATA & ivoldual_data,
- const COORD_ARRAY & vertex_coord, 
- const VERTEX_INDEX_ARRAY & plist, 
- const IVOLDUAL_INFO & ivoldual_info)
-{
-  report_iso_info(output_info, ivoldual_data, 
-                  vertex_coord, plist, ivoldual_info);
-
-  if (output_info.flag_rm_non_manifold) {
-    // print total number of changes for eliminating non-manifold
-    report_non_manifold_changes(ivoldual_info); 
-  }
-}
-
-
-// ************************************************************************
 // READ NEARLY RAW RASTER DATA (nrrd) FILE
 // ************************************************************************
 
@@ -2101,6 +2080,33 @@ void IVOLDUAL::rescale_vertex_coord
 // REPORT SCALAR FIELD OR ISOSURFACE INFORMATION
 // **************************************************
 
+void IVOLDUAL::report_ivol_info
+(const OUTPUT_INFO & output_info, 
+ const IVOLDUAL_DATA & ivoldual_data,
+ const COORD_ARRAY & vertex_coord, 
+ const VERTEX_INDEX_ARRAY & plist, 
+ const IVOLDUAL_INFO & ivoldual_info)
+{
+  report_iso_info(output_info, ivoldual_data, 
+                  vertex_coord, plist, ivoldual_info);
+
+  if (output_info.flag_rm_non_manifold) {
+    // print total number of changes for eliminating non-manifold
+    report_non_manifold_changes(ivoldual_info); 
+  }
+}
+
+
+/// Report number of changes for eliminating non-manifold
+void IVOLDUAL::report_non_manifold_changes
+(const IVOLDUAL_INFO & ivoldual_info) 
+{
+  std::cout << "    " 
+   << "# ambiguous facets changed to avoid non-manifold facets: "
+   << ivoldual_info.num_non_manifold_changes << std::endl; 
+}
+
+
 void IVOLDUAL::report_num_cubes
 (const DUALISO_GRID & full_scalar_grid, const IO_INFO & io_info, 
  const IVOLDUAL_DATA & ivoldual_data)
@@ -2834,15 +2840,5 @@ void IVOLDUAL::set_color_alternating
   
 }
 
-// **************************************************
-// REPORT CHANGES FOR ELIMINATING NON-MANIFOLD 
-// **************************************************
 
-/// Report number of changes for eliminating non-manifold
-void IVOLDUAL::report_non_manifold_changes
-(const IVOLDUAL_INFO & ivoldual_info) 
-{
-  std::cout << "    " 
-   << "# ambiguous facets changed to avoid non-manifold facets: "
-   << ivoldual_info.num_non_manifold_changes << std::endl; 
-}
+

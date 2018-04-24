@@ -264,19 +264,6 @@ namespace IVOLDUAL {
    const IVOLDUAL_INFO & ivoldual_info, IO_TIME & io_time);
 
 
-  // ************************************************************************
-  // REPORT SCALAR FIELD OR INTERVAL VOLUME INFORMAITON
-  // ************************************************************************
-
-  /// Report scalar field or interval volume information.
-  void report_ivol_info
-  (const OUTPUT_INFO & output_info, 
-   const IVOLDUAL_DATA & ivoldual_data,
-   const COORD_ARRAY & vertex_coord, 
-   const VERTEX_INDEX_ARRAY & plist, 
-   const IVOLDUAL_INFO & ivoldual_info);
-
-
   // **************************************************
   // READ NEARLY RAW RASTER DATA (nrrd) FILE
   // **************************************************
@@ -521,6 +508,14 @@ namespace IVOLDUAL {
   // REPORT SCALAR FIELD OR ISOSURFACE INFORMATION
   // **************************************************
 
+  /// Report scalar field or interval volume information.
+  void report_ivol_info
+  (const OUTPUT_INFO & output_info, 
+   const IVOLDUAL_DATA & ivoldual_data,
+   const COORD_ARRAY & vertex_coord, 
+   const VERTEX_INDEX_ARRAY & plist, 
+   const IVOLDUAL_INFO & ivoldual_info);
+
   void report_num_cubes
     (const DUALISO_GRID & full_grid, const IO_INFO & io_info, 
      const IVOLDUAL_DATA & ivoldual_data);
@@ -528,6 +523,9 @@ namespace IVOLDUAL {
   void report_num_cubes
     (const DUALISO_GRID & full_grid, const IO_INFO & io_info, 
      const DUALISO_GRID & dualiso_data_grid);
+
+  /// Report number of changes for eliminating non-manifold
+  void report_non_manifold_changes(const IVOLDUAL_INFO & dualiso_info);
 
   void warn_non_manifold(const IO_INFO & io_info);
 
@@ -587,12 +585,6 @@ namespace IVOLDUAL {
   void usage_all(std::ostream & out, const int return_code);
   void help(), help_all();
 
-  // **************************************************
-  // REPORT CHANGES FOR ELIMINATING NON-MANIFOLD 
-  // **************************************************
-
-  /// Report number of changes for eliminating non-manifold
-  void report_non_manifold_changes(const IVOLDUAL_INFO & dualiso_info);
 }
 
 #endif
