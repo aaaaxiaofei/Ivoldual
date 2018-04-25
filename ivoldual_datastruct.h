@@ -69,7 +69,11 @@ namespace IVOLDUAL {
     int EliminateAmbiguity
       (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
 
-    void EliminateDiagonalNonmanifold
+    void EliminateDiagonalPlus
+      (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1, 
+       VTYPE icube, int caseID, int& num_change);
+
+    void EliminateDiagonalMinus
       (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1, 
        VTYPE icube, int caseID, int& num_change);
 

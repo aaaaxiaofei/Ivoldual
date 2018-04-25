@@ -411,20 +411,32 @@ int IVOLDUAL::IVOLDUAL_DATA::RmDiagonalAmbig
       (scalar_grid, isovalue0, isovalue1, icube,
        interior_code, above_code, table_index);
 
-    int idx1 = -1, idx2 = -1, num_plus = 0;
+    int idx_p1 = -1, idx_p2 = -1, num_plus = 0;
+    int idx_m1 = -1, idx_m2 = -1, num_minus = 0;
+
     for (int k = 0; k < scalar_grid.NumCubeVertices(); k++) {
       int idx = scalar_grid.CubeVertex(icube, k);
       if (scalar_grid.Scalar(idx) > isovalue1) {
         num_plus++;
-        if (num_plus == 1) idx1 = k;
-        else if (num_plus == 2) idx2 = k;
-        else break;
+        if (num_plus == 1) idx_p1 = k;
+        else if (num_plus == 2) idx_p2 = k;
+      }
+      else if (scalar_grid.Scalar(idx) < isovalue0) {
+        num_minus++;
+        if (num_minus == 1) idx_m1 = k;
+        else if (num_minus == 2) idx_m2 = k;
       }
     }
 
-    if (num_plus == 2 && idx1 + idx2 == 7)  {
+    if (num_plus == 2 && idx_p1 + idx_p2 == 7)  {
       int num_change = 0;
-      scalar_grid.EliminateDiagonalNonmanifold
+      scalar_grid.EliminateDiagonalPlus
+        (isovalue0, isovalue1, icube, caseID, num_change);
+      changes_of_cube += num_change;
+    }
+    if (num_minus == 2 && idx_m1 + idx_m2 == 7) {
+      int num_change = 0;
+      scalar_grid.EliminateDiagonalMinus
         (isovalue0, isovalue1, icube, caseID, num_change);
       changes_of_cube += num_change;
     }
@@ -576,7 +588,7 @@ void IVOLDUAL::IVOLDUAL_SCALAR_GRID::AddOuterLayer()
   }
 }
 
-void IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateDiagonalNonmanifold
+void IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateDiagonalPlus
 (const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1,
  VTYPE icube, int caseID, int& num_change) 
 {
@@ -599,6 +611,37 @@ void IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateDiagonalNonmanifold
     }
     // Vertex is at the cube center
     else if (caseID == 1 && this->Scalar(idx) > isovalue1 && 
+        (x+y+z)%2 == 1 && (x%2)+(y%2)+(z%2) == 3) {      
+      this->Set(idx, 0.5*(isovalue0 + isovalue1));
+      num_change = 1;
+      break;
+    }
+  }
+}
+
+void IVOLDUAL::IVOLDUAL_SCALAR_GRID::EliminateDiagonalMinus
+(const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1,
+ VTYPE icube, int caseID, int& num_change) 
+{
+  int dx = this->axis_size[0];
+  int dy = this->axis_size[1];
+  int dz = this->axis_size[2];
+
+  for (int k = 0; k < this->NumCubeVertices(); k++) {
+    int idx = this->CubeVertex(icube, k);
+    int x = idx % dx;
+    int y = (idx / dx) % dy;
+    int z = idx / dx / dy;
+
+    // Vertex is at cube edge center
+    if (caseID == 0 && this->Scalar(idx) < isovalue0 && 
+        (x+y+z)%2 == 1 && (x%2)+(y%2)+(z%2) < 3) {    
+      this->Set(idx, 0.5*(isovalue0 + isovalue1));
+      num_change = 1;
+      break;
+    }
+    // Vertex is at the cube center
+    else if (caseID == 1 && this->Scalar(idx) < isovalue0 && 
         (x+y+z)%2 == 1 && (x%2)+(y%2)+(z%2) == 3) {      
       this->Set(idx, 0.5*(isovalue0 + isovalue1));
       num_change = 1;
