@@ -4,7 +4,7 @@
 
 /*
   IJK: Isosurface Jeneration Kode
-  Copyright (C) 2012-2017 Rephael Wenger
+  Copyright (C) 2012-2018 Rephael Wenger
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public License
@@ -410,7 +410,7 @@ namespace IJKDUALTABLE {
     }
   }
 
-
+  /* OBSOLETE
   /// Modify the ivoldual table entries of the lower and upper lifted cubes
   ///   if the facet shared by the two cubes is ambiguous, no facet shared
   ///   with a third cube is ambiguous and each cube contains only
@@ -451,6 +451,65 @@ namespace IJKDUALTABLE {
       // The facet between the upper and lower lifted cubes is not ambiguous.
       return; 
     }
+
+    for (NTYPE jf = 0; jf < num_facets; jf++) {
+      if (jf == ilower_facet || jf == iupper_facet) { 
+        // Skip the facet between the upper and lower lifted cubes
+        //   and the facet on the lifted boundary.
+        continue; 
+      }
+
+      if (lower_isodual.IsFacetAmbiguous(jf) ||
+          upper_isodual.IsFacetAmbiguous(jf)) {
+        // Lower or upper cube has some ambiguous facet adjacent
+        //   to a third cube.
+        // Don't change table entry.
+        return;
+      }
+    }
+
+    // Flip ivoldual table entries.
+    new_ilower = compute_complement(ilower, num_table_entries);
+    new_iupper = compute_complement(iupper, num_table_entries);
+  }
+  */
+
+  /// *** NEW VERSION ***
+  /// Modify the ivoldual table entries of the lower and upper lifted cubes
+  ///   if at least one of the cubes is ambiguous, no facet shared
+  ///   with a third cube is ambiguous and each cube contains only
+  ///   one isosurface vertex.
+  /// Replace the table entries by their complements.
+  template <typename NTYPE, typename CUBE_TYPE,
+            typename TI_TYPE_L, typename TI_TYPE_U, 
+            typename ISODUAL_ENTRY_TYPE>
+  void modify_ambiguous_lifted_ivoldual_entries
+  (const NTYPE num_table_entries,
+   const CUBE_TYPE & lifted_cube,
+   const TI_TYPE_L ilower, const ISODUAL_ENTRY_TYPE & lower_isodual,
+   const TI_TYPE_U iupper, const ISODUAL_ENTRY_TYPE & upper_isodual,
+   TI_TYPE_L & new_ilower,
+   TI_TYPE_U & new_iupper)
+  {
+    typedef typename CUBE_TYPE::DIMENSION_TYPE DTYPE;
+
+    const DTYPE dimension = lifted_cube.Dimension();
+    const NTYPE num_facets = lifted_cube.NumFacets();
+    NTYPE ilower_facet, iupper_facet;
+
+    new_ilower = ilower;
+    new_iupper = iupper;
+
+    if (!lower_isodual.IsAmbiguous() &&
+        !upper_isodual.IsAmbiguous()) { return; }
+
+    if (lower_isodual.NumVertices() > 1 ||
+        upper_isodual.NumVertices() > 1) { return; }
+
+    if (dimension < 1) { return; }
+
+    ilower_facet = dimension-1;
+    iupper_facet = ilower_facet+dimension;
 
     for (NTYPE jf = 0; jf < num_facets; jf++) {
       if (jf == ilower_facet || jf == iupper_facet) { 
