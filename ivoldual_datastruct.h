@@ -297,15 +297,23 @@ namespace IVOLDUAL {
     /// If true, change vertices values to remove ambiguous facets.
     bool flag_rm_non_manifold;
 
-    /// If true, perforam laplacian smoothing.
+    /// Flags for smoothing.
     bool flag_lsmooth_elength;
     bool flag_lsmooth_jacobian;
-    bool flag_split_hex;
-    bool flag_collapse_hex;
+    bool flag_gsmooth_elength;
+    bool flag_gsmooth_jacobian;
+
     int lsmooth_elength_iter;
     int lsmooth_jacobian_iter;
-    float lsmooth_elength_threshold;
-    float lsmooth_jacobian_threshold;
+    int gsmooth_elength_iter;
+    int gsmooth_jacobian_iter;
+
+    float elength_threshold;
+    float jacobian_threshold;
+
+    bool flag_split_hex;
+    bool flag_collapse_hex;
+
     float split_hex_threshold;
     float collapse_hex_threshold;
 
@@ -380,6 +388,7 @@ namespace IVOLDUAL {
        const bool flag_supersample, const int supersample_resolution, 
        const bool flag_subdivide, const bool flag_rm_diag_ambig,
        const bool flag_add_outer_layer, 
+       const GRID_VERTEX_ENCODING interior_code,
        const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1);
 
     void SubdivideScalarGrid      /// Subdivide scalar_grid.

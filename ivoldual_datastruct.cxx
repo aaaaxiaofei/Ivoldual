@@ -44,14 +44,18 @@ void IVOLDUAL::IVOLDUAL_DATA_FLAGS::Init()
   flag_orient_in = false;
   flag_lsmooth_elength = false;
   flag_lsmooth_jacobian = false;
+  flag_gsmooth_elength = false;
+  flag_gsmooth_jacobian = false;
   flag_split_hex = false;
   flag_collapse_hex = false;
   flag_set_interior_code_from_scalar = false;
   default_interior_code = 2;
   lsmooth_elength_iter = 1;
   lsmooth_jacobian_iter = 1;
-  lsmooth_elength_threshold = 0.1;
-  lsmooth_jacobian_threshold = 0.0;
+  gsmooth_elength_iter = 1;
+  gsmooth_jacobian_iter = 1;
+  elength_threshold = 0.1;
+  jacobian_threshold = 0.0;
   split_hex_threshold = 0.0;
   collapse_hex_threshold = 0.0;
 
@@ -99,6 +103,7 @@ void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
  const bool flag_supersample, const int supersample_resolution, 
  const bool flag_subdivide, const bool flag_rm_diag_ambig,
  const bool flag_add_outer_layer, 
+ const GRID_VERTEX_ENCODING interior_code,
  const SCALAR_TYPE isovalue0, const SCALAR_TYPE isovalue1)
 {
   IJK::PROCEDURE_ERROR error("IVOLDUAL_DATA::SetScalarGrid");
@@ -108,6 +113,9 @@ void IVOLDUAL::IVOLDUAL_DATA::SetScalarGrid
       ("At most one of -subsample, -supersample or -subdivide may be used.");
     throw error;
   }
+
+  // Set interior code
+  default_interior_code = interior_code;
   
   if (flag_subsample) {
     // subsample grid
@@ -176,7 +184,6 @@ void IVOLDUAL::IVOLDUAL_DATA::SubdivideScalarGrid
       EvaluateSubdivideCenter(corner, edge, i, isovalue0, isovalue1);
     }
   }
-
   EvaluateCubeCenter(isovalue0, isovalue1);
 }
 
@@ -195,7 +202,6 @@ void IVOLDUAL::IVOLDUAL_DATA::EvaluateCubeCenter
     std::vector<SCALAR_TYPE> non_manifold_list;
     // Vertex at cube center
     if (x % 2 == 1 && y % 2 == 1 && z % 2 == 1) {
-
       SCALAR_TYPE minus_val = 0.0, equal_val = 0.0, plus_val = 0.0;
 
       int cornerXY[] = {i-dx-1, i-dx+1, i+dx+1, i+dx-1};
@@ -209,7 +215,8 @@ void IVOLDUAL::IVOLDUAL_DATA::EvaluateCubeCenter
 
       // Evaluate cube center in X-Y plane
       EvaluateSubdivideCenter(cornerXY, edgeXY, i, isovalue0, isovalue1);
-      if (CheckManifold(cornerXZ, edgeXZ, i, isovalue0, isovalue1) &&
+      if (CheckManifold(cornerXY, edgeXY, i, isovalue0, isovalue1) &&
+          CheckManifold(cornerXZ, edgeXZ, i, isovalue0, isovalue1) &&
           CheckManifold(cornerYZ, edgeYZ, i, isovalue0, isovalue1)) {
         continue;
       }
@@ -224,8 +231,9 @@ void IVOLDUAL::IVOLDUAL_DATA::EvaluateCubeCenter
 
       // Evaluate cube center in X-Z plane
       EvaluateSubdivideCenter(cornerXZ, edgeXZ, i, isovalue0, isovalue1);
-      if (CheckManifold(cornerYZ, edgeYZ, i, isovalue0, isovalue1) &&
-          CheckManifold(cornerXY, edgeXY, i, isovalue0, isovalue1)) {
+      if (CheckManifold(cornerXY, edgeXY, i, isovalue0, isovalue1) &&
+          CheckManifold(cornerXZ, edgeXZ, i, isovalue0, isovalue1) &&
+          CheckManifold(cornerYZ, edgeYZ, i, isovalue0, isovalue1)) {
         continue;
       }
       else {
@@ -238,8 +246,9 @@ void IVOLDUAL::IVOLDUAL_DATA::EvaluateCubeCenter
       }
 
       EvaluateSubdivideCenter(cornerYZ, edgeYZ, i, isovalue0, isovalue1);
-      if (CheckManifold(cornerXZ, edgeXZ, i, isovalue0, isovalue1) &&
-          CheckManifold(cornerXY, edgeXY, i, isovalue0, isovalue1)) {
+      if (CheckManifold(cornerXY, edgeXY, i, isovalue0, isovalue1) &&
+          CheckManifold(cornerXZ, edgeXZ, i, isovalue0, isovalue1) &&
+          CheckManifold(cornerYZ, edgeYZ, i, isovalue0, isovalue1)) {
         continue;
       }
       else {
@@ -251,8 +260,12 @@ void IVOLDUAL::IVOLDUAL_DATA::EvaluateCubeCenter
           { plus_val = scalar_grid.Scalar(i); }
       }
 
+      // Set the cube center value for rule confliction cases.
       if (equal_val > 0 && plus_val > 0) {
         scalar_grid.Set(i, plus_val);
+      }
+      else if (equal_val > 0 && minus_val > 0) {
+        scalar_grid.Set(i, minus_val);
       }
     }
   }
@@ -301,7 +314,6 @@ bool IVOLDUAL::IVOLDUAL_DATA::EvaluateSubdivideCenter
       }
     }
   }
-
   // Subdivide Rule 3 and Rule 5
   else if (num_plus == 2 || num_equal == 2 || num_minus == 2) {
     bool flag_rule_five = false;
@@ -332,7 +344,7 @@ bool IVOLDUAL::IVOLDUAL_DATA::EvaluateSubdivideCenter
     // Subdivide Rule 5
     if (flag_rule_five) {
       SCALAR_TYPE val = 0.5*(v0 + v1);
-      scalar_grid.Set(icenter, val); 
+      scalar_grid.Set(icenter, val);
       return true; 
     }
   }
@@ -401,15 +413,9 @@ int IVOLDUAL::IVOLDUAL_DATA::RmDiagonalAmbig
   int changes_of_cube = 0;
   const int DIM3(3);
   IVOLDUAL_CUBE_TABLE ivoldual_table(DIM3, true);
-  const int interior_code(2);
-  const int above_code(3);
   TABLE_INDEX table_index;
 
   IJK_FOR_EACH_GRID_CUBE(icube, scalar_grid, VERTEX_INDEX) {
-
-    IVOLDUAL::compute_ivoltable_index_of_grid_cube<4>
-      (scalar_grid, isovalue0, isovalue1, icube,
-       interior_code, above_code, table_index);
 
     int idx_p1 = -1, idx_p2 = -1, num_plus = 0;
     int idx_m1 = -1, idx_m2 = -1, num_minus = 0;
@@ -428,13 +434,13 @@ int IVOLDUAL::IVOLDUAL_DATA::RmDiagonalAmbig
       }
     }
 
-    if (num_plus == 2 && idx_p1 + idx_p2 == 7)  {
+    if (num_plus == 2 && idx_p1 + idx_p2 == 7 && default_interior_code == 2)  {
       int num_change = 0;
       scalar_grid.EliminateDiagonalPlus
         (isovalue0, isovalue1, icube, caseID, num_change);
       changes_of_cube += num_change;
     }
-    if (num_minus == 2 && idx_m1 + idx_m2 == 7) {
+    else if (num_minus == 2 && idx_m1 + idx_m2 == 7 && default_interior_code == 1) {
       int num_change = 0;
       scalar_grid.EliminateDiagonalMinus
         (isovalue0, isovalue1, icube, caseID, num_change);
