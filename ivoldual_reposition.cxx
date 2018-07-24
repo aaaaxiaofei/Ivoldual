@@ -115,6 +115,51 @@ void IVOLDUAL::laplacian_smooth_elength
   }
 }
 
+void IVOLDUAL::gradient_smooth_elength
+(const std::vector<VERTEX_INDEX> & ivolpoly_vert,
+ const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+ IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+ const DUAL_IVOLVERT_ARRAY & ivolv_list,
+ COORD_ARRAY & vertex_coord, 
+ float elength_limit, 
+ int iteration)
+{
+  float dist;
+  const int DIM3(3);
+  COORD_TYPE * vcoord = &(vertex_coord.front());
+
+  for (int it = 0; it < iteration; it++) {
+    std::vector<int> short_edge_list;
+
+    // Loop over all vertices
+    for (int cur = 0; cur < vertex_adjacency_list.NumVertices(); cur++) {
+
+      // Current node coordinates.
+      COORD_TYPE *cur_coord = vcoord + cur * DIM3;
+
+      // Loop over adjacent vertices of the current vertex
+      for (int  k = 0; k < vertex_adjacency_list.NumAdjacent(cur); k++) {
+        
+        // Neighbor node coordinates
+        int adj = vertex_adjacency_list.AdjacentVertex(cur, k);
+        COORD_TYPE *neigh_coord = vcoord + adj * DIM3;
+
+        IJK::compute_distance(DIM3, cur_coord, neigh_coord, dist);
+
+        // Check if minimum distance is valid.
+        if (dist < elength_limit) {
+          short_edge_list.push_back(cur);
+          short_edge_list.push_back(adj);
+        }
+      }
+    }
+
+    laplacian_smooth_jacobian
+      (ivolpoly_vert, ivoldual_table, vertex_adjacency_list,
+       ivolv_list, vertex_coord, short_edge_list);
+  }
+}
+
 void IVOLDUAL::laplacian_smooth_jacobian
 (const std::vector<VERTEX_INDEX> & ivolpoly_vert,
  const IVOLDUAL_CUBE_TABLE & ivoldual_table,

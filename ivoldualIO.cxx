@@ -74,9 +74,11 @@ namespace {
      LABEL_WITH_ISOVALUE_OPT,
      NO_WRITE_OPT, SILENT_OPT, NO_WARN_OPT,
      INFO_OPT, TIME_OPT, OUT_IVOLV_OPT, OUT_IVOLP_OPT, WRITE_SCALAR_OPT,
-     SPLIT_HEX_OPT, COLLAPSE_HEX_OPT, LSMOOTH_ELENGTH_OPT, LSMOOTH_JACOBIAN_OPT,
-     ELENGTH_THRESHOLD_OPT, JACOBIAN_THRESHOLD_OPT,
+     SPLIT_HEX_OPT, COLLAPSE_HEX_OPT, 
+     LSMOOTH_ELENGTH_OPT, LSMOOTH_JACOBIAN_OPT, 
+     GSMOOTH_ELENGTH_OPT, GSMOOTH_JACOBIAN_OPT,
      SPLIT_HEX_THRESHOLD_OPT, COLLAPSE_HEX_THRESHOLD_OPT, 
+     ELENGTH_THRESHOLD_OPT, JACOBIAN_THRESHOLD_OPT,
      ADD_OUTER_LAYER_OPT,
      EXPAND_THIN_REGIONS_OPT,
      UNKNOWN_OPT} OPTION_TYPE;
@@ -333,7 +335,7 @@ namespace {
     options.AddOption1Arg
       (LSMOOTH_ELENGTH_OPT, "LSMOOTH_ELENGTH_OPT", REGULAR_OPTG, 
        "-lsmooth_elength", "S", 
-       "Perform Laplacian Smoothing for vertex with edge length less than S.");
+       "Perform Laplacian Smoothing on vertex with edge length less than S.");
 
     options.AddToHelpMessage
       (LSMOOTH_ELENGTH_OPT, "S is the minimum accepted edge length.");
@@ -342,6 +344,16 @@ namespace {
       (LSMOOTH_JACOBIAN_OPT, "LSMOOTH_JACOBIAN_OPT", REGULAR_OPTG, 
        "-lsmooth_jacobian", "S", 
        "Perform Laplacian Smoothing on vertex negative Jacobian.");
+
+    options.AddOption1Arg
+      (GSMOOTH_ELENGTH_OPT, "GSMOOTH_ELENGTH_OPT", REGULAR_OPTG, 
+       "-gsmooth_elength", "S", 
+       "Perform Gradient Smoothing on vertex with edge length less than S.");
+
+    options.AddOption1Arg
+      (GSMOOTH_JACOBIAN_OPT, "GSMOOTH_JACOBIAN_OPT", REGULAR_OPTG, 
+       "-gsmooth_jacobian", "S", 
+       "Perform Gradient Smoothing on vertex negative Jacobian.");
 
     options.AddUsageOptionEndOr(REGULAR_OPTG);
     options.AddUsageOptionNewline(REGULAR_OPTG);
@@ -809,13 +821,25 @@ bool process_option
     iarg++;
     break;
 
+  case GSMOOTH_ELENGTH_OPT:
+    io_info.gsmooth_elength_iter = get_arg_int(iarg, argc, argv, error);
+    io_info.flag_gsmooth_elength = true;
+    iarg++;
+    break;
+
+  case GSMOOTH_JACOBIAN_OPT:
+    io_info.gsmooth_jacobian_iter = get_arg_int(iarg, argc, argv, error);
+    io_info.flag_gsmooth_jacobian = true;
+    iarg++;
+    break;
+
   case ELENGTH_THRESHOLD_OPT:
-    io_info.lsmooth_elength_threshold = get_arg_float(iarg, argc, argv, error);
+    io_info.elength_threshold = get_arg_float(iarg, argc, argv, error);
     iarg++;
     break;
 
   case JACOBIAN_THRESHOLD_OPT:
-    io_info.lsmooth_jacobian_threshold = get_arg_float(iarg, argc, argv, error);
+    io_info.jacobian_threshold = get_arg_float(iarg, argc, argv, error);
     iarg++;
     break;
 

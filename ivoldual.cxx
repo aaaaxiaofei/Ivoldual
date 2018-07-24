@@ -289,7 +289,7 @@ void IVOLDUAL::dual_contouring_interval_volume
        param.thin_separation_distance, vertex_coord, num_moved);
   }
 
-  // Mesh quality improvement.
+  // Split or Collapse hexahedron to improve Jacobian.
   if (param.flag_split_hex) {
     split_hex
     (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list,
@@ -300,16 +300,30 @@ void IVOLDUAL::dual_contouring_interval_volume
     (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list, 
      ivolpoly_info, vertex_coord, param.collapse_hex_threshold);
   }
+  // Edge length improvement.
   if (param.flag_lsmooth_elength) {
     laplacian_smooth_elength
     (scalar_grid, ivoldual_table, param, vertex_adjacency_list, ivolv_list, 
-     vertex_coord, param.lsmooth_elength_threshold, param.lsmooth_elength_iter);         
+     vertex_coord, param.elength_threshold, param.lsmooth_elength_iter);         
   }
+  else if (param.flag_gsmooth_elength) {
+    gradient_smooth_elength
+    (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list, 
+     vertex_coord, param.elength_threshold, param.gsmooth_elength_iter);         
+  }
+
+  // Jacobian improvement.
   if (param.flag_lsmooth_jacobian) {
     laplacian_smooth_jacobian
     (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list, 
-     vertex_coord, param.lsmooth_jacobian_threshold, param.lsmooth_jacobian_iter);
+     vertex_coord, param.jacobian_threshold, param.lsmooth_jacobian_iter);
   } 
+  else if (param.flag_gsmooth_jacobian) {
+    laplacian_smooth_jacobian
+    (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list, 
+     vertex_coord, param.jacobian_threshold, param.gsmooth_jacobian_iter);
+  } 
+
 
   if (param.flag_orient_in) {
     const int num_vert_per_cube_facet =  
