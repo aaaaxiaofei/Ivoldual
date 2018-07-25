@@ -37,8 +37,10 @@
 namespace IJK {
 
   // **************************************************
-  // TRIANGULATE POLYGONS
+  //! @name TRIANGULATE POLYGONS
   // **************************************************
+
+  ///@{
 
   /// Triangulate a polygon by adding diagonals from vertex poly_vert[0].
   /// - Polygon vertices are listed in clockwise or counter-clockwise order
@@ -55,6 +57,44 @@ namespace IJK {
       add_triangle_vertices(v0, poly_vert[i], poly_vert[i+1], tri_vert);
     }
   }
+
+
+  /// Triangulate a polygon by adding diagonals from vertex poly_vert[0].
+  /// - Reverse triangle orientations.
+  /// - Polygon vertices are listed in clockwise or counter-clockwise order
+  ///   around the polygon.
+  /// - poly_vert[0] is a vertex of all new triangles.
+  /// - Add new triangles to vector tri_vert.
+  template <typename NTYPE, typename VTYPE0, typename VTYPE1>
+  void triangulate_polygon_reverse_orient
+  (const NTYPE num_poly_vert, const VTYPE0 * poly_vert, 
+   std::vector<VTYPE1> & tri_vert)
+  {
+    VTYPE0 v0 = poly_vert[0];
+    for (NTYPE i = 1; i+1 < num_poly_vert; i++) {
+      add_triangle_vertices(v0, poly_vert[i+1], poly_vert[i], tri_vert);
+    }
+  }
+
+
+  /// Triangulate a polygon by adding diagonals from vertex poly_vert[0].
+  /// - Polygon vertices are listed in clockwise or counter-clockwise order
+  ///   around the polygon.
+  /// - Add new triangles to vector tri_vert.
+  /// @param flag_reverse_orient If true, reverse triangle orientations.
+  template <typename NTYPE, typename VTYPE0, typename VTYPE1>
+  void triangulate_polygon_from_v0
+  (const NTYPE num_poly_vert, const VTYPE0 * poly_vert,
+   const bool flag_reverse_orient, std::vector<VTYPE1> & tri_vert)
+  {
+    if (flag_reverse_orient) {
+      triangulate_polygon_reverse_orient(num_poly_vert, poly_vert, tri_vert);
+    }
+    else {
+      triangulate_polygon(num_poly_vert, poly_vert, tri_vert);
+    }
+  }
+
 
   /// Triangulate a polygon using diagonals from vertex poly_vert[index_v0].
   /// - Polygon vertices are listed in clockwise or counter-clockwise order
@@ -78,6 +118,31 @@ namespace IJK {
     }
   }
 
+
+  /// Triangulate a polygon using diagonals from vertex poly_vert[index_v0].
+  /// - Polygon vertices are listed in clockwise or counter-clockwise order
+  ///   around the polygon.
+  /// - poly_vert[index_v0] is a vertex of all new triangles.
+  /// - Add new triangles to vector tri_vert.
+  /// - Reverse triangle orientations.
+  template <typename NTYPE, 
+            typename VTYPE0, typename VTYPE1, typename VTYPE2>
+  void triangulate_polygon_reverse_orient
+  (const NTYPE num_poly_vert, const VTYPE0 * poly_vert,
+   const VTYPE1 index_v0,
+   std::vector<VTYPE2> & tri_vert)
+  {
+    VTYPE0 v0 = poly_vert[index_v0];
+    NTYPE i1 = (index_v0+1)%num_poly_vert;
+    NTYPE i2 = (i1+1)%num_poly_vert;
+    while (i2 != index_v0) {
+      add_triangle_vertices(v0, poly_vert[i2], poly_vert[i1], tri_vert);
+      i1 = i2;
+      i2 = (i1+1)%num_poly_vert;
+    }
+  }
+
+
   /// Triangulate a polygon by adding a triangle between each polygon edge
   ///   and vertex w0.
   /// - Polygon vertices are listed in clockwise or counter-clockwise order
@@ -94,6 +159,49 @@ namespace IJK {
       add_triangle_vertices(w0, poly_vert[i0], poly_vert[i1], tri_vert);
     }
   }
+
+
+  /// Triangulate a polygon by adding a triangle between each polygon edge
+  ///   and vertex w0.
+  /// - Polygon vertices are listed in clockwise or counter-clockwise order
+  ///   around the polygon.
+  /// - Add new triangles to vector tri_vert.
+  /// - Reverse triangle orientation.
+  template <typename NTYPE, typename VTYPE0, typename VTYPE1, 
+            typename VTYPE2>
+  void triangulate_polygon_with_vertex_reverse_orient
+  (const NTYPE num_poly_vert, const VTYPE0 * poly_vert, const VTYPE1 w0,
+   std::vector<VTYPE2> & tri_vert)
+  {
+    for (NTYPE i0 = 0; i0 < num_poly_vert; i0++) {
+      NTYPE i1 = (i0+1)%num_poly_vert;
+      add_triangle_vertices(w0, poly_vert[i1], poly_vert[i0], tri_vert);
+    }
+  }
+
+
+  /// Triangulate a polygon by adding a triangle between each polygon edge
+  ///   and vertex w0.
+  /// - Polygon vertices are listed in clockwise or counter-clockwise order
+  ///   around the polygon.
+  /// - Add new triangles to vector tri_vert.
+  /// @param flag_reverse_orient If true, reverse triangle orientations.
+  template <typename NTYPE, typename VTYPE0, typename VTYPE1, 
+            typename VTYPE2>
+  void triangulate_polygon_with_vertex
+  (const NTYPE num_poly_vert, const VTYPE0 * poly_vert, const VTYPE1 w0,
+   const bool flag_reverse_orient, std::vector<VTYPE2> & tri_vert)
+  {
+    if (flag_reverse_orient) {
+      triangulate_polygon_with_vertex_reverse_orient
+        (num_poly_vert, poly_vert, w0, tri_vert);
+    }
+    else {
+      triangulate_polygon_with_vertex
+        (num_poly_vert, poly_vert, w0, tri_vert);
+    }
+  }
+
 
   /// Triangulate list of polygons.
   template <typename NTYPE0, typename NTYPE1, 
@@ -126,6 +234,15 @@ namespace IJK {
        IJK::vector2pointer(first_poly_vert), num_poly_vert.size(), tri_vert);
   }
 
+  ///@}
+
+
+  // **************************************************
+  //! @name TRIANGULATE QUADRILATERALS
+  // **************************************************
+
+  ///@{
+
   /// Triangulate a set of quadrilaterals.
   /// - Quadrilateral vertices are listed in clockwise or counter-clockwise 
   ///   order around the polygon.
@@ -157,6 +274,7 @@ namespace IJK {
     SIZE_TYPE num_quad = quad_vert.size()/NUM_VERT_PER_QUAD;
     triangulate_quad(IJK::vector2pointer(quad_vert), num_quad, tri_vert);
   }
+
 
   /// Triangulate a set of quadrilaterals by adding a triangle between
   ///   each quad edge and a new vertex for each quad.
@@ -197,6 +315,78 @@ namespace IJK {
       (IJK::vector2pointer(quad_vert), num_quad, first_vertex, tri_vert);
   }
 
+
+  /// Triangulate a set of quadrilaterals with diagonal (0,2) or (1,3).
+  /// - Quadrilateral vertices are listed in clockwise or counter-clockwise
+  ///   order around the polygon.
+  /// - Add new triangles to vector tri_vert.
+  template <typename VTYPE0, typename VTYPE1>
+  void triangulate_quad_using_diagonal
+  (const VTYPE0 * quad_vert, const bool flag_diag02,
+   std::vector<VTYPE1> & tri_vert)
+  {
+    const int NUM_VERT_PER_QUAD(4);
+
+    if (flag_diag02) {
+      triangulate_polygon(NUM_VERT_PER_QUAD, quad_vert, 0, tri_vert);
+    }
+    else {
+      triangulate_polygon(NUM_VERT_PER_QUAD, quad_vert, 1, tri_vert);
+    }
+  }
+
+  /// Triangulate a set of quadrilaterals with diagonal (0,2) or (1,3).
+  /// - Quadrilateral vertices are listed in clockwise or counter-clockwise
+  ///   order around the polygon.
+  /// - Add new triangles to vector tri_vert.
+  /// - Reverse triangle_orientation
+  template <typename VTYPE0, typename VTYPE1>
+  void triangulate_quad_using_diagonal_reverse_orient
+  (const VTYPE0 * quad_vert, const bool flag_diag02,
+   std::vector<VTYPE1> & tri_vert)
+  {
+    const int NUM_VERT_PER_QUAD(4);
+
+    if (flag_diag02) {
+      triangulate_polygon_reverse_orient
+        (NUM_VERT_PER_QUAD, quad_vert, 0, tri_vert);
+    }
+    else {
+      triangulate_polygon_reverse_orient
+        (NUM_VERT_PER_QUAD, quad_vert, 1, tri_vert);
+    }
+  }
+
+
+  /// Triangulate a set of quadrilaterals with diagonal (0,2) or (1,3).
+  /// - Quadrilateral vertices are listed in clockwise or counter-clockwise
+  ///   order around the polygon.
+  /// - Add new triangles to vector tri_vert.
+  /// @param flag_reverse_orient If true, reverse triangle orientation.
+  template <typename VTYPE0, typename VTYPE1>
+  void triangulate_quad_using_diagonal
+  (const VTYPE0 * quad_vert, const bool flag_diag02,
+   const bool flag_reverse_orient, std::vector<VTYPE1> & tri_vert)
+  {
+    if (flag_reverse_orient) {
+      triangulate_quad_using_diagonal_reverse_orient
+        (quad_vert, flag_diag02, tri_vert);
+    }
+    else {
+      triangulate_quad_using_diagonal(quad_vert, flag_diag02, tri_vert);
+    }
+  }
+
+
+  ///@}
+
+
+  // **************************************************
+  //! @name TRIANGULATE PENTAGONS
+  // **************************************************
+
+  ///@{
+
   /// Triangulate a pentagon by adding triangles
   ///   (v0,v1,v2), (v0, v2, v3) and (v0, v3, v4).
   /// - Pentagon vertices are listed in clockwise or counter-clockwise 
@@ -213,6 +403,26 @@ namespace IJK {
     add_triangle_vertices(v0, v2, v3, tri_vert);
     add_triangle_vertices(v0, v3, v4, tri_vert);
   }
+
+  /// Triangulate a pentagon by adding triangles
+  ///   (v0,v1,v2), (v0, v2, v3) and (v0, v3, v4).
+  /// - Version allowing reverse orientation.
+  /// @param flag_reverse_orient If true, reverse orientation.
+  template <typename VTYPE0, typename VTYPE1, typename VTYPE2,
+            typename VTYPE3, typename VTYPE4, typename VTYPEB>
+  void triangulate_pentagon
+  (const VTYPE0 v0, const VTYPE1 v1, const VTYPE2 v2,
+   const VTYPE3 v3, const VTYPE4 v4, const bool flag_reverse_orient,
+   std::vector<VTYPEB> & tri_vert)
+  {
+    if (flag_reverse_orient) {
+      triangulate_pentagon(v0, v4, v3, v2, v1, tri_vert);
+    }
+    else {
+      triangulate_pentagon(v0, v1, v2, v3, v4, tri_vert);
+    }
+  }
+
 
   /// Triangulate a pentagon by adding triangles incident on pentagon_vert[ivX].
   /// - Pentagon vertices are listed in clockwise or counter-clockwise 
@@ -287,6 +497,81 @@ namespace IJK {
       break;
     }
   }
+
+
+  /// Triangulate a pentagon by adding triangles
+  ///   (w0,v0,v1), (w0,v1,v2), (w0,v2,v3), (w0,v3,v4) and (w0, v4, v0).
+  /// - Pentagon vertices are listed in clockwise or counter-clockwise 
+  ///   order around the pentagon.
+  /// - Add new triangles to vector tri_vert.
+  template <typename VTYPE0, typename VTYPE1, typename VTYPE2,
+            typename VTYPE3, typename VTYPE4, typename WTYPE, typename VTYPEB>
+  void triangulate_pentagon_with_vertex
+  (const VTYPE0 v0, const VTYPE1 v1, const VTYPE2 v2,
+   const VTYPE3 v3, const VTYPE4 v4, const WTYPE w0,
+   std::vector<VTYPEB> & tri_vert)
+  {
+    add_triangle_vertices(w0, v0, v1, tri_vert);
+    add_triangle_vertices(w0, v1, v2, tri_vert);
+    add_triangle_vertices(w0, v2, v3, tri_vert);
+    add_triangle_vertices(w0, v3, v4, tri_vert);
+    add_triangle_vertices(w0, v4, v0, tri_vert);
+  }
+
+
+  /// Triangulate a pentagon by adding triangles
+  ///   (w0,v1,v0), (w0,v2,v1), (w0,v3,v2), (w0,v4,v3) and (w0, v0, v4).
+  /// - Pentagon vertices are listed in clockwise or counter-clockwise 
+  ///   order around the pentagon.
+  /// - Add new triangles to vector tri_vert.
+  template <typename VTYPE0, typename VTYPE1, typename VTYPE2,
+            typename VTYPE3, typename VTYPE4, typename WTYPE, typename VTYPEB>
+  void triangulate_pentagon_with_vertex_reverse_orient
+  (const VTYPE0 v0, const VTYPE1 v1, const VTYPE2 v2,
+   const VTYPE3 v3, const VTYPE4 v4, const WTYPE w0,
+   std::vector<VTYPEB> & tri_vert)
+  {
+    add_triangle_vertices(w0, v1, v0, tri_vert);
+    add_triangle_vertices(w0, v2, v1, tri_vert);
+    add_triangle_vertices(w0, v3, v2, tri_vert);
+    add_triangle_vertices(w0, v4, v3, tri_vert);
+    add_triangle_vertices(w0, v0, v4, tri_vert);
+  }
+
+
+  /// Triangulate a pentagon by adding a triangle between each pentagon edge
+  ///   and vertex w0.
+  /// - Pentagon vertices are listed in clockwise or counter-clockwise 
+  ///   order around the pentagon.
+  /// - Add new triangles to vector tri_vert.
+  /// @param flag_reverse_orient If true, reverse triangle orientations.
+  template <typename VTYPE0, typename VTYPE1, typename VTYPE2,
+            typename VTYPE3, typename VTYPE4, typename WTYPE, typename VTYPEB>
+  void triangulate_pentagon_with_vertex
+  (const VTYPE0 v0, const VTYPE1 v1, const VTYPE2 v2,
+   const VTYPE3 v3, const VTYPE4 v4, const WTYPE w0,
+   const bool flag_reverse_orient, std::vector<VTYPEB> & tri_vert)
+  {
+
+    if (flag_reverse_orient) {
+      triangulate_pentagon_with_vertex_reverse_orient
+        (v0, v1, v2, v3, v4, w0, tri_vert);
+    }
+    else {
+      triangulate_pentagon_with_vertex
+        (v0, v1, v2, v3, v4, w0, tri_vert);
+    }
+  }
+
+  ///@}
+
+
+
+  // **************************************************
+  //! @name TRIANGULATE HEXAGONS
+  // **************************************************
+
+  ///@{
 
   /// Triangulate a hexagon by adding triangle (iv0,iv2,iv4).
   /// - Hexagon vertices are listed in clockwise or counter-clockwise 
@@ -432,10 +717,56 @@ namespace IJK {
        hex_vert[5], ear0, ear1, ear2, tri_vert);
   }
 
+  ///@}
+
 
   // **************************************************
-  // TRIANGULATE SQUARE PYRAMIDS
+  // @name CLASS HEX_TRIANGULATION_INFO
   // **************************************************
+
+  ///@{
+
+  /// Information on hex triangulation.
+  template <typename ANCHOR_TYPE, typename FLAGS_TYPE>
+  class HEX_TRIANGULATION_INFO {
+  public:
+
+    /// Hex vertex (0,1,...,7) which is the triangulation anchor.
+    /// All triangulation tetrahedra are incident on the triangulation_anchor.
+    ANCHOR_TYPE triangulation_anchor;
+
+    /// Flags indicating triangulation of hex facet diagonals.
+    FLAGS_TYPE triangulation_flags;
+
+    HEX_TRIANGULATION_INFO() 
+    {
+      triangulation_flags = 0;
+    }
+
+    template <typename FTYPE>
+    bool TriangulationFlag(const FTYPE jfacet)
+    {
+      const FLAGS_TYPE mask = (FLAGS_TYPE(1) << jfacet);
+      return(!((mask & triangulation_flags) == 0));
+    }
+
+    template <typename FTYPE>
+    void FlipTriangulationFlag(const FTYPE jfacet)
+    {
+      const FLAGS_TYPE mask = (FLAGS_TYPE(1) << jfacet);
+      triangulation_flags = (triangulation_flags ^ mask);
+    }
+  };
+
+  ///@}
+
+
+
+  // **************************************************
+  //! @name TRIANGULATE SQUARE PYRAMIDS
+  // **************************************************
+
+  ///@{
 
   /// Triangulate square pyramid adding diagonal (v0,v2).
   /// - Vertices of pyramid base are listed in clockwise/counter-clockwise
@@ -491,47 +822,14 @@ namespace IJK {
     }
   }
 
-
-  // **************************************************
-  // CLASS HEX_TRIANGULATION_INFO
-  // **************************************************
-
-  /// Information on hex triangulation.
-  template <typename ANCHOR_TYPE, typename FLAGS_TYPE>
-  class HEX_TRIANGULATION_INFO {
-  public:
-
-    /// Hex vertex (0,1,...,7) which is the triangulation anchor.
-    /// All triangulation tetrahedra are incident on the triangulation_anchor.
-    ANCHOR_TYPE triangulation_anchor;
-
-    /// Flags indicating triangulation of hex facet diagonals.
-    FLAGS_TYPE triangulation_flags;
-
-    HEX_TRIANGULATION_INFO() 
-    {
-      triangulation_flags = 0;
-    }
-
-    template <typename FTYPE>
-    bool TriangulationFlag(const FTYPE jfacet)
-    {
-      const FLAGS_TYPE mask = (FLAGS_TYPE(1) << jfacet);
-      return(!((mask & triangulation_flags) == 0));
-    }
-
-    template <typename FTYPE>
-    void FlipTriangulationFlag(const FTYPE jfacet)
-    {
-      const FLAGS_TYPE mask = (FLAGS_TYPE(1) << jfacet);
-      triangulation_flags = (triangulation_flags ^ mask);
-    }
-  };
+  ///@}
 
 
   // **************************************************
-  // TRIANGULATE HEXAHEDRA
+  //! @name TRIANGULATE HEXAHEDRA
   // **************************************************
+
+  ///@{
 
   /// Triangulate a hexahedron with tetrahedra all incident
   ///   on the diagonal (hex_vert[0], hex_vert[7])
@@ -785,6 +1083,8 @@ namespace IJK {
     hex_data.Set(hex_mesh);
     triangulate_hex_meshX(hex_data, tet_vert_list);
   }
+
+  ///@}
 
 }
 
