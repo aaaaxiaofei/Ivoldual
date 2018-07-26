@@ -4,7 +4,7 @@
 
 /*
   IJK: Isosurface Jeneration Kode
-  Copyright (C) 2011-2017 Rephael Wenger
+  Copyright (C) 2011-2018 Rephael Wenger
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public License
@@ -25,6 +25,7 @@
 #define _IJKCUBE_
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <vector>
 
@@ -538,6 +539,56 @@ namespace IJK {
     (const CTYPE2 * vertex0_coord, const LTYPE2 edge_length);
   };
 
+
+  // **************************************************
+  // TEMPLATE CLASS CUBE_CENTER_TO_VERTEX_DIRECTIONS
+  // **************************************************
+
+  template <typename DTYPE, typename NTYPE, typename CTYPE> 
+  class CUBE_CENTER_TO_VERTEX_DIRECTIONS:public CUBEV<DTYPE,NTYPE,CTYPE>
+  {
+  protected:
+    void Init(const DTYPE dimension);
+
+  public:
+    CUBE_CENTER_TO_VERTEX_DIRECTIONS();
+    CUBE_CENTER_TO_VERTEX_DIRECTIONS(const DTYPE dimension);
+
+    void SetDimension(const DTYPE dimension);
+
+    /// Return pointer to directions.
+    const CTYPE * Direction() const
+    { return(this->VertexCoord()); }
+
+    /// Return pointer to direction to k'th cube vertex.
+    const CTYPE * Direction(const NTYPE k) const
+    { return(this->VertexCoord(k)); }
+
+    /// Return j'th coordinate of direction to k'th vertex.
+    const CTYPE Direction         
+    (const NTYPE k, const NTYPE j) const
+    { return(this->VertexCoord(k,j)); }
+
+  };
+
+
+  // ****************************************************************
+  // TEMPLATE CLASS CUBE_CENTER_TO_VERTEX_DIRECTIONS_3D
+  // ****************************************************************
+
+  template <typename DTYPE, typename NTYPE, typename CTYPE> 
+  class CUBE_CENTER_TO_VERTEX_DIRECTIONS_3D:
+    public CUBE_CENTER_TO_VERTEX_DIRECTIONS<DTYPE,NTYPE,CTYPE>
+  {
+  public:
+    CUBE_CENTER_TO_VERTEX_DIRECTIONS_3D():
+      CUBE_CENTER_TO_VERTEX_DIRECTIONS<DTYPE,NTYPE,CTYPE>(3) {};
+
+    // Unset SetDimension().
+    void SetDimension(const DTYPE dimension);
+  };
+
+
   // **************************************************
   // TEMPLATE FUNCTIONS: COUNTING
   // **************************************************
@@ -618,7 +669,7 @@ namespace IJK {
       { throw error; }
     if (!check_array_allocated(coord, "coord", error)) { throw error; }
     
-    long num_cube_vertices = compute_num_cube_vertices(dimension);
+    const long num_cube_vertices = compute_num_cube_vertices(dimension);
 
     for (long j = 0; j < num_cube_vertices; j++) {
       long j0 = j;
@@ -629,6 +680,7 @@ namespace IJK {
       }
     }
   }
+
 
   /// Compute unit cube vertex coordinates (0,0,...,0) to (1,1,...,1)
   /// @param dimension  Dimension of grid.
@@ -644,7 +696,7 @@ namespace IJK {
 
     if (!check_array_allocated(coord, "coord", error)) { throw error; }
     
-    long num_cube_vertices = compute_num_cube_vertices(dimension);
+    const long num_cube_vertices = compute_num_cube_vertices(dimension);
 
     for (long j = 0; j < num_cube_vertices; j++) {
       long j0 = j;
@@ -674,9 +726,10 @@ namespace IJK {
     if (!check_array_allocated(vertex0_coord, "vertex0_coord", error)) 
       { throw error; }
     if (!check_array_allocated(coord, "coord", error)) { throw error; }
-    if (!check_array_allocated(edge_length, "edge_length", error)) { throw error; }
+    if (!check_array_allocated(edge_length, "edge_length", error)) 
+      { throw error; }
     
-    long num_hrect_vertices = compute_num_cube_vertices(dimension);
+    const long num_hrect_vertices = compute_num_cube_vertices(dimension);
 
     for (long j = 0; j < num_hrect_vertices; j++) {
       long j0 = j;
@@ -687,6 +740,36 @@ namespace IJK {
       }
     }
   }
+
+
+  /// Compute direction of each vertex from cube center.
+  /// @param dimension  Dimension of grid.
+  /// @param[out] coord[] = Unit cube vertex coordinates.
+  /// @pre Array coord[] is allocated with size at least 
+  ///      (number of cube vertices)*dimension
+  template <typename DTYPE, typename CTYPE>
+  void compute_cube_center_to_vertex_directions
+  (const DTYPE dimension, CTYPE * direction)
+  {
+    IJK::PROCEDURE_ERROR error("compute_cube_directions");
+
+    if (dimension <= 0) { return; };
+
+    if (!check_array_allocated(direction, "direction", error)) 
+      { throw error; }
+    
+    const long num_cube_vertices = compute_num_cube_vertices(dimension);
+    const CTYPE pos_coord = 1.0/std::sqrt(CTYPE(dimension));
+
+    for (long j = 0; j < num_cube_vertices; j++) {
+      long j0 = j;
+      for (DTYPE d = 0; d < dimension; d++) {
+        direction[j*dimension+d] = (2*(j0%2)-1)*pos_coord;
+        j0 = j0/2;
+      }
+    }
+  }
+
 
   /// Compute coordinates of cube diagonal endpoints.
   /// @param dimension  Dimension of grid.
@@ -711,7 +794,7 @@ namespace IJK {
       { throw error; }
     if (!check_array_allocated(coord, "coord", error)) { throw error; }
     
-    long num_cube_vertices = compute_num_cube_vertices(dimension);
+    const long num_cube_vertices = compute_num_cube_vertices(dimension);
 
     for (long k = 0; k < num_cube_vertices; k++) {
       long k0 = k;
@@ -745,7 +828,7 @@ namespace IJK {
 
     if (!check_array_allocated(coord, "coord", error)) { throw error; }
     
-    long num_cube_vertices = compute_num_cube_vertices(dimension);
+    const long num_cube_vertices = compute_num_cube_vertices(dimension);
 
     for (long k = 0; k < num_cube_vertices; k++) {
       long k0 = k;
@@ -1512,6 +1595,44 @@ namespace IJK {
   UNIT_CUBE<DTYPE,NTYPE,CTYPE>::UNIT_CUBE():
     CUBE<DTYPE,NTYPE,CTYPE,CTYPE>()
   {}
+
+
+  // **************************************************
+  // TEMPLATE CLASS CUBE_CENTER_TO_VERTEX_DIRECTIONS MEMBER FUNCTIONS
+  // **************************************************
+
+  template <typename DTYPE, typename NTYPE, typename CTYPE> 
+  CUBE_CENTER_TO_VERTEX_DIRECTIONS<DTYPE,NTYPE,CTYPE>::
+  CUBE_CENTER_TO_VERTEX_DIRECTIONS()
+  {
+    Init(0);
+  }
+
+
+  template <typename DTYPE, typename NTYPE, typename CTYPE> 
+  CUBE_CENTER_TO_VERTEX_DIRECTIONS<DTYPE,NTYPE,CTYPE>::
+  CUBE_CENTER_TO_VERTEX_DIRECTIONS(const DTYPE dimension)
+  {
+    Init(dimension);
+  }
+
+
+  template <typename DTYPE, typename NTYPE, typename CTYPE> 
+  void CUBE_CENTER_TO_VERTEX_DIRECTIONS<DTYPE,NTYPE,CTYPE>::
+  Init(const DTYPE dimension)
+  {
+    SetDimension(dimension);
+  }
+
+
+  template <typename DTYPE, typename NTYPE, typename CTYPE> 
+  void CUBE_CENTER_TO_VERTEX_DIRECTIONS<DTYPE,NTYPE,CTYPE>::
+  SetDimension(const DTYPE dimension)
+  {
+    CUBEV<DTYPE,NTYPE,CTYPE>::SetDimension(dimension);
+
+    compute_cube_center_to_vertex_directions(dimension, this->vertex_coord);
+  }
 
 }
 
