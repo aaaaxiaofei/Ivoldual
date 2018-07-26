@@ -91,6 +91,10 @@ namespace IVOLDUAL {
   /// Type of cube with face info.
   typedef IJK::CUBE_FACE_INFO<int,int,int> CUBE_FACE_INFO;
 
+  /// Directions of cube center to cube vertices.
+  typedef IJK::CUBE_CENTER_TO_VERTEX_DIRECTIONS_3D<int,int,COORD_TYPE>
+  CUBE_DIRECTIONS;
+
 
   // **************************************************
   // DUAL INTERVAL VOLUME VERTICES
@@ -451,6 +455,8 @@ namespace IVOLDUAL {
   <int,ISO_VERTEX_INDEX,FACET_INDEX,int>
   IVOL_VERTEX_ADJACENCY_LIST;
 
+  typedef IJK::VERTEX_POLY_INCIDENCE_WITH_VLOC<int, int, int>
+  IVOL_VERTEX_POLY_INCIDENCE;
 
   // **************************************************
   // MERGE DATA
