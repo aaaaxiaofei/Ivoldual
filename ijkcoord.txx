@@ -2180,7 +2180,7 @@ namespace IJK {
 
   /// Compute determinant of the Jacobian matrix of a hexahedron
   ///   at the hexahedron center.
-  /// @param orientation Orientation of hexahedra. +1 or -1.
+  /// @param orientation Orientation of hexahedron. +1 or -1.
   /// @param cube Cube with facet information.
   /// @pre     cube.Dimension() = 3. 
   /// @param[out] Jacobian 3x3 Jacobian matrix.
@@ -2208,7 +2208,7 @@ namespace IJK {
   /// Compute determinant of the Jacobian matrix of a hexahedron
   ///   at the hexahedron center.
   /// - Version which does not return Jacobian matrix.
-  /// @param orientation Orientation of hexahedra. +1 or -1.
+  /// @param orientation Orientation of hexahedron. +1 or -1.
   /// @param cube Cube with facet information.
   /// @pre     cube.Dimension() = 3. 
   template <typename ORIENT_TYPE, typename VTYPE, 
@@ -2614,7 +2614,7 @@ namespace IJK {
 
   /// Compute normalized determinant of the Jacobian matrix of a hexahedron
   ///   at the hexahedron center.
-  /// @param orientation Orientation of hexahedra. +1 or -1.
+  /// @param orientation Orientation of hexahedron. +1 or -1.
   /// @param cube Cube with facet information.
   /// @pre     cube.Dimension() = 3. 
   template <typename ORIENT_TYPE, typename VTYPE, 
@@ -2882,7 +2882,7 @@ namespace IJK {
   ///@{
 
   /// Compute shape metric from 3x3 Jacobian matrix.
-  /// @param orientation Orientation of hexahedra. +1 or -1.
+  /// @param orientation Orientation of hexahedron. +1 or -1.
   /// @param Jacobian 3x3 Jacobian matrix.
   template <typename CTYPE, typename MTYPE, 
             typename SHAPE_TYPE>

@@ -4,7 +4,7 @@
 
 /*
   IJK: Isosurface Jeneration Kode
-  Copyright (C) 2017 Rephael Wenger
+  Copyright (C) 2017-2018 Rephael Wenger
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public License
@@ -91,3 +91,4 @@ void IVOLDUAL::compute_hexahedron_normalized_Jacobian_determinant
     (hex_i_vert, POSITIVE_ORIENTATION, vcoord, cube, icorner,
       max_small_magnitude, Jacobian_determinant, flag_zero);
 }
+
