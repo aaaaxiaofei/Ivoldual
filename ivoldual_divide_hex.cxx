@@ -100,7 +100,7 @@ void IVOLDUAL::split_hex
       COORD_TYPE jacob;        
       compute_hexahedron_normalized_Jacobian_determinant
         (ivolpoly_vert, ihex, vertex_coord, icorner, jacob);
-        
+
       if (jacob < jacobian_limit)
       {
       	// Push back the opposite vertex in the cube to the negative Jacobian vertex.
@@ -137,8 +137,6 @@ void IVOLDUAL::subdivide_hex_to_four
  	vertex_subdivide_list,
  COORD_ARRAY & vertex_coord)
 {
-	printf("split_hex, %d cases\n", vertex_subdivide_list.size());
-
 	VERTEX_INDEX corner[8];
   VERTEX_INDEX iv[8];
   VERTEX_INDEX iw[8];

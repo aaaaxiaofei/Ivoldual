@@ -94,7 +94,7 @@ namespace IVOLDUAL {
    COORD_ARRAY & vertex_coord, 
    const std::vector<std::vector<int>> & flag_hex);
 
-  void expand_flat_hex2
+  void expand_flat_hex_normal_direction
   (const std::vector<VERTEX_INDEX> & ivolpoly_cube,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
@@ -111,7 +111,6 @@ namespace IVOLDUAL {
    const DUAL_IVOLVERT_ARRAY & ivolv_list,
    COORD_ARRAY & vertex_coord, 
    const std::vector<int> & negative_jabocian_list,
-   std::unordered_map<int, int> & negative_hex_list,
    std::unordered_map<int, COORD_TYPE> & negative_jacobian_value,
    int iter);
 
@@ -133,7 +132,7 @@ namespace IVOLDUAL {
    COORD_TYPE cur_min_jacob,
    int ivert);
 
-  void move_vertex_along_gradient
+  void move_vertex_all_direction
   (const std::vector<VERTEX_INDEX> & ivolpoly_vert,
    IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
    IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
@@ -156,6 +155,15 @@ namespace IVOLDUAL {
    const std::vector<int> & internal_vert,
    COORD_TYPE normal_dir[]);
 
+  void find_optimal_jacobian_point
+  (const std::vector<VERTEX_INDEX> & ivolpoly_vert,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
+   COORD_ARRAY & vertex_coord, 
+   const std::vector<std::vector<int>> & flat_hex, 
+   float pre_min_at_facet, float pre_min_around_facet, 
+   int ifacet, 
+   float & move_dist, std::vector<int> & dir);
+   
   void surface_normal_direction
    (COORD_ARRAY & vertex_coord,
     const std::vector<int> & surface_vert,
