@@ -58,7 +58,7 @@ namespace IVOLDUAL {
    IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
    DUAL_IVOLVERT_ARRAY & ivolv_list,
    IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
-   std::vector<std::pair<VERTEX_INDEX, VERTEX_INDEX>> 
+   std::vector<std::pair<VERTEX_INDEX, VERTEX_INDEX>> &
    	vertex_subdivide_list,
    COORD_ARRAY & vertex_coord);
 
