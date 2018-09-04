@@ -38,7 +38,6 @@ void IVOLDUAL::collapse_hex
  COORD_ARRAY & vertex_coord, 
  COORD_TYPE jacobian_limit)
  {
-  const int DIM3(3);
   const int NUM_VERT_PER_HEX(8);
   std::vector<std::pair<VERTEX_INDEX, VERTEX_INDEX>> vertex_subdivide_list;
 
@@ -71,10 +70,10 @@ void IVOLDUAL::collapse_hex
   std::vector<VERTEX_INDEX> ivolpoly_vert_new;
   for (int i = 0; i < ivolpoly_info.size(); i++) {
   	if (!ivolpoly_info[i].flag_subdivide_hex) {
-  		for (int j = 0; j < 8; j++) {
-  			int cur = ivolpoly_vert[i*8 + j];
-  			ivolpoly_vert_new.push_back(ivolv_list[cur].map_to);
-  		} 		
+			for (int j = 0; j < 8; j++) {
+				int cur = ivolpoly_vert[i*8 + j];
+				ivolpoly_vert_new.push_back(ivolv_list[cur].map_to);
+			} 		
   	}
   }
   ivolpoly_vert = move(ivolpoly_vert_new);
@@ -89,7 +88,6 @@ void IVOLDUAL::split_hex
  COORD_ARRAY & vertex_coord, 
  COORD_TYPE jacobian_limit)
  {
-  const int DIM3(3);
   const int NUM_VERT_PER_HEX(8);
   std::vector<std::pair<VERTEX_INDEX, VERTEX_INDEX>> vertex_subdivide_list;
 
@@ -102,10 +100,8 @@ void IVOLDUAL::split_hex
       COORD_TYPE jacob;        
       compute_hexahedron_normalized_Jacobian_determinant
         (ivolpoly_vert, ihex, vertex_coord, icorner, jacob);
-      if (jacob < jacobian_limit && 
-      		ivolv_list[cur].num_incident_hex == 1 && 
-		      ivolv_list[cur].num_incident_iso_quad == 3 && 
-		      ivolv_list[cur].flag_missing_ivol_hexahedra == false) 
+
+      if (jacob < jacobian_limit)
       {
       	// Push back the opposite vertex in the cube to the negative Jacobian vertex.
       	vertex_subdivide_list.push_back
@@ -137,7 +133,7 @@ void IVOLDUAL::subdivide_hex_to_four
  IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
  DUAL_IVOLVERT_ARRAY & ivolv_list,
  IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
- std::vector<std::pair<VERTEX_INDEX, VERTEX_INDEX>> 
+ std::vector<std::pair<VERTEX_INDEX, VERTEX_INDEX>> &
  	vertex_subdivide_list,
  COORD_ARRAY & vertex_coord)
 {

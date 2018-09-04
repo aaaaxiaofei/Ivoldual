@@ -304,12 +304,10 @@ namespace IVOLDUAL {
     /// Flags for smoothing.
     bool flag_lsmooth_elength;
     bool flag_lsmooth_jacobian;
-    bool flag_gsmooth_elength;
     bool flag_gsmooth_jacobian;
 
     int lsmooth_elength_iter;
     int lsmooth_jacobian_iter;
-    int gsmooth_elength_iter;
     int gsmooth_jacobian_iter;
 
     float elength_threshold;

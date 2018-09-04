@@ -289,6 +289,13 @@ void IVOLDUAL::dual_contouring_interval_volume
        param.thin_separation_distance, vertex_coord, num_moved);
   }
 
+  // Polytopes dual to vertex.
+  const int NUM_VERT_PER_HEXAHEDRON(8);
+  IJK::POLYMESH_DATA<VERTEX_INDEX,int, 
+    IJK::HEX_TRIANGULATION_INFO<char,char>> hex_data;
+  hex_data.AddPolytopes(ivolpoly_vert, NUM_VERT_PER_HEXAHEDRON);
+  IJK::VERTEX_POLY_INCIDENCE<int,int> vertex_poly_incidence(hex_data);
+
   // Split or Collapse hexahedron to improve Jacobian.
   if (param.flag_split_hex) {
     split_hex
@@ -303,25 +310,20 @@ void IVOLDUAL::dual_contouring_interval_volume
   // Edge length improvement.
   if (param.flag_lsmooth_elength) {
     laplacian_smooth_elength
-    (scalar_grid, ivoldual_table, param, vertex_adjacency_list, ivolv_list, 
+    (ivoldual_table, vertex_adjacency_list, ivolv_list, 
      vertex_coord, param.elength_threshold, param.lsmooth_elength_iter);         
-  }
-  else if (param.flag_gsmooth_elength) {
-    gradient_smooth_elength
-    (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list, 
-     vertex_coord, param.elength_threshold, param.gsmooth_elength_iter);         
   }
 
   // Jacobian improvement.
   if (param.flag_lsmooth_jacobian) {
     laplacian_smooth_jacobian
-    (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list, 
+    (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, vertex_poly_incidence, ivolv_list, 
      vertex_coord, param.jacobian_threshold, param.lsmooth_jacobian_iter);
   } 
   else if (param.flag_gsmooth_jacobian) {
-    laplacian_smooth_jacobian
-    (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, ivolv_list, 
-     vertex_coord, param.jacobian_threshold, param.gsmooth_jacobian_iter);
+    gradient_smooth_jacobian
+    (ivolpoly_vert, ivoldual_table, vertex_adjacency_list, vertex_poly_incidence, ivolv_list, 
+     ivolpoly_info, vertex_coord, param.jacobian_threshold, param.gsmooth_jacobian_iter);
   } 
 
 

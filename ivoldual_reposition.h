@@ -28,6 +28,7 @@
 #include "ivoldual_types.h"
 #include "ivoldual_datastruct.h"
 #include "ivoldualtable.h"
+#include <unordered_map>
 
 /// ivoldual classes and routines.
 namespace IVOLDUAL {
@@ -45,30 +46,19 @@ namespace IVOLDUAL {
 
   /// Laplacian Smoothing for small edge length.
   void laplacian_smooth_elength
-  (const DUALISO_SCALAR_GRID_BASE & scalar_grid,
-   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
-   const IVOLDUAL_DATA_FLAGS & param,
+  (const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
    const DUAL_IVOLVERT_ARRAY & ivolv_list,
    COORD_ARRAY & vertex_coord,
    float laplacian_smooth_limit, 
    int iteration);
 
-  /// Gradient Smoothing for small edge length.
-  void gradient_smooth_elength
-  (const std::vector<VERTEX_INDEX> & ivolpoly_cube,
-   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
-   IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
-   const DUAL_IVOLVERT_ARRAY & ivolv_list,
-   COORD_ARRAY & vertex_coord, 
-   float elength_limit, 
-   int iteration);
-
-  /// Laplacian Smoothing for negative Jacobian.
+  /// Laplacian Smoothing for bad Jacobian.
   void laplacian_smooth_jacobian
   (const std::vector<VERTEX_INDEX> & ivolpoly_cube,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
    const DUAL_IVOLVERT_ARRAY & ivolv_list,
    COORD_ARRAY & vertex_coord, 
    float jacobian_limit, 
@@ -78,20 +68,106 @@ namespace IVOLDUAL {
   (const std::vector<VERTEX_INDEX> & ivolpoly_cube,
    const IVOLDUAL_CUBE_TABLE & ivoldual_table,
    IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
    const DUAL_IVOLVERT_ARRAY & ivolv_list,
    COORD_ARRAY & vertex_coord, 
-   std::vector<int> negative_jabocian_list);
+   const std::vector<int> & negative_jabocian_list);
+
+  /// Gradient Smoothing for bad Jacobian.
+  void gradient_smooth_jacobian
+  (std::vector<VERTEX_INDEX> & ivolpoly_cube,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
+   DUAL_IVOLVERT_ARRAY & ivolv_list,
+   IVOLDUAL_POLY_INFO_ARRAY & ivolpoly_info,
+   COORD_ARRAY & vertex_coord, 
+   float jacobian_limit, 
+   int iteration);
+
+  void expand_flat_hex
+  (const std::vector<VERTEX_INDEX> & ivolpoly_cube,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
+   COORD_ARRAY & vertex_coord, 
+   const std::vector<std::vector<int>> & flag_hex);
+
+  void expand_flat_hex_normal_direction
+  (const std::vector<VERTEX_INDEX> & ivolpoly_cube,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
+   COORD_ARRAY & vertex_coord, 
+   const std::vector<int> & hex_list);
+
+  void gradient_smooth_jacobian
+  (const std::vector<VERTEX_INDEX> & ivolpoly_cube,
+   const IVOLDUAL_CUBE_TABLE & ivoldual_table,
+   IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
+   const DUAL_IVOLVERT_ARRAY & ivolv_list,
+   COORD_ARRAY & vertex_coord, 
+   const std::vector<int> & negative_jabocian_list,
+   std::unordered_map<int, COORD_TYPE> & negative_jacobian_value,
+   int iter);
 
   void gradient_move_vertex
 	(const std::vector<VERTEX_INDEX> & ivolpoly_cube,
 	 const IVOLDUAL_CUBE_TABLE & ivoldual_table,
 	 IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
-   IJK::VERTEX_POLY_INCIDENCE<int,int> vertex_poly_incidence,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
 	 const DUAL_IVOLVERT_ARRAY & ivolv_list,
 	 COORD_ARRAY & vertex_coord, 
 	 COORD_TYPE *ver_coord, int ver_index,	 
 	 bool flag_onLower,  bool flag_onUpper);
 
+  void move_vertex_along_edge
+  (const std::vector<VERTEX_INDEX> & ivolpoly_vert,
+   IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
+   COORD_ARRAY & vertex_coord,
+   COORD_TYPE cur_min_jacob,
+   int ivert);
+
+  void move_vertex_all_direction
+  (const std::vector<VERTEX_INDEX> & ivolpoly_vert,
+   IVOL_VERTEX_ADJACENCY_LIST & vertex_adjacency_list,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
+   COORD_ARRAY & vertex_coord,
+   COORD_TYPE cur_min_jacob,
+   int ivert, int iter);
+
+  void min_jacob_around_vertex
+  (const std::vector<VERTEX_INDEX> & ivolpoly_vert,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
+   COORD_ARRAY & vertex_coord,
+   int & ivert,
+   COORD_TYPE & min_jacob_at_cur,
+   COORD_TYPE & min_jacob_around_cur);
+
+  void move_vertex_normal_direction
+  (const std::vector<VERTEX_INDEX> & ivolpoly_vert,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
+   COORD_ARRAY & vertex_coord,
+   const std::vector<int> & internal_vert,
+   COORD_TYPE normal_dir[]);
+
+  void find_optimal_jacobian_point
+  (const std::vector<VERTEX_INDEX> & ivolpoly_vert,
+   IJK::VERTEX_POLY_INCIDENCE<int,int> & vertex_poly_incidence,
+   COORD_ARRAY & vertex_coord, 
+   const std::vector<std::vector<int>> & flat_hex, 
+   float pre_min_at_facet, float pre_min_around_facet, 
+   int ifacet, 
+   float & move_dist, std::vector<int> & dir);
+   
+  void surface_normal_direction
+   (COORD_ARRAY & vertex_coord,
+    const std::vector<int> & surface_vert,
+    COORD_TYPE dir[]);
 }
 
 #endif
