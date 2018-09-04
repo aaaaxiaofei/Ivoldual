@@ -1628,13 +1628,13 @@ void IVOLDUAL::position_dual_ivolv_on_lower_isosurface_centroid_multi
 
     if (ivoldual_table.IsBelowIntervalVolume(table_index, k0) &&
         ivoldual_table.IsBelowIntervalVolume(table_index, k1)) {
-      // Edge does not intersect upper isosurface.
+      // Edge does not intersect lower isosurface.
       continue;
     }
 
     if (!ivoldual_table.IsBelowIntervalVolume(table_index, k0) &&
         !ivoldual_table.IsBelowIntervalVolume(table_index, k1)) {
-      // Edge does not intersect upper isosurface.
+      // Edge does not intersect lower isosurface.
       continue;
     }
 
